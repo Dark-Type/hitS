@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "997010536882",
+    "project_id": "shooter-24512",
+    "storage_bucket": "shooter-24512.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:997010536882:android:ff56501819817185624cab",
+        "android_client_info": {
+          "package_name": "com.example.hits"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBNwhGgpFopUfZISXZ_l38iZVxDH2UN4Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
