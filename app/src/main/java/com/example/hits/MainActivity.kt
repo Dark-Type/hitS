@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.hits.fragments.JoinLobbyFragment
 import com.example.hits.fragments.LobbyFragment
+import com.example.hits.fragments.SettingsFragment
 import com.example.hits.ui.theme.HitSTheme
 import kotlinx.coroutines.launch
 
@@ -45,13 +46,17 @@ class MainActivity : ComponentActivity() {
 
             val nickname = sharedPrefHelper.getNickname()
 
-            NavHost(navController, startDestination = if (nickname.isNullOrEmpty()) "initUI" else "joinLobbyFragment") {
+            NavHost(
+                navController,
+                startDestination = if (nickname.isNullOrEmpty()) "initUI" else "joinLobbyFragment"
+            ) {
                 composable("initUI") { InitUI(navController) }
                 composable("joinLobbyFragment") { JoinLobbyFragment().JoinLobbyScreen(navController) }
+                composable("settingsScreen") { SettingsFragment().SettingsScreen(navController) }
                 composable("lobbyFragment/{lobbyId}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     if (lobbyId != null) {
-                        LobbyFragment().LobbyScreen(lobbyId.toInt())
+                        LobbyFragment().LobbyScreen(lobbyId.toInt(), navController)
                     }
                 }
             }
@@ -64,6 +69,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 @Composable
 fun InitUI(navController: NavController) {
     val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
@@ -103,7 +109,9 @@ fun InitUI(navController: NavController) {
                                 }
                             }
                         },
-                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(16.dp),
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(16.dp),
                         shape = MaterialTheme.shapes.large
                     ) {
                         Text("Save Nickname")

@@ -16,19 +16,25 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.hits.R
 
 
 class LobbyFragment {
     data class User(val id: Int, val name: String)
 
     @Composable
-    fun LobbyScreen(lobbyId: Int) {
+    fun LobbyScreen(lobbyId: Int, navController: NavController) {
         val users = listOf(
             User(id = 1, name = "User 1"),
             User(id = 2, name = "User 2"),
@@ -57,13 +63,27 @@ class LobbyFragment {
         )
         val votes = remember { mutableStateOf(List(modes.size) { 0 }) }
         val hasVoted = remember { mutableStateOf(false) }
-
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            IconButton(onClick = { navController.navigate("settingsScreen") }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.settings_button),
+                    contentDescription = "Settings"
+                )
+            }
+        }
         Text(text = "Lobby $lobbyId", modifier = Modifier.padding(16.dp))
 
+
         Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier
-                .weight(0.5f)
-                .padding(top = 64.dp)) {
+            Box(
+                modifier = Modifier
+                    .weight(0.5f)
+                    .padding(top = 64.dp)
+            ) {
+
                 UserList(users)
             }
 
@@ -116,39 +136,38 @@ class LobbyFragment {
     }
 
 
-
-@Composable
-fun DisplayModePercentages(selectedMode: Int, modes: List<String>, votes: List<Int>) {
-    val sortedModes = modes.zip(votes).sortedByDescending { it.second }
-    LazyRow {
-        itemsIndexed(sortedModes) { index, pair ->
-            val mode = pair.first
-            val vote = pair.second
-            val displayPercentage = if (index == selectedMode) 100.0 / modes.size else 0.0
-            Text(
-                text = "$mode: ${displayPercentage.toInt()}% (Votes: $vote)",
-                modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
-            )
+    @Composable
+    fun DisplayModePercentages(selectedMode: Int, modes: List<String>, votes: List<Int>) {
+        val sortedModes = modes.zip(votes).sortedByDescending { it.second }
+        LazyRow {
+            itemsIndexed(sortedModes) { index, pair ->
+                val mode = pair.first
+                val vote = pair.second
+                val displayPercentage = if (index == selectedMode) 100.0 / modes.size else 0.0
+                Text(
+                    text = "$mode: ${displayPercentage.toInt()}% (Votes: $vote)",
+                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
+                )
+            }
         }
     }
-}
 
-@Composable
-fun UserList(users: List<User>) {
-    LazyColumn {
-        items(users) { user ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = user.name)
-                Button(onClick = { println("Button clicked for user: ${user.name}") }) {
-                    Text(text = "Button")
+    @Composable
+    fun UserList(users: List<User>) {
+        LazyColumn {
+            items(users) { user ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = user.name)
+                    Button(onClick = { println("Button clicked for user: ${user.name}") }) {
+                        Text(text = "Button")
+                    }
                 }
             }
         }
     }
-}
 }
