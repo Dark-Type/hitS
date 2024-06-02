@@ -6,10 +6,10 @@ import android.content.SharedPreferences
 class SharedPrefHelper(context: Context) {
     private val preferencesName = "com.example.hits"
     private val nicknameKey = "nickname"
-    private val killsKey = "0"
-    private val deathsKey = "0"
-    private val assistsKey = "0"
-    private val damageKey = "0"
+    private val killsKey = "kills"
+    private val deathsKey = "deaths"
+    private val assistsKey = "assists"
+    private val damageKey = "damage"
     private val prefs: SharedPreferences =
         context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
 
