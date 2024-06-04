@@ -30,6 +30,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
+import com.example.hits.utility.User
+import com.example.hits.utility.addUserToRoom
+import com.example.hits.utility.createRoom
+import com.example.hits.utility.getRandomID
 
 class JoinLobbyFragment {
 
@@ -78,7 +82,13 @@ class JoinLobbyFragment {
                         Spacer(modifier = Modifier.height(32.dp))
 
                         Button(onClick = {
-                            generatedId.value = (0..9999999).random().toString()
+                            generatedId.value = getRandomID().toString()
+
+                            val firstUser = User(sharedPrefHelper.getID()!!.toInt(), sharedPrefHelper.getNickname()!!)
+
+                            createRoom(generatedId.value.toInt())
+                            addUserToRoom(generatedId.value.toInt(), firstUser)
+
                             navController.navigate("lobbyFragment/${generatedId.value}")
                         }) {
                             Text("Create Lobby")
@@ -119,6 +129,10 @@ class JoinLobbyFragment {
                             keyboardActions = KeyboardActions(onDone = {
                                 if (lobbyCode.value.isNotBlank()) {
                                     val lobbyId = lobbyCode.value
+
+                                    val newUser = User(sharedPrefHelper.getID()!!.toInt(), sharedPrefHelper.getNickname()!!)
+                                    addUserToRoom(lobbyId.toInt(), newUser)
+
                                     navController.navigate("lobbyFragment/$lobbyId")
                                 }
                             })

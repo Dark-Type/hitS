@@ -1,6 +1,7 @@
 package com.example.hits
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,8 @@ import com.example.hits.fragments.JoinLobbyFragment
 import com.example.hits.fragments.LobbyFragment
 import com.example.hits.fragments.SettingsFragment
 import com.example.hits.ui.theme.HitSTheme
+import com.example.hits.utility.createUser
+import com.example.hits.utility.getNewID
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -75,6 +78,7 @@ fun InitUI(navController: NavController) {
     val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
     val nickname = sharedPrefHelper.getNickname() ?: ""
     val snackbarHostState = remember { SnackbarHostState() }
+    val toast = Toast.makeText(LocalContext.current, "Creating your account...", Toast.LENGTH_SHORT)
 
     HitSTheme {
         Surface(
@@ -104,8 +108,22 @@ fun InitUI(navController: NavController) {
                                 }
                             } else {
                                 sharedPrefHelper.saveNickname(textState.value)
+
                                 if (sharedPrefHelper.getNickname() != null) {
-                                    navController.navigate("joinLobbyFragment")
+
+                                    toast.show()
+
+                                    getNewID().thenAccept { newID ->
+
+                                        sharedPrefHelper.createID(newID)
+
+                                        createUser(
+                                            sharedPrefHelper.getID()!!.toInt(),
+                                            sharedPrefHelper.getNickname()!!
+                                        )
+
+                                        navController.navigate("joinLobbyFragment")
+                                    }
                                 }
                             }
                         },

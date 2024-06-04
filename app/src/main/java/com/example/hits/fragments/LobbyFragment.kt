@@ -1,5 +1,7 @@
 package com.example.hits.fragments
 
+import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
@@ -20,35 +22,48 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.example.hits.R
+import com.example.hits.SharedPrefHelper
+import com.example.hits.utility.User
+import com.example.hits.utility.databaseRef
+import com.example.hits.utility.getLobbyUsers
+import com.example.hits.utility.removeUserFromRoom
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 
 
 class LobbyFragment {
-    data class User(val id: Int, val name: String)
+
+    var users : SnapshotStateList<User> = mutableStateListOf()
+    var lobbyIdToCheck = 0
 
     @Composable
     fun LobbyScreen(lobbyId: Int, navController: NavController) {
-        val users = listOf(
-            User(id = 1, name = "User 1"),
-            User(id = 2, name = "User 2"),
-            User(id = 3, name = "User 3"),
-            User(id = 4, name = "User 4"),
-            User(id = 5, name = "User 5"),
-            User(id = 6, name = "User 6"),
-            User(id = 7, name = "User 7"),
-            User(id = 8, name = "User 8"),
-            User(id = 9, name = "User 9"),
-            User(id = 10, name = "User 10"),
-            User(id = 11, name = "User 11"),
-            User(id = 12, name = "User 12")
-        )
+
+        val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
+        val lifecycleOwner = LocalLifecycleOwner.current
+
+        lobbyIdToCheck = lobbyId
+
+        users = remember { getLobbyUsers(lobbyId) }
+        listenForChanges(lobbyId)
+
         val showDialog = remember { mutableStateOf(false) }
         val selectedMode = remember { mutableIntStateOf(0) }
         val modes = listOf(
@@ -133,6 +148,19 @@ class LobbyFragment {
                 confirmButton = { }
             )
         }
+
+        BackHandler {
+            // Get the current user
+            val currentUser = users.find { it.id == sharedPrefHelper.getID()?.toInt() }
+
+            // Remove the current user from the room
+            if (currentUser != null) {
+                removeUserFromRoom(lobbyId, currentUser)
+            }
+
+            // Navigate back
+            navController.popBackStack()
+        }
     }
 
 
@@ -169,5 +197,41 @@ class LobbyFragment {
                 }
             }
         }
+    }
+
+    private fun listenForChanges(lobbyId: Int) {
+        val childEventListener = object : ChildEventListener {
+            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                val newUser = dataSnapshot.getValue(User::class.java)
+                val existingUser = users.find { it.id == newUser?.id }
+
+                // Only add the new user if it doesn't already exist in the list
+                if (existingUser == null && newUser != null) {
+                    users.add(newUser)
+                }
+                // Call a function to update your UI here
+            }
+
+            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                // A user has changed, find it and update
+                val newUser = dataSnapshot.getValue(User::class.java)
+                val oldUser = users.find { it.id == newUser?.id }
+                oldUser?.let {
+                    users[users.indexOf(it)] = newUser!!
+                }
+                // Call a function to update your UI here
+            }
+
+            override fun onChildRemoved(dataSnapshot: DataSnapshot) {
+                val user = dataSnapshot.getValue(User::class.java)
+                users.remove(user)
+                // Call a function to update your UI here
+            }
+
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onCancelled(databaseError: DatabaseError) {}
+        }
+
+        databaseRef.child("rooms").child(lobbyId.toString()).child("users").addChildEventListener(childEventListener)
     }
 }
