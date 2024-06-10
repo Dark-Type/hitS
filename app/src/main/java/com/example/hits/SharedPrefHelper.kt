@@ -10,8 +10,19 @@ class SharedPrefHelper(context: Context) {
     private val deathsKey = "deaths"
     private val assistsKey = "assists"
     private val damageKey = "damage"
+    private val id = "id"
     private val prefs: SharedPreferences =
         context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+
+    fun createID(id: Int) {
+        val editor = prefs.edit()
+        editor.putString("id", id.toString())
+        editor.apply()
+    }
+
+    fun getID() : String? {
+        return prefs.getString(id, null)
+    }
 
     fun saveNickname(nickname: String) {
         val editor = prefs.edit()
