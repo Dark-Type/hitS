@@ -52,6 +52,14 @@ android {
 
 dependencies {
 
+    implementation( libs.androidx.camera.core)
+    implementation (libs.androidx.camera.camera2)
+    implementation (libs.androidx.camera.lifecycle)
+    implementation(libs.coil.compose)
+    implementation (libs.androidx.camera.view)
+    implementation (libs.core)
+    implementation (libs.sceneform.ux)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -80,5 +88,5 @@ dependencies {
 
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("androidx.compose.runtime:runtime:1.6.7")
+    implementation(libs.androidx.runtime)
 }

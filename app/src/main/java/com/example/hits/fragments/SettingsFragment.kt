@@ -1,5 +1,8 @@
 package com.example.hits.fragments
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +43,16 @@ class SettingsFragment {
         val deaths = sharedPrefHelper.getDeaths() ?: "N/A"
         val assists = sharedPrefHelper.getAssists() ?: "N/A"
 
+        val requestPermissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+
+            } else {
+
+            }
+        }
+
         IconButton(onClick = { navController.popBackStack() }) {
             Icon(
                 painter = painterResource(id = R.drawable.go_back),
@@ -69,6 +82,14 @@ class SettingsFragment {
                         .align(Alignment.CenterHorizontally)
                 ) {
                     Text("Change Nickname")
+                }
+                Button(
+                    onClick = { requestPermissionLauncher.launch(Manifest.permission.CAMERA) },
+                    modifier = Modifier
+                        .padding(bottom = 32.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Request Camera Permission")
                 }
 
                 Text(

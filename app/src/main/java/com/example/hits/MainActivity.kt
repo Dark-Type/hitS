@@ -3,7 +3,9 @@ package com.example.hits
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,8 +31,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.hits.fragments.ScreenForGame
 import com.example.hits.fragments.JoinLobbyFragment
 import com.example.hits.fragments.LobbyFragment
+import com.example.hits.fragments.ScreenForResults
 import com.example.hits.fragments.SettingsFragment
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.utility.createUser
@@ -51,30 +55,42 @@ class MainActivity : ComponentActivity() {
 
             NavHost(
                 navController,
-                startDestination = if (nickname.isNullOrEmpty()) "initUI" else "joinLobbyFragment"
+                startDestination = if (nickname.isNullOrEmpty()) "initUI" else "joinLobbyScreen"
             ) {
                 composable("initUI") { InitUI(navController) }
-                composable("joinLobbyFragment") { JoinLobbyFragment().JoinLobbyScreen(navController) }
+                composable("joinLobbyScreen") { JoinLobbyFragment().JoinLobbyScreen(navController) }
                 composable("settingsScreen") { SettingsFragment().SettingsScreen(navController) }
+                composable("resultsScreen") { ScreenForResults().ResultsScreen(navController) }
                 composable("lobbyFragment/{lobbyId}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     if (lobbyId != null) {
                         LobbyFragment().LobbyScreen(lobbyId.toInt(), navController)
                     }
                 }
+                composable("gameScreen") { ScreenForGame().GameScreen(navController) }
             }
-
             LaunchedEffect(nickname) {
                 if (!nickname.isNullOrEmpty()) {
-                    navController.navigate("joinLobbyFragment")
+                    navController.navigate("joinLobbyScreen")
                 }
             }
+
         }
     }
 }
 
 @Composable
 fun InitUI(navController: NavController) {
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+
+        } else {
+
+        }
+    }
+
     val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
     val nickname = sharedPrefHelper.getNickname() ?: ""
     val snackbarHostState = remember { SnackbarHostState() }
@@ -102,6 +118,7 @@ fun InitUI(navController: NavController) {
 
                     Button(
                         onClick = {
+
                             if (textState.value.isBlank()) {
                                 scope.launch {
                                     snackbarHostState.showSnackbar("Please enter a nickname")
@@ -122,7 +139,7 @@ fun InitUI(navController: NavController) {
                                             sharedPrefHelper.getNickname()!!
                                         )
 
-                                        navController.navigate("joinLobbyFragment")
+                                        navController.navigate("joinLobbyScreen")
                                     }
                                 }
                             }

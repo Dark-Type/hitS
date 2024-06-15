@@ -1,6 +1,6 @@
 package com.example.hits.fragments
 
-import android.util.Log
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,8 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Text
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,8 +32,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
@@ -53,8 +49,10 @@ class LobbyFragment {
     var users : SnapshotStateList<User> = mutableStateListOf()
     var lobbyIdToCheck = 0
 
+
     @Composable
     fun LobbyScreen(lobbyId: Int, navController: NavController) {
+
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
         val lifecycleOwner = LocalLifecycleOwner.current
@@ -115,7 +113,8 @@ class LobbyFragment {
                     Text(text = "Choose mode")
                 }
 
-                Button(onClick = { /* Game starting logic */ }) {
+                Button(onClick = { navController.navigate("gameScreen")
+                }) {
                     Text(text = "Start session")
                 }
             }
@@ -150,15 +149,13 @@ class LobbyFragment {
         }
 
         BackHandler {
-            // Get the current user
+
             val currentUser = users.find { it.id == sharedPrefHelper.getID()?.toInt() }
 
-            // Remove the current user from the room
             if (currentUser != null) {
                 removeUserFromRoom(lobbyId, currentUser)
             }
 
-            // Navigate back
             navController.popBackStack()
         }
     }
@@ -205,27 +202,26 @@ class LobbyFragment {
                 val newUser = dataSnapshot.getValue(User::class.java)
                 val existingUser = users.find { it.id == newUser?.id }
 
-                // Only add the new user if it doesn't already exist in the list
                 if (existingUser == null && newUser != null) {
                     users.add(newUser)
                 }
-                // Call a function to update your UI here
+
             }
 
             override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                // A user has changed, find it and update
+
                 val newUser = dataSnapshot.getValue(User::class.java)
                 val oldUser = users.find { it.id == newUser?.id }
                 oldUser?.let {
                     users[users.indexOf(it)] = newUser!!
                 }
-                // Call a function to update your UI here
+
             }
 
             override fun onChildRemoved(dataSnapshot: DataSnapshot) {
                 val user = dataSnapshot.getValue(User::class.java)
                 users.remove(user)
-                // Call a function to update your UI here
+
             }
 
             override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
