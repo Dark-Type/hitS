@@ -1,0 +1,16 @@
+package com.example.hits
+
+enum class GameMods {
+    ONE_HIT_ELIMINATION_1,
+    ONE_HIT_ELIMINATION_2,
+    ONE_HIT_ELIMINATION_3,
+    ONE_HIT_ELIMINATION_4,
+    CS_GO,
+    BATTLE_ROYALE_1,
+    BATTLE_ROYALE_2,
+    BATTLE_ROYALE_3,
+    BATTLE_ROYALE_4,
+    ONE_VS_ALL,
+    TEAM_DEATHMATCH,
+
+}

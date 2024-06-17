@@ -49,17 +49,21 @@ android {
         }
     }
 }
+val camerax_version = "1.2.0-alpha02"
 
 dependencies {
 
     implementation( libs.androidx.camera.core)
     implementation (libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.extensions)
     implementation (libs.androidx.camera.lifecycle)
     implementation(libs.coil.compose)
     implementation (libs.androidx.camera.view)
     implementation (libs.core)
     implementation (libs.sceneform.ux)
-
+    implementation (libs.rive.android.v870)
+    implementation(libs.androidx.startup.runtime)
+    implementation (libs.coil.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -78,6 +82,11 @@ dependencies {
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.firebase.database.ktx)
     implementation(libs.firebase.database)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.vision.common)
+    implementation(libs.play.services.mlkit.text.recognition.common)
+    implementation (libs.play.services.mlkit.text.recognition)
+    implementation (libs.androidx.camera.mlkit.vision)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -85,6 +94,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+
 
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")

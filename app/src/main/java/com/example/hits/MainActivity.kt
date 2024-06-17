@@ -31,6 +31,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import app.rive.runtime.kotlin.core.Rive
 import com.example.hits.fragments.ScreenForGame
 import com.example.hits.fragments.JoinLobbyFragment
 import com.example.hits.fragments.LobbyFragment
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Rive.init(this)
         sharedPrefHelper = SharedPrefHelper(this)
 
         setContent {

@@ -46,7 +46,7 @@ import com.google.firebase.database.DatabaseError
 
 class LobbyFragment {
 
-    var users : SnapshotStateList<User> = mutableStateListOf()
+    var users: SnapshotStateList<User> = mutableStateListOf()
     var lobbyIdToCheck = 0
 
 
@@ -55,7 +55,6 @@ class LobbyFragment {
 
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
-        val lifecycleOwner = LocalLifecycleOwner.current
 
         lobbyIdToCheck = lobbyId
 
@@ -113,7 +112,8 @@ class LobbyFragment {
                     Text(text = "Choose mode")
                 }
 
-                Button(onClick = { navController.navigate("gameScreen")
+                Button(onClick = {
+                    navController.navigate("gameScreen")
                 }) {
                     Text(text = "Start session")
                 }
@@ -228,6 +228,7 @@ class LobbyFragment {
             override fun onCancelled(databaseError: DatabaseError) {}
         }
 
-        databaseRef.child("rooms").child(lobbyId.toString()).child("users").addChildEventListener(childEventListener)
+        databaseRef.child("rooms").child(lobbyId.toString()).child("users")
+            .addChildEventListener(childEventListener)
     }
 }
