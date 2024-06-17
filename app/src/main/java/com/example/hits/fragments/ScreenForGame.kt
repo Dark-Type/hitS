@@ -32,9 +32,23 @@ import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.utility.CameraX
 import kotlinx.coroutines.delay
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlin.math.sqrt
 
 
 class ScreenForGame() {
+    private val shakeThreshold = 15f
+    private var shakeCount = 0
+    private var shakeTime = 0
+    private var job: Job? = null
 
 
     @Composable
@@ -129,8 +143,39 @@ class ScreenForGame() {
                 .padding(bottom = 45.dp), Arrangement.Bottom, Alignment.CenterHorizontally
         ) {
             Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+                val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+                val sensorListener = object : SensorEventListener {
+                    override fun onSensorChanged(event: SensorEvent) {
+                        val x = event.values[0]
+                        val y = event.values[1]
+                        val z = event.values[2]
+
+                        val acceleration = sqrt((x * x + y * y + z * z).toDouble()) - SensorManager.GRAVITY_EARTH
+                        if (acceleration > shakeThreshold) {
+                            shakeCount++
+                        }
+                    }
+
+                    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
+                }
+
                 Button(
-                    onClick = { },
+                    onClick = {
+                        shakeCount = 0
+                        sensorManager.registerListener(sensorListener, accelerometer, SensorManager.SENSOR_DELAY_NORMAL)
+                        job = CoroutineScope(Dispatchers.Main).launch {
+                            while (isActive && shakeCount < 10) {
+                                delay(1000)
+                                shakeTime++
+                            }
+                            sensorManager.unregisterListener(sensorListener)
+                            if (shakeCount >= 10) {
+                                Toast.makeText(context, "Shake count: $shakeCount, Shake time: $shakeTime", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(
                         start = 40.dp,
