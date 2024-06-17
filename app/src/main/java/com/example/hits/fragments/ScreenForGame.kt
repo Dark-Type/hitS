@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 
 
-class ScreenForGame() {
+class ScreenForGame {
     private val shakeThreshold = 15f
     private var shakeCount = 0
     private var shakeTime = 0
@@ -73,7 +73,7 @@ class ScreenForGame() {
 
         var showDialog by remember { mutableStateOf(false) }
         var bitmapToShow by remember { mutableStateOf<Bitmap?>(null) }
-        val REQUIRED_PERMISSIONS =
+        val requiredPermissions =
             mutableListOf(
                 Manifest.permission.CAMERA,
             ).apply {
@@ -84,7 +84,7 @@ class ScreenForGame() {
 
         var hasCamPermission by remember {
             mutableStateOf(
-                REQUIRED_PERMISSIONS.all {
+                requiredPermissions.all {
                     ContextCompat.checkSelfPermission(context, it) ==
                             PackageManager.PERMISSION_GRANTED
                 })
