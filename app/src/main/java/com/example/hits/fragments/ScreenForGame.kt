@@ -123,7 +123,7 @@ class ScreenForGame() {
             }
 
             Button(
-                onClick = { /* Handle settings button click */ },
+                onClick = {  },
                 modifier = Modifier.align(Alignment.TopStart)
             ) {
                 Text(text = "Settings")
