@@ -62,14 +62,24 @@ class MainActivity : ComponentActivity() {
                 composable("initUI") { InitUI(navController) }
                 composable("joinLobbyScreen") { JoinLobbyFragment().JoinLobbyScreen(navController) }
                 composable("settingsScreen") { SettingsFragment().SettingsScreen(navController) }
-                composable("resultsScreen") { ScreenForResults().ResultsScreen(navController) }
-                composable("lobbyFragment/{lobbyId}") { backStackEntry ->
+                composable("resultsScreen/{lobbyId}") { backStackEntry ->
+                    val lobbyId = backStackEntry.arguments?.getString("lobbyId")
+                    if (lobbyId != null) {
+                        ScreenForResults().ResultsScreen(lobbyId.toInt(), navController)
+                    }
+                }
+                composable("lobbyScreen/{lobbyId}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     if (lobbyId != null) {
                         LobbyFragment().LobbyScreen(lobbyId.toInt(), navController)
                     }
                 }
-                composable("gameScreen") { ScreenForGame().GameScreen(navController) }
+                composable("gameScreen/{lobbyId}") { backStackEntry ->
+                    val lobbyId = backStackEntry.arguments?.getString("lobbyId")
+                    if (lobbyId != null) {
+                        ScreenForGame().GameScreen(lobbyId.toInt(), navController)
+                    }
+                }
             }
             LaunchedEffect(nickname) {
                 if (!nickname.isNullOrEmpty()) {

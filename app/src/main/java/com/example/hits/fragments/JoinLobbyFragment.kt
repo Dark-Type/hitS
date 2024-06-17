@@ -89,7 +89,7 @@ class JoinLobbyFragment {
                             createRoom(generatedId.value.toInt())
                             addUserToRoom(generatedId.value.toInt(), firstUser)
 
-                            navController.navigate("lobbyFragment/${generatedId.value}")
+                            navController.navigate("lobbyScreen/${generatedId.value}")
                         }) {
                             Text("Create Lobby")
                         }
@@ -133,7 +133,7 @@ class JoinLobbyFragment {
                                     val newUser = User(sharedPrefHelper.getID()!!.toInt(), sharedPrefHelper.getNickname()!!)
                                     addUserToRoom(lobbyId.toInt(), newUser)
 
-                                    navController.navigate("lobbyFragment/$lobbyId")
+                                    navController.navigate("lobbyScreen/$lobbyId")
                                 }
                             })
                         )

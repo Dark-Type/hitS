@@ -25,7 +25,7 @@ import java.util.Random
 class ScreenForResults {
     data class ScoreData(val id: Int, val score: Int)
     @Composable
-    fun ResultsScreen(navController: NavController) {
+    fun ResultsScreen(lobbyId:Int, navController: NavController) {
         val scores = remember { mutableStateOf(generateRandomScores()) }
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -51,10 +51,13 @@ class ScreenForResults {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = { navController.navigate("joinLobbyFragment") }) {
-                    Text("Go back")
+                Button(onClick = { navController.navigate("joinLobbyScreen") }) {
+                    Text("Return to Main menu")
                 }
 
+                Button(onClick = { navController.navigate("lobbyScreen/$lobbyId") }) {
+                    Text("Return to Lobby")
+                }
 
             }
         }

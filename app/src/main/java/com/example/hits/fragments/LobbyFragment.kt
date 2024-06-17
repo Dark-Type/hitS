@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
@@ -112,9 +111,9 @@ class LobbyFragment {
                     Text(text = "Choose mode")
                 }
 
-                Button(onClick = {
-                    navController.navigate("gameScreen")
-                }) {
+                Button(
+                    onClick = { navController.navigate("gameScreen/$lobbyId") },
+                ) {
                     Text(text = "Start session")
                 }
             }

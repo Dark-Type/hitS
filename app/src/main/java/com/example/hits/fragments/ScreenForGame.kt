@@ -38,11 +38,11 @@ class ScreenForGame() {
 
 
     @Composable
-    fun GameScreen(navController: NavController) {
+    fun GameScreen(lobbyId:Int, navController: NavController ) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
-        CameraCompose(context = context, cameraX = cameraX, navController)
+        CameraCompose(context = context, cameraX = cameraX, navController, lobbyId)
     }
 
 
@@ -54,7 +54,7 @@ class ScreenForGame() {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        navController: NavController
+        navController: NavController, lobbyId:Int
     ) {
 
         var showDialog by remember { mutableStateOf(false) }
@@ -116,7 +116,7 @@ class ScreenForGame() {
             }
 
             Button(
-                onClick = { navController.navigate("resultsScreen") },
+                onClick = { navController.navigate("resultsScreen/$lobbyId") },
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Text(text = "Exit")
