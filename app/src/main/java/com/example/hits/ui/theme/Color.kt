@@ -2,10 +2,10 @@ package com.example.hits.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val Turquoise = Color(android.graphics.Color.parseColor("#518677"))
+val LightTurquoise = Color(android.graphics.Color.parseColor("#77BCA1"))
+val DarkTurquoise = Color(android.graphics.Color.parseColor("#35574E"))
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val LightBlue = Color(android.graphics.Color.parseColor("#3BBDFF"))
+val StrokeBlue = Color(android.graphics.Color.parseColor("#30799E"))
+val Blue = Color(android.graphics.Color.parseColor("#0D7ADE"))

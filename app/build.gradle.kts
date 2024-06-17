@@ -52,7 +52,6 @@ android {
 val camerax_version = "1.2.0-alpha02"
 
 dependencies {
-
     implementation( libs.androidx.camera.core)
     implementation (libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.extensions)

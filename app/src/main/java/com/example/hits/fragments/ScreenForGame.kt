@@ -52,7 +52,7 @@ class ScreenForGame {
 
 
     @Composable
-    fun GameScreen(lobbyId:Int, navController: NavController ) {
+    fun GameScreen(lobbyId: Int, navController: NavController) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
@@ -68,7 +68,7 @@ class ScreenForGame {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        navController: NavController, lobbyId:Int
+        navController: NavController, lobbyId: Int
     ) {
 
         var showDialog by remember { mutableStateOf(false) }
@@ -123,7 +123,7 @@ class ScreenForGame {
             }
 
             Button(
-                onClick = {  },
+                onClick = { },
                 modifier = Modifier.align(Alignment.TopStart)
             ) {
                 Text(text = "Settings")
@@ -143,7 +143,8 @@ class ScreenForGame {
                 .padding(bottom = 45.dp), Arrangement.Bottom, Alignment.CenterHorizontally
         ) {
             Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-                val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+                val sensorManager =
+                    context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
                 val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
                 val sensorListener = object : SensorEventListener {
@@ -152,7 +153,8 @@ class ScreenForGame {
                         val y = event.values[1]
                         val z = event.values[2]
 
-                        val acceleration = sqrt((x * x + y * y + z * z).toDouble()) - SensorManager.GRAVITY_EARTH
+                        val acceleration =
+                            sqrt((x * x + y * y + z * z).toDouble()) - SensorManager.GRAVITY_EARTH
                         if (acceleration > shakeThreshold) {
                             shakeCount++
                         }
@@ -164,7 +166,11 @@ class ScreenForGame {
                 Button(
                     onClick = {
                         shakeCount = 0
-                        sensorManager.registerListener(sensorListener, accelerometer, SensorManager.SENSOR_DELAY_NORMAL)
+                        sensorManager.registerListener(
+                            sensorListener,
+                            accelerometer,
+                            SensorManager.SENSOR_DELAY_NORMAL
+                        )
                         job = CoroutineScope(Dispatchers.Main).launch {
                             while (isActive && shakeCount < 10) {
                                 delay(1000)
@@ -172,7 +178,11 @@ class ScreenForGame {
                             }
                             sensorManager.unregisterListener(sensorListener)
                             if (shakeCount >= 10) {
-                                Toast.makeText(context, "Shake count: $shakeCount, Shake time: $shakeTime", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Shake count: $shakeCount, Shake time: $shakeTime",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
                     },

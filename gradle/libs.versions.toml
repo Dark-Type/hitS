@@ -3,7 +3,6 @@ agp = "8.3.2"
 cameraCore = "1.3.4"
 cameraExtensions = "1.3.4"
 cameraMlkitVision = "1.3.0-beta02"
-cameraxCompose = "1.0.0"
 coilCompose = "1.4.0"
 core = "1.43.0"
 kotlin = "1.9.0"
@@ -37,6 +36,7 @@ visionCommon = "17.3.0"
 playServicesMlkitTextRecognitionCommon = "19.0.0"
 
 [libraries]
+
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCore" }
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraCore" }
 androidx-camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "cameraExtensions" }
