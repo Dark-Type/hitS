@@ -1,12 +1,14 @@
 package com.example.hits
 
 import android.Manifest
+import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -52,6 +54,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private lateinit var sharedPrefHelper: SharedPrefHelper
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,6 +103,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+    }
 
     @Composable
     fun InitUI(navController: NavController) {

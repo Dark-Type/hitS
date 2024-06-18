@@ -52,7 +52,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
-import com.example.hits.ui.theme.Blue
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
@@ -88,11 +87,12 @@ class JoinLobbyFragment {
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 4.dp
             ),
-            colors = CardColors(Blue, Color.White, StrokeBlue, Color.Gray),
+            colors = CardColors(Color(0xFFDADDE2), Color.Black, StrokeBlue, Color.Gray),
             modifier = Modifier
                 .fillMaxSize()
+                .height(80.dp)
                 .padding(4.dp),
-            shape = RoundedCornerShape(6.dp)
+            shape = RoundedCornerShape(8.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -134,7 +134,10 @@ class JoinLobbyFragment {
         val screenHeight = configuration.screenHeightDp.dp
         Dialog(onDismissRequest = { showDialog.value = false }) {
             ElevatedCard(
-                modifier = Modifier.size(screenWidth * 2 / 3, screenHeight / 2)
+                modifier = Modifier.size(screenWidth * 2 / 3, screenHeight / 2),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 12.dp
+                )
             ) {
 
                 Text(text = news, modifier = Modifier.padding(16.dp))
@@ -162,17 +165,20 @@ class JoinLobbyFragment {
             0 -> Color(0xFFD4AF37)
             1 -> Color(0xFFC0C0C0)
             2 -> Color(0xFFCD7F32)
-            else -> Blue
+            else -> Color(0xFFDADDE2)
         }
+        val fontColor = if (index > 2) Color.Black else Color.White
+        val cardElevation = if (index < 3) 12.dp else 6.dp
         ElevatedCard(
             elevation = CardDefaults.cardElevation(
-                defaultElevation = 6.dp
+                defaultElevation = cardElevation
             ),
-            colors = CardColors(backgroundColor, Color.White, StrokeBlue, Color.Gray),
+            colors = CardColors(backgroundColor, fontColor, StrokeBlue, Color.Gray),
             modifier = Modifier
                 .fillMaxSize()
+                .height(64.dp)
                 .padding(4.dp),
-            shape = RoundedCornerShape(6.dp)
+            shape = RoundedCornerShape(6.dp),
         ) {
             Row(
                 modifier = Modifier
@@ -202,7 +208,7 @@ class JoinLobbyFragment {
                     },
                     modifier = Modifier.padding(4.dp)
                 ) {
-                    Icon(
+                    Image(
                         painter = painterResource(id = R.drawable.settings_icon),
                         contentDescription = "info",
                         modifier = Modifier
@@ -261,19 +267,22 @@ class JoinLobbyFragment {
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.FillBounds
                 )
-                IconButton(onClick = { navController.navigate("settingsScreen") }) {
-                    Icon(
+                IconButton(
+                    onClick = { navController.navigate("settingsScreen") },
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Image(
                         painter = painterResource(id = R.drawable.settings_button),
                         contentDescription = "Settings",
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
+
+                        )
                 }
                 Surface(
                     color = Color.White,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(16.dp)
+                        .padding(top = 25.dp, bottom = 60.dp, start = 16.dp, end = 16.dp)
                         .fillMaxSize(0.9f)
                 ) {
 
@@ -301,6 +310,7 @@ class JoinLobbyFragment {
                                 Player("Player", 100, 1, 50, 10, 40),
                                 Player("Player", 90, 2, 45, 15, 35),
                                 Player("Player", 80, 3, 40, 20, 30),
+                                Player("Player", 70, 4, 35, 25, 25),
 
                                 )
 
@@ -394,12 +404,15 @@ class JoinLobbyFragment {
                                 Spacer(modifier = Modifier.height(32.dp))
 
                                 OutlinedTextField(
+
                                     value = lobbyCode.value,
                                     onValueChange = { lobbyCode.value = it },
                                     label = { Text("Input lobby code to join") },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(bottom = 16.dp),
+
+
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     keyboardActions = KeyboardActions(onDone = {
                                         if (lobbyCode.value.isNotBlank()) {

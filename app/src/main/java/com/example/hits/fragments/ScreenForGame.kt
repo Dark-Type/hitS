@@ -13,7 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -24,7 +23,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
@@ -36,6 +34,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import androidx.compose.material3.IconButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,7 +44,8 @@ import kotlin.math.sqrt
 
 
 class ScreenForGame {
-    private val shakeThreshold = 15f
+    private val shakeThreshold = 10f
+    private val moderateSpeedThreshold = 30f
     private var shakeCount = 0
     private var shakeTime = 0
     private var job: Job? = null
@@ -122,16 +122,28 @@ class ScreenForGame {
                 )
             }
 
-            Button(
+            IconButton(
                 onClick = { },
-                modifier = Modifier.align(Alignment.TopStart)
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .size(50.dp)
+                    .padding(top = 15.dp)
             ) {
-                Text(text = "Settings")
+                Image(
+                    painter = painterResource(id = R.drawable.stats),
+                    contentDescription = "Settings",
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .size(50.dp)
+
+                )
             }
 
             Button(
                 onClick = { navController.navigate("resultsScreen/$lobbyId") },
-                modifier = Modifier.align(Alignment.TopEnd)
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 15.dp)
             ) {
                 Text(text = "Exit")
             }
@@ -157,13 +169,18 @@ class ScreenForGame {
                             sqrt((x * x + y * y + z * z).toDouble()) - SensorManager.GRAVITY_EARTH
                         if (acceleration > shakeThreshold) {
                             shakeCount++
+                            if (acceleration > moderateSpeedThreshold) {
+                                shakeTime += 2
+                            } else {
+                                shakeTime++
+                            }
                         }
                     }
 
                     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
                 }
 
-                Button(
+                IconButton(
                     onClick = {
                         shakeCount = 0
                         sensorManager.registerListener(
@@ -172,29 +189,29 @@ class ScreenForGame {
                             SensorManager.SENSOR_DELAY_NORMAL
                         )
                         job = CoroutineScope(Dispatchers.Main).launch {
-                            while (isActive && shakeCount < 10) {
+                            while (isActive) {
                                 delay(1000)
                                 shakeTime++
+                                if (shakeTime >= 10) {
+                                    Toast.makeText(
+                                        context,
+                                        "Shake time: $shakeTime",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    shakeTime = 0
+                                    break
+                                }
                             }
                             sensorManager.unregisterListener(sensorListener)
-                            if (shakeCount >= 10) {
-                                Toast.makeText(
-                                    context,
-                                    "Shake count: $shakeCount, Shake time: $shakeTime",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
                         }
                     },
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(
-                        start = 40.dp,
-                        top = 12.dp,
-                        end = 40.dp,
-                        bottom = 12.dp
-                    )
+                    modifier = Modifier.size(100.dp)
                 ) {
-                    Text(text = "Heal", fontSize = 16.sp)
+                    Image(
+                        painter = painterResource(id = R.drawable.heal),
+                        contentDescription = "heal",
+                        modifier = Modifier.size(100.dp)
+                    )
                 }
 
                 Image(
@@ -229,17 +246,15 @@ class ScreenForGame {
                         }
                 )
 
-                Button(
+                IconButton(
                     onClick = { cameraX.startRealTimeTextRecognition() },
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(
-                        start = 40.dp,
-                        top = 12.dp,
-                        end = 40.dp,
-                        bottom = 12.dp
-                    )
+                    modifier = Modifier.size(100.dp)
                 ) {
-                    Text(text = "Interact", fontSize = 16.sp)
+                    Image(
+                        painter = painterResource(id = R.drawable.interact),
+                        contentDescription = "Interact",
+                        modifier = Modifier.size(100.dp)
+                    )
                 }
             }
         }
