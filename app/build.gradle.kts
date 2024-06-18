@@ -52,7 +52,8 @@ android {
 val camerax_version = "1.2.0-alpha02"
 
 dependencies {
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.1")
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:latest.release")
+    implementation("com.microsoft.onnxruntime:onnxruntime-extensions-android:latest.release")
     implementation(libs.androidx.camera.core)
     implementation (libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.extensions)

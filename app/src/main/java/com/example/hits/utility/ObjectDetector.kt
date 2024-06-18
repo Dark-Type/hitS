@@ -13,11 +13,15 @@ import java.util.*
 internal data class Result(
     var outputBitmap: Bitmap,
     var outputBox: Array<FloatArray>
-) {}
+)
 
-internal class ObjectDetector(
-) {
-    fun detect(inputStream: InputStream, ortEnv: OrtEnvironment, ortSession: OrtSession): Result {
+internal class ObjectDetector {
+    fun detect(
+        inputStream: InputStream,
+        ortEnv: OrtEnvironment,
+        ortSession:
+        OrtSession
+    ): Result {
         // Step 1: convert image into byte array (raw image bytes)
         val rawImageBytes = inputStream.readBytes()
 
