@@ -57,9 +57,12 @@ import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
 import com.example.hits.ui.theme.Turquoise
 import com.example.hits.utility.User
+import com.example.hits.utility.UserForLeaderboard
 import com.example.hits.utility.addUserToRoom
 import com.example.hits.utility.createRoom
+import com.example.hits.utility.getNews
 import com.example.hits.utility.getRandomID
+import com.example.hits.utility.getUsersForLeaderboard
 
 class JoinLobbyFragment {
 
@@ -145,21 +148,12 @@ class JoinLobbyFragment {
         }
     }
 
-    data class Player(
-        val name: String,
-        val score: Int,
-        val rank: Int,
-        val kills: Int,
-        val deaths: Int,
-        val assists: Int
-    )
-
     @Composable
     fun LeaderboardItem(
-        player: Player,
+        user: UserForLeaderboard,
         index: Int,
         showDialog: MutableState<Boolean>,
-        selectedPlayer: MutableState<Player?>
+        selectedPlayer: MutableState<UserForLeaderboard?>
     ) {
         val backgroundColor = when (index) {
             0 -> Color(0xFFD4AF37)
@@ -187,14 +181,14 @@ class JoinLobbyFragment {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "${player.rank}. ${player.name}",
+                    text = "${user.rank}. ${user.name}",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = "Score: ${player.score}",
+                    text = "Score: ${user.points}",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
@@ -203,7 +197,7 @@ class JoinLobbyFragment {
 
                 IconButton(
                     onClick = {
-                        selectedPlayer.value = player
+                        selectedPlayer.value = user
                         showDialog.value = true
                     },
                     modifier = Modifier.padding(4.dp)
@@ -220,7 +214,7 @@ class JoinLobbyFragment {
     }
 
     @Composable
-    fun PlayerStatsDialog(player: Player, showDialog: MutableState<Boolean>) {
+    fun PlayerStatsDialog(user: UserForLeaderboard, showDialog: MutableState<Boolean>) {
         val configuration = LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
         val screenHeight = configuration.screenHeightDp.dp
@@ -235,12 +229,12 @@ class JoinLobbyFragment {
                     verticalArrangement = Arrangement.SpaceEvenly,
 
                     ) {
-                    Text(text = "Name: ${player.name}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Score: ${player.score}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Rank: ${player.rank}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Kills: ${player.kills}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Deaths: ${player.deaths}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Assists: ${player.assists}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Name: ${user.name}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Score: ${user.points}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Rank: ${user.rank}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Kills: ${user.kills}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Deaths: ${user.deaths}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Assists: ${user.assists}", modifier = Modifier.padding(16.dp))
                 }
             }
         }
@@ -253,7 +247,7 @@ class JoinLobbyFragment {
         val lobbyCode = remember { mutableStateOf("") }
         val generatedId = remember { mutableStateOf("") }
         val showLeaderBoardsDialog = remember { mutableStateOf(false) }
-        val selectedPlayer = remember { mutableStateOf<Player?>(null) }
+        val selectedPlayer = remember { mutableStateOf<UserForLeaderboard?>(null) }
         val showNewsDialog = remember { mutableStateOf(false) }
         val selectedNews = remember { mutableStateOf<String?>(null) }
         HitSTheme {
@@ -299,20 +293,8 @@ class JoinLobbyFragment {
                         ) {
                             Greeting(preferences = sharedPrefHelper)
                             val showNews = remember { mutableStateOf(true) }
-                            val newsList = listOf(
-                                "News 1: This is the first news item.",
-                                "News 2: This is the second news item.",
-                                "News 3: This is the third news item.",
-                                "News 2: This is the second news item.",
-                                "News 3: This is the third news item.",
-                            )
-                            val leaderboardList = listOf(
-                                Player("Player", 100, 1, 50, 10, 40),
-                                Player("Player", 90, 2, 45, 15, 35),
-                                Player("Player", 80, 3, 40, 20, 30),
-                                Player("Player", 70, 4, 35, 25, 25),
-
-                                )
+                            val newsList = remember { getNews() }
+                            val leaderboardList = remember { getUsersForLeaderboard() }
 
                             Button(
                                 onClick = { showNews.value = !showNews.value },
@@ -343,9 +325,9 @@ class JoinLobbyFragment {
                                 }
                             } else {
                                 LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
-                                    itemsIndexed(leaderboardList) { index, player ->
+                                    itemsIndexed(leaderboardList) { index, user ->
                                         LeaderboardItem(
-                                            player,
+                                            user,
                                             index,
                                             showLeaderBoardsDialog,
                                             selectedPlayer

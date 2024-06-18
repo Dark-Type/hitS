@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.hits.ui.theme.Blue
 import com.example.hits.ui.theme.StrokeBlue
+import com.example.hits.utility.updateNicknameInDatabase
 
 class SettingsFragment {
     @Composable
@@ -249,6 +250,7 @@ class SettingsFragment {
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                 keyboardActions = KeyboardActions(onDone = {
                                     sharedPrefHelper.saveNickname(newNickname)
+                                    updateNicknameInDatabase(sharedPrefHelper.getID()!!.toInt(), newNickname)
                                     showDialog = false
                                 }),
                                 modifier = Modifier.fillMaxWidth()
@@ -257,6 +259,7 @@ class SettingsFragment {
                             Button(
                                 onClick = {
                                     sharedPrefHelper.saveNickname(newNickname)
+                                    updateNicknameInDatabase(sharedPrefHelper.getID()!!.toInt(), newNickname)
                                     showDialog = false
                                 },
                                 modifier = Modifier.fillMaxWidth()
