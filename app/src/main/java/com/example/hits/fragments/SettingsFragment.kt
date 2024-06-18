@@ -30,18 +30,24 @@ import com.example.hits.R
 import com.example.hits.SharedPrefHelper
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import com.example.hits.utility.updateNicknameInDatabase
 
+val notAvailable = "N/A"
 class SettingsFragment {
     @Composable
     fun SettingsScreen(navController: NavController) {
+
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
         var showDialog by remember { mutableStateOf(false) }
         var showToDoDialog by remember { mutableStateOf(false) }
         var newNickname by remember { mutableStateOf("") }
-        val damage = sharedPrefHelper.getDamage() ?: "N/A"
-        val kills = sharedPrefHelper.getKills() ?: "N/A"
-        val deaths = sharedPrefHelper.getDeaths() ?: "N/A"
-        val assists = sharedPrefHelper.getAssists() ?: "N/A"
+
+        val damage = sharedPrefHelper.getDamage() ?: notAvailable
+        val kills = sharedPrefHelper.getKills() ?: notAvailable
+        val deaths = sharedPrefHelper.getDeaths() ?: notAvailable
+        val assists = sharedPrefHelper.getAssists() ?: notAvailable
+        val points = sharedPrefHelper.getPoints() ?: notAvailable
+        val id = sharedPrefHelper.getID()!!.toInt()
 
         val requestPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
@@ -102,6 +108,13 @@ class SettingsFragment {
                 Text(
                     text = "Damage: $damage",
                     textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .align(Alignment.CenterHorizontally)
+                )
+                Text(
+                    text = "Points: $points",
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
@@ -119,6 +132,7 @@ class SettingsFragment {
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
                             sharedPrefHelper.saveNickname(newNickname)
+                            updateNicknameInDatabase(id, newNickname)
                             showDialog = false
                         })
                     )
@@ -126,6 +140,7 @@ class SettingsFragment {
                 confirmButton = {
                     Button(onClick = {
                         sharedPrefHelper.saveNickname(newNickname)
+                        updateNicknameInDatabase(id, newNickname)
                         showDialog = false
                     }) {
                         Text("Confirm")

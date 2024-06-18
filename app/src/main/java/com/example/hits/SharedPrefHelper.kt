@@ -10,18 +10,19 @@ class SharedPrefHelper(context: Context) {
     private val deathsKey = "deaths"
     private val assistsKey = "assists"
     private val damageKey = "damage"
-    private val id = "id"
+    private val idKey = "id"
+    private val pointsKey = "points"
     private val prefs: SharedPreferences =
         context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
 
     fun createID(id: Int) {
         val editor = prefs.edit()
-        editor.putString("id", id.toString())
+        editor.putString(idKey, id.toString())
         editor.apply()
     }
 
     fun getID() : String? {
-        return prefs.getString(id, null)
+        return prefs.getString(idKey, null)
     }
 
     fun saveNickname(nickname: String) {
@@ -72,5 +73,15 @@ class SharedPrefHelper(context: Context) {
 
     fun getDamage(): String? {
         return prefs.getString(damageKey, null)
+    }
+
+    fun savePoints(points: String) {
+        val editor = prefs.edit()
+        editor.putString(pointsKey, points)
+        editor.apply()
+    }
+
+    fun getPoints() : String? {
+        return prefs.getString(pointsKey, null)
     }
 }

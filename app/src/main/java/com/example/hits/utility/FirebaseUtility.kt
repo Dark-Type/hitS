@@ -7,12 +7,20 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.getValue
 import java.util.concurrent.CompletableFuture
 import kotlin.math.max
 
 val databaseRef: DatabaseReference = FirebaseDatabase.getInstance("https://shooter-24512-default-rtdb.europe-west1.firebasedatabase.app").getReference()
-data class User(val id: Int = 0, val name: String = "")
+data class User(val id: Int = 0, val name: String = "", val points: Int = 0, val damage: Int = 0, val kills: Int = 0, val deaths: Int = 0, val assists: Int = 0)
+data class NewsObject(val text: String = "NO TEXT")
+data class UserForLeaderboard(
+    val name: String,
+    val points: Int,
+    val rank: Int,
+    val kills: Int,
+    val deaths: Int,
+    val assists: Int
+)
 
 fun getRandomID(): Int {
 
@@ -61,7 +69,12 @@ fun createRoom(roomID: Int) {
 fun addUserToRoom(roomID: Int, firstUser: User) {
 
     val newUserRef = databaseRef.child("rooms").child(roomID.toString()).child("users").child(firstUser.id.toString())
-    newUserRef.setValue(firstUser)
+
+    val startTime = System.currentTimeMillis()
+    newUserRef.setValue(firstUser).addOnSuccessListener {
+        val endTime = System.currentTimeMillis()
+        Log.d("TIME", (endTime - startTime).toString())
+    }
 
     newUserRef.onDisconnect().removeValue().addOnSuccessListener {
         Log.d("CALLED", "a")
@@ -165,4 +178,89 @@ fun removeRoomIfEmpty(lobbyId: Int) {
             Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
         }
     })
+}
+
+fun getNews() : SnapshotStateList<String> {
+
+    val news = SnapshotStateList<String>()
+
+    databaseRef.child("news").addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+            for (newsSnapshot in dataSnapshot.children) {
+                news.add(newsSnapshot.getValue(NewsObject::class.java)!!.text)
+            }
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+
+            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
+        }
+    })
+
+    return news
+}
+
+fun updateNicknameInDatabase(id: Int, newName: String) {
+
+    databaseRef.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+            for (userSnapshot in dataSnapshot.children) {
+
+                val currUser = userSnapshot.getValue(User::class.java)
+
+                if (currUser!!.id == id) {
+                    databaseRef.child("users").child(id.toString()).child("name").setValue(newName)
+                }
+            }
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+
+            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
+        }
+    })
+
+    Log.d("Nickname change", newName)
+}
+
+fun getUsersForLeaderboard() : SnapshotStateList<UserForLeaderboard> {
+
+    val users = SnapshotStateList<User>()
+    val leaderboardUsers = SnapshotStateList<UserForLeaderboard>()
+
+    databaseRef.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+            users.clear()
+
+            for (userSnapshot in dataSnapshot.children) {
+                users.add(userSnapshot.getValue(User::class.java)!!)
+            }
+
+            val sortedUsers = users.sortedWith(compareBy({ -it.points }, { it.id }))
+
+            for (i in sortedUsers.indices) {
+                leaderboardUsers.add(UserForLeaderboard(
+                    sortedUsers[i].name,
+                    sortedUsers[i].points,
+                    i,
+                    sortedUsers[i].kills,
+                    sortedUsers[i].deaths,
+                    sortedUsers[i].assists
+                ))
+            }
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+
+            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
+        }
+    })
+
+    return leaderboardUsers
 }
