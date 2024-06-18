@@ -46,6 +46,7 @@ import com.example.hits.fragments.SettingsFragment
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Turquoise
+import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.createUser
 import com.example.hits.utility.getNewID
 import kotlinx.coroutines.launch
@@ -57,6 +58,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Rive.init(this)
         sharedPrefHelper = SharedPrefHelper(this)
+        val neuralNetwork = NeuralNetwork(this)
+        neuralNetwork.detect(neuralNetwork.readModel(), neuralNetwork.readInputImage())
 
 
 
