@@ -52,15 +52,17 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
-import com.example.hits.ui.theme.Blue
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
 import com.example.hits.ui.theme.Turquoise
 import com.example.hits.utility.User
+import com.example.hits.utility.UserForLeaderboard
 import com.example.hits.utility.addUserToRoom
 import com.example.hits.utility.createRoom
+import com.example.hits.utility.getNews
 import com.example.hits.utility.getRandomID
+import com.example.hits.utility.getUsersForLeaderboard
 
 class JoinLobbyFragment {
 
@@ -88,11 +90,12 @@ class JoinLobbyFragment {
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 4.dp
             ),
-            colors = CardColors(Blue, Color.White, StrokeBlue, Color.Gray),
+            colors = CardColors(Color(0xFFDADDE2), Color.Black, StrokeBlue, Color.Gray),
             modifier = Modifier
                 .fillMaxSize()
+                .height(80.dp)
                 .padding(4.dp),
-            shape = RoundedCornerShape(6.dp)
+            shape = RoundedCornerShape(8.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -134,7 +137,10 @@ class JoinLobbyFragment {
         val screenHeight = configuration.screenHeightDp.dp
         Dialog(onDismissRequest = { showDialog.value = false }) {
             ElevatedCard(
-                modifier = Modifier.size(screenWidth * 2 / 3, screenHeight / 2)
+                modifier = Modifier.size(screenWidth * 2 / 3, screenHeight / 2),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = 12.dp
+                )
             ) {
 
                 Text(text = news, modifier = Modifier.padding(16.dp))
@@ -142,37 +148,31 @@ class JoinLobbyFragment {
         }
     }
 
-    data class Player(
-        val name: String,
-        val score: Int,
-        val rank: Int,
-        val kills: Int,
-        val deaths: Int,
-        val assists: Int
-    )
-
     @Composable
     fun LeaderboardItem(
-        player: Player,
+        user: UserForLeaderboard,
         index: Int,
         showDialog: MutableState<Boolean>,
-        selectedPlayer: MutableState<Player?>
+        selectedPlayer: MutableState<UserForLeaderboard?>
     ) {
         val backgroundColor = when (index) {
             0 -> Color(0xFFD4AF37)
             1 -> Color(0xFFC0C0C0)
             2 -> Color(0xFFCD7F32)
-            else -> Blue
+            else -> Color(0xFFDADDE2)
         }
+        val fontColor = if (index > 2) Color.Black else Color.White
+        val cardElevation = if (index < 3) 12.dp else 6.dp
         ElevatedCard(
             elevation = CardDefaults.cardElevation(
-                defaultElevation = 6.dp
+                defaultElevation = cardElevation
             ),
-            colors = CardColors(backgroundColor, Color.White, StrokeBlue, Color.Gray),
+            colors = CardColors(backgroundColor, fontColor, StrokeBlue, Color.Gray),
             modifier = Modifier
                 .fillMaxSize()
+                .height(64.dp)
                 .padding(4.dp),
-            shape = RoundedCornerShape(6.dp)
+            shape = RoundedCornerShape(6.dp),
         ) {
             Row(
                 modifier = Modifier
@@ -181,14 +181,14 @@ class JoinLobbyFragment {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "${player.rank}. ${player.name}",
+                    text = "${user.rank}. ${user.name}",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = "Score: ${player.score}",
+                    text = "Score: ${user.points}",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
@@ -197,12 +197,12 @@ class JoinLobbyFragment {
 
                 IconButton(
                     onClick = {
-                        selectedPlayer.value = player
+                        selectedPlayer.value = user
                         showDialog.value = true
                     },
                     modifier = Modifier.padding(4.dp)
                 ) {
-                    Icon(
+                    Image(
                         painter = painterResource(id = R.drawable.settings_icon),
                         contentDescription = "info",
                         modifier = Modifier
@@ -214,7 +214,7 @@ class JoinLobbyFragment {
     }
 
     @Composable
-    fun PlayerStatsDialog(player: Player, showDialog: MutableState<Boolean>) {
+    fun PlayerStatsDialog(user: UserForLeaderboard, showDialog: MutableState<Boolean>) {
         val configuration = LocalConfiguration.current
         val screenWidth = configuration.screenWidthDp.dp
         val screenHeight = configuration.screenHeightDp.dp
@@ -229,12 +229,12 @@ class JoinLobbyFragment {
                     verticalArrangement = Arrangement.SpaceEvenly,
 
                     ) {
-                    Text(text = "Name: ${player.name}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Score: ${player.score}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Rank: ${player.rank}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Kills: ${player.kills}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Deaths: ${player.deaths}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Assists: ${player.assists}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Name: ${user.name}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Score: ${user.points}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Rank: ${user.rank}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Kills: ${user.kills}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Deaths: ${user.deaths}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Assists: ${user.assists}", modifier = Modifier.padding(16.dp))
                 }
             }
         }
@@ -247,7 +247,7 @@ class JoinLobbyFragment {
         val lobbyCode = remember { mutableStateOf("") }
         val generatedId = remember { mutableStateOf("") }
         val showLeaderBoardsDialog = remember { mutableStateOf(false) }
-        val selectedPlayer = remember { mutableStateOf<Player?>(null) }
+        val selectedPlayer = remember { mutableStateOf<UserForLeaderboard?>(null) }
         val showNewsDialog = remember { mutableStateOf(false) }
         val selectedNews = remember { mutableStateOf<String?>(null) }
         HitSTheme {
@@ -261,19 +261,22 @@ class JoinLobbyFragment {
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.FillBounds
                 )
-                IconButton(onClick = { navController.navigate("settingsScreen") }) {
-                    Icon(
+                IconButton(
+                    onClick = { navController.navigate("settingsScreen") },
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Image(
                         painter = painterResource(id = R.drawable.settings_button),
                         contentDescription = "Settings",
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
+
+                        )
                 }
                 Surface(
                     color = Color.White,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(16.dp)
+                        .padding(top = 25.dp, bottom = 60.dp, start = 16.dp, end = 16.dp)
                         .fillMaxSize(0.9f)
                 ) {
 
@@ -290,19 +293,8 @@ class JoinLobbyFragment {
                         ) {
                             Greeting(preferences = sharedPrefHelper)
                             val showNews = remember { mutableStateOf(true) }
-                            val newsList = listOf(
-                                "News 1: This is the first news item.",
-                                "News 2: This is the second news item.",
-                                "News 3: This is the third news item.",
-                                "News 2: This is the second news item.",
-                                "News 3: This is the third news item.",
-                            )
-                            val leaderboardList = listOf(
-                                Player("Player", 100, 1, 50, 10, 40),
-                                Player("Player", 90, 2, 45, 15, 35),
-                                Player("Player", 80, 3, 40, 20, 30),
-
-                                )
+                            val newsList = remember { getNews() }
+                            val leaderboardList = remember { getUsersForLeaderboard() }
 
                             Button(
                                 onClick = { showNews.value = !showNews.value },
@@ -333,9 +325,9 @@ class JoinLobbyFragment {
                                 }
                             } else {
                                 LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
-                                    itemsIndexed(leaderboardList) { index, player ->
+                                    itemsIndexed(leaderboardList) { index, user ->
                                         LeaderboardItem(
-                                            player,
+                                            user,
                                             index,
                                             showLeaderBoardsDialog,
                                             selectedPlayer
@@ -394,12 +386,15 @@ class JoinLobbyFragment {
                                 Spacer(modifier = Modifier.height(32.dp))
 
                                 OutlinedTextField(
+
                                     value = lobbyCode.value,
                                     onValueChange = { lobbyCode.value = it },
                                     label = { Text("Input lobby code to join") },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(bottom = 16.dp),
+
+
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                     keyboardActions = KeyboardActions(onDone = {
                                         if (lobbyCode.value.isNotBlank()) {
