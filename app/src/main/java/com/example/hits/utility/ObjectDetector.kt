@@ -1,14 +1,9 @@
 package com.example.hits.utility
 
-import ai.onnxruntime.OnnxJavaType
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import java.io.InputStream
-import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.*
 
@@ -45,9 +40,5 @@ internal class ObjectDetector {
                 return (output.get(0)?.value) as Array<FloatArray>
             }
         }
-    }
-
-    private fun byteArrayToBitmap(data: ByteArray): Bitmap {
-        return BitmapFactory.decodeByteArray(data, 0, data.size)
     }
 }

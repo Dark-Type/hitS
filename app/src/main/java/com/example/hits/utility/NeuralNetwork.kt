@@ -17,9 +17,12 @@ class NeuralNetwork(private val context: Context) {
         val sessionOptions: OrtSession.SessionOptions = OrtSession.SessionOptions()
         ortSession = ortEnv.createSession(readModel(), sessionOptions)
 
-
+        try {
             performObjectDetection(ortSession, readInputImage())
             Log.d("ObjectDetection", "Successful ObjectDetection")
+        } catch (e: Exception) {
+            Log.d("ObjectDetection", "Error in ObjectDetection ${Exception(e)}")
+        }
     }
 
     private fun performObjectDetection(
