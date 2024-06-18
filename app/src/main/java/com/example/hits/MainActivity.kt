@@ -56,13 +56,13 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private lateinit var sharedPrefHelper: SharedPrefHelper
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Rive.init(this)
         sharedPrefHelper = SharedPrefHelper(this)
+
         val neuralNetwork = NeuralNetwork(this)
-        neuralNetwork.detect(neuralNetwork.readModel(), neuralNetwork.readInputImage())
+        neuralNetwork.detect()
 
         if (sharedPrefHelper.getDamage() == null) sharedPrefHelper.saveDamage("0")
         if (sharedPrefHelper.getKills() == null) sharedPrefHelper.saveKills("0")

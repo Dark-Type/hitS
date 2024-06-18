@@ -13,19 +13,13 @@ class NeuralNetwork(private val context: Context) {
     private var ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment()
     private lateinit var ortSession: OrtSession
 
-    fun detect(
-        model: ByteArray,
-        inputStream: InputStream
-    ) {
+    fun detect() {
         val sessionOptions: OrtSession.SessionOptions = OrtSession.SessionOptions()
-        ortSession = ortEnv.createSession(model, sessionOptions)
+        ortSession = ortEnv.createSession(readModel(), sessionOptions)
 
-        try {
-            performObjectDetection(ortSession, inputStream)
+
+            performObjectDetection(ortSession, readInputImage())
             Log.d("ObjectDetection", "Successful ObjectDetection")
-        } catch (e: Exception) {
-            Log.d("ObjectDetection", "Error in ObjectDetection ${Exception(e)}")
-        }
     }
 
     private fun performObjectDetection(
@@ -38,22 +32,20 @@ class NeuralNetwork(private val context: Context) {
         var result = objDetector.detect(imageStream, ortEnv, ortSession)
 
         // Вывод боксов в консоль для проверки
-        val boxit = result.outputBox.iterator()
+        val boxit = result.iterator()
         while(boxit.hasNext()) {
             var box_info = boxit.next()
-            Log.d("ObjectDetection", (box_info[0]-box_info[2] / 2).toString())
-            Log.d("ObjectDetection", (box_info[1]-box_info[3] / 2).toString())
+            Log.d("ObjectDetection", (box_info[0] - box_info[2] / 2).toString())
+            Log.d("ObjectDetection", (box_info[1] - box_info[3] / 2).toString())
         }
     }
 
-
-    fun readModel(): ByteArray {
+    private fun readModel(): ByteArray {
         val modelID = R.raw.ssd_onnx
         return context.resources.openRawResource(modelID).readBytes()
     }
 
-
-    fun readInputImage(): InputStream {
+    private fun readInputImage(): InputStream {
         return context.assets.open("test_image.jpg")
     }
 

@@ -6,49 +6,43 @@ import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import java.io.InputStream
 import java.nio.ByteBuffer
+import java.nio.FloatBuffer
 import java.util.*
-
-internal data class Result(
-    var outputBitmap: Bitmap,
-    var outputBox: Array<FloatArray>
-)
 
 internal class ObjectDetector {
     fun detect(
         inputStream: InputStream,
         ortEnv: OrtEnvironment,
-        ortSession:
-        OrtSession
-    ): Result {
+        ortSession: OrtSession
+    ): Array<FloatArray> {
         // Step 1: convert image into byte array (raw image bytes)
         val rawImageBytes = inputStream.readBytes()
 
         // Step 2: get the shape of the byte array and make ort tensor
-        val shape = longArrayOf(rawImageBytes.size.toLong())
+        val shape = longArrayOf(1, 3, 500, 500)
+
+        // Normalize the byte values to float values
+        val floatImageBytes = rawImageBytes.map { it.toFloat() / 255.0f }.toFloatArray()
 
         val inputTensor = OnnxTensor.createTensor(
             ortEnv,
-            ByteBuffer.wrap(rawImageBytes),
-            shape,
-            OnnxJavaType.UINT8
+            FloatBuffer.wrap(floatImageBytes),
+            shape
         )
+
         inputTensor.use {
             // Step 3: call ort inferenceSession run
-            val output = ortSession.run(Collections.singletonMap("image", inputTensor),
-                setOf("image_out","scaled_box_out_next")
+            val output = ortSession.run(Collections.singletonMap("input", inputTensor),
+                setOf("output")
             )
 
             // Step 4: output analysis
             output.use {
-                val rawOutput = (output?.get(0)?.value) as ByteArray
-                val boxOutput = (output?.get(1)?.value) as Array<FloatArray>
-                val outputImageBitmap = byteArrayToBitmap(rawOutput)
-
                 // Step 5: set output result
-                var result = Result(outputImageBitmap,boxOutput)
-                return result
+                return (output.get(0)?.value) as Array<FloatArray>
             }
         }
     }
