@@ -1,6 +1,7 @@
 package com.example.hits.fragments
 
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -34,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Text
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,10 +53,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
+import com.example.hits.getGamemodes
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
 import com.example.hits.ui.theme.Turquoise
 import com.example.hits.utility.User
+import com.example.hits.utility.addValue
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.getLobbyUsers
 import com.example.hits.utility.removeUserFromRoom
@@ -67,32 +71,26 @@ class LobbyFragment {
 
     var users: SnapshotStateList<User> = mutableStateListOf()
     var lobbyIdToCheck = 0
-
+    var databaseVotesRef = databaseRef
+    var didLocalDeviceInitiateChange = false
 
     @Composable
     fun LobbyScreen(lobbyId: Int, navController: NavController) {
 
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
+        databaseVotesRef = databaseRef.child("rooms").child(lobbyId.toString()).child("gamemodeVotes")
 
         lobbyIdToCheck = lobbyId
 
         users = remember { getLobbyUsers(lobbyId) }
-        listenForChanges(lobbyId)
 
         val showDialog = remember { mutableStateOf(false) }
         val selectedMode = remember { mutableIntStateOf(-1) }
-        val modes = listOf(
-            "Solo Battle Royale",
-            "Duo Battle Royale",
-            "Trio Battle Royale",
-            "Squads Battle Royale",
-            "Planters vs Defusers",
-            "Capture the flag",
-            "BedWars",
-            "Sniper Royale"
-        )
+        val modes = getGamemodes()
         val votes = remember { mutableStateOf(List(modes.size) { 0 }) }
+
+        listenForChanges(lobbyId, modes, votes)
 
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -221,6 +219,7 @@ class LobbyFragment {
                                                                         .toMutableList()
                                                                         .also {
                                                                             it[selectedMode.intValue]--
+                                                                            addValue(databaseVotesRef.child(modes[selectedMode.intValue]), -1)
                                                                         }
                                                             }
                                                             votes.value =
@@ -228,6 +227,7 @@ class LobbyFragment {
                                                                     .toMutableList()
                                                                     .also {
                                                                         it[index]++
+                                                                        addValue(databaseVotesRef.child(modes[index]), 1)
                                                                     }
                                                             selectedMode.intValue = index
                                                         } else {
@@ -236,6 +236,7 @@ class LobbyFragment {
                                                                     .toMutableList()
                                                                     .also {
                                                                         it[index]--
+                                                                        addValue(databaseVotesRef.child(modes[selectedMode.intValue]), -1)
                                                                     }
 
                                                             selectedMode.intValue = -1
@@ -258,6 +259,10 @@ class LobbyFragment {
 
                     if (currentUser != null) {
                         removeUserFromRoom(lobbyId, currentUser)
+                    }
+
+                    if (selectedMode.intValue != -1) {
+                        addValue(databaseVotesRef.child(modes[selectedMode.intValue]), -1)
                     }
 
                     navController.popBackStack()
@@ -325,8 +330,9 @@ class LobbyFragment {
         }
     }
 
-    private fun listenForChanges(lobbyId: Int) {
-        val childEventListener = object : ChildEventListener {
+    private fun listenForChanges(lobbyId: Int, modes: List<String>, votes: MutableState<List<Int>>) {
+
+        val userJoinListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
                 val newUser = dataSnapshot.getValue(User::class.java)
                 val existingUser = users.find { it.id == newUser?.id }
@@ -357,7 +363,37 @@ class LobbyFragment {
             override fun onCancelled(databaseError: DatabaseError) {}
         }
 
+        val voteChangesListener = object : ChildEventListener {
+
+            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+
+            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+
+                if (didLocalDeviceInitiateChange) {
+
+                    didLocalDeviceInitiateChange = false
+                }
+
+                else {
+                    val key = dataSnapshot.key
+                    val value = dataSnapshot.getValue(Int::class.java)
+
+                    val updatedVotes = votes.value.toMutableList()
+                    updatedVotes[modes.indexOf(key)] = value ?: updatedVotes[modes.indexOf(key)]
+                    votes.value = updatedVotes
+
+                    Log.d("Firebase", "Vote for $key changed to $value")
+                }
+            }
+
+            override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onCancelled(databaseError: DatabaseError) {}
+        }
+
         databaseRef.child("rooms").child(lobbyId.toString()).child("users")
-            .addChildEventListener(childEventListener)
+            .addChildEventListener(userJoinListener)
+
+        databaseVotesRef.addChildEventListener(voteChangesListener)
     }
 }

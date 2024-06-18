@@ -2,10 +2,18 @@ package com.example.hits.utility
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.example.hits.GAMEMODE_BATTLE_ROYALE
+import com.example.hits.GAMEMODE_CS_GO
+import com.example.hits.GAMEMODE_FFA
+import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
+import com.example.hits.GAMEMODE_TDM
+import com.example.hits.getGamemodes
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import java.util.concurrent.CompletableFuture
 import kotlin.math.max
@@ -62,6 +70,10 @@ fun createRoom(roomID: Int) {
 
     currRoomRef.child("users").setValue("")
     currRoomRef.child("gameInfo").setValue("")
+
+    for (gamemode in getGamemodes()) {
+        currRoomRef.child("gamemodeVotes").child(gamemode).setValue(0)
+    }
 
     Log.d("Firebase", "Room $roomID created")
 }
@@ -263,4 +275,28 @@ fun getUsersForLeaderboard() : SnapshotStateList<UserForLeaderboard> {
     })
 
     return leaderboardUsers
+}
+
+fun addValue(valueRef: DatabaseReference, value: Int) {
+
+    valueRef.runTransaction(object : Transaction.Handler {
+
+        override fun doTransaction(mutableData: MutableData): Transaction.Result {
+
+            var currentValue = mutableData.getValue(Int::class.java)
+
+            if (currentValue == null) {
+                currentValue = 0
+            }
+
+            mutableData.value = currentValue + value
+
+            return Transaction.success(mutableData)
+        }
+
+        override fun onComplete(databaseError: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+            // Transaction completed
+            Log.d("Firebase", "Transaction:onComplete:$databaseError")
+        }
+    })
 }
