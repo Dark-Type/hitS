@@ -15,12 +15,11 @@ internal class ObjectDetector {
     ): Array<FloatArray> {
         // Step 1: convert image into byte array (raw image bytes)
         val rawImageBytes = inputStream.readBytes()
+        // Normalize the byte values to float values
+        val floatImageBytes = rawImageBytes.map { it.toFloat() / 255.0f }.toFloatArray()
 
         // Step 2: get the shape of the byte array and make ort tensor
         val shape = longArrayOf(1, 3, 500, 500)
-
-        // Normalize the byte values to float values
-        val floatImageBytes = rawImageBytes.map { it.toFloat() / 255.0f }.toFloatArray()
 
         val inputTensor = OnnxTensor.createTensor(
             ortEnv,

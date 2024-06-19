@@ -1,12 +1,16 @@
 package com.example.hits.utility
 
-import android.graphics.Bitmap
-import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtEnvironment
+import ai.onnxruntime.OrtSession
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import com.example.hits.R
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
+
 
 class NeuralNetwork(private val context: Context) {
     private var image: Bitmap ? = null
@@ -24,6 +28,49 @@ class NeuralNetwork(private val context: Context) {
             Log.d("ObjectDetection", "Error in ObjectDetection ${Exception(e)}")
         }
     }
+
+    private fun assetFilePath(context: Context, asset: String): String {
+        val file = File(context.filesDir, asset)
+        try {
+            val inpStream: InputStream = context.assets.open(asset)
+            try {
+                val outStream = FileOutputStream(file, false)
+                val buffer = ByteArray(4 * 1024)
+                var read: Int
+                while (true) {
+                    read = inpStream.read(buffer)
+                    if (read == -1) {
+                        break
+                    }
+                    outStream.write(buffer, 0, read)
+                }
+                outStream.flush()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return ""
+    }
+
+    /*
+    fun encode(bitmap: Bitmap) {
+        val imageStream = context.assets.open("test_image.jpg")
+        val bitmap = BitmapFactory.decodeStream(imageStream)
+        val module = Module.load(assetFilePath(context, "model.ptl"))
+
+        val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(
+            bitmap,
+            TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
+            TensorImageUtils.TORCHVISION_NORM_STD_RGB
+        )
+
+        val output = module.forward(IValue.from(inputTensor)).toTensor().dataAsFloatArray
+        println(output[0])
+    }
+    */
 
     private fun performObjectDetection(
         ortSession: OrtSession,

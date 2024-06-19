@@ -7,6 +7,7 @@ plugins {
 android {
     namespace = "com.example.hits"
     compileSdk = 34
+    ndkVersion = "21.4.7075529"
 
     defaultConfig {
         applicationId = "com.example.hits"
@@ -44,6 +45,7 @@ android {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
+        jniLibs.pickFirsts += "**/libc++_shared.so"
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -101,4 +103,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation(libs.androidx.runtime)
+
+    implementation("org.pytorch:pytorch_android_lite:1.9.0")
+    implementation("org.pytorch:pytorch_android_torchvision:1.9.0")
 }
