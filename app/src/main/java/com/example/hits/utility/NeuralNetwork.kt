@@ -7,7 +7,9 @@ class NeuralNetwork {
     fun putImage(image: Bitmap) {
         this.image = image
     }
-    fun predictIfHit(): Boolean {
-        return true
+    fun predictIfHit(): Int {
+        val hit = true
+        val playerId =10
+        return if (hit)playerId else -1
     }
 }

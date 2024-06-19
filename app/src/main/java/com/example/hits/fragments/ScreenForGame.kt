@@ -34,7 +34,10 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import androidx.compose.material3.IconButton
+import com.example.hits.utility.NeuralNetwork
+import com.example.hits.utility.PlayerLogic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -70,6 +73,9 @@ class ScreenForGame {
         cameraX: CameraX,
         navController: NavController, lobbyId: Int
     ) {
+        val player = PlayerLogic()
+        val neuralNetwork = NeuralNetwork()
+
 
         var showDialog by remember { mutableStateOf(false) }
         var bitmapToShow by remember { mutableStateOf<Bitmap?>(null) }
@@ -120,6 +126,11 @@ class ScreenForGame {
                     text = "Elapsed Time: ${elapsedTime / 1000} seconds",
                     modifier = Modifier.align(Alignment.TopCenter),
                 )
+            }
+            if (elapsedTime == 10000L) {
+                val playerID = 0 //prop
+                player.revive(playerID)
+                Log.d("revive", "revive $playerID")
             }
 
             IconButton(
@@ -193,6 +204,7 @@ class ScreenForGame {
                                 delay(1000)
                                 shakeTime++
                                 if (shakeTime >= 10) {
+                                    player.heal()
                                     Toast.makeText(
                                         context,
                                         "Shake time: $shakeTime",
@@ -213,38 +225,52 @@ class ScreenForGame {
                         modifier = Modifier.size(100.dp)
                     )
                 }
+                IconButton(onClick = {
+                    val playerId = neuralNetwork.predictIfHit()
+                    if (playerId != -1){
+                        player.doDamage(playerId)
+                        Toast.makeText(context, "Hit", Toast.LENGTH_SHORT).show()
+                        // display damage, id and animation
+                    }
+                    else {
+                        // display miss animation
+                    }
 
-                Image(
-                    painter = painterResource(id = R.drawable.prop),
-                    contentDescription = "Shoot",
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clickable {
+                }) {
 
-                            cameraX.capturePhoto { pathToPhoto ->
-                                Toast
-                                    .makeText(
-                                        context,
-                                        "Image Saved to $pathToPhoto",
-                                        Toast.LENGTH_SHORT
-                                    )
-                                    .show()
-                                val bitmap = getPhotoFromPath(pathToPhoto)
-                                if (bitmap != null) {
+
+                    Image(
+                        painter = painterResource(id = R.drawable.prop),
+                        contentDescription = "Shoot",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clickable {
+
+                                cameraX.capturePhoto { pathToPhoto ->
                                     Toast
                                         .makeText(
                                             context,
-                                            "BITMAP IS NOT NULL",
+                                            "Image Saved to $pathToPhoto",
                                             Toast.LENGTH_SHORT
                                         )
                                         .show()
-                                    bitmapToShow = bitmap
-                                    showDialog = true
-                                }
+                                    val bitmap = getPhotoFromPath(pathToPhoto)
+                                    if (bitmap != null) {
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "BITMAP IS NOT NULL",
+                                                Toast.LENGTH_SHORT
+                                            )
+                                            .show()
+                                        bitmapToShow = bitmap
+                                        showDialog = true
+                                    }
 
+                                }
                             }
-                        }
-                )
+                    )
+                }
 
                 IconButton(
                     onClick = { cameraX.startRealTimeTextRecognition() },
