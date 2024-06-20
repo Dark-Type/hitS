@@ -252,6 +252,7 @@ class JoinLobbyFragment {
         val showNewsDialog = remember { mutableStateOf(false) }
         val selectedNews = remember { mutableStateOf<String?>(null) }
         val isSurfaceVisible = remember { mutableStateOf(false) }
+        val newsList = remember { getNews() }
 
         HitSTheme {
             Box(
@@ -315,7 +316,7 @@ class JoinLobbyFragment {
                             ) {
                                 Greeting(preferences = sharedPrefHelper)
                                 val showNews = remember { mutableStateOf(true) }
-                                val newsList = remember { getNews() }
+
                                 val leaderboardList = remember { getUsersForLeaderboard() }
 
                                 Button(

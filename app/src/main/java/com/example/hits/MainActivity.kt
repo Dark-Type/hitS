@@ -14,6 +14,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -141,11 +142,21 @@ class MainActivity : ComponentActivity() {
 
         Box(modifier = Modifier.fillMaxSize()) {
             Image(
-                painter = painterResource(id = R.drawable.register_background),
+                painter = painterResource(id = R.drawable.lobby_background),
                 contentDescription = "Background",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.FillBounds
             )
+
+            Image(
+                painter = painterResource(id = R.drawable.lobby_gun0),
+                contentDescription = "Gun",
+                modifier = Modifier
+                    .fillMaxSize(0.8f)
+                    .fillMaxHeight(0.8f)
+                    .align(Alignment.Center)
+            )
+
             HitSTheme {
 
                 Box(modifier = Modifier.fillMaxSize()) {
