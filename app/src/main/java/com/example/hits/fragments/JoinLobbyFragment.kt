@@ -2,6 +2,7 @@ package com.example.hits.fragments
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -250,166 +251,188 @@ class JoinLobbyFragment {
         val selectedPlayer = remember { mutableStateOf<UserForLeaderboard?>(null) }
         val showNewsDialog = remember { mutableStateOf(false) }
         val selectedNews = remember { mutableStateOf<String?>(null) }
+        val isSurfaceVisible = remember { mutableStateOf(false) }
+
         HitSTheme {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.TopEnd
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.main_background),
+                    painter = painterResource(id = R.drawable.lobby_background),
                     contentDescription = "Background",
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(onClick = {
+                            if (isSurfaceVisible.value) isSurfaceVisible.value = false
+                        }),
                     contentScale = ContentScale.FillBounds
                 )
+
                 IconButton(
-                    onClick = { navController.navigate("settingsScreen") },
-                    modifier = Modifier.padding(16.dp)
+                    onClick = { isSurfaceVisible.value = true },
+                    modifier = Modifier
+                        .fillMaxSize(0.8f)
+                        .fillMaxHeight(0.8f)
+                        .align(Alignment.Center)
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.settings_button),
-                        contentDescription = "Settings",
-
-                        )
+                        painter = painterResource(id = R.drawable.lobby_gun0),
+                        contentDescription = "to lobby",
+                    )
                 }
-                Surface(
-                    color = Color.White,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(top = 25.dp, bottom = 60.dp, start = 16.dp, end = 16.dp)
-                        .fillMaxSize(0.9f)
-                ) {
+                IconButton(onClick = { navController.navigate("settingsScreen") }, modifier = Modifier.fillMaxSize(0.4f).align(Alignment.BottomStart)
+                    .padding(16.dp)) {
+                    Image(
+                        painter = painterResource(id = R.drawable.lobby_go_to_settings),
+                        contentDescription = "Settings",
+                        modifier = Modifier
 
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.TopEnd
+
+
+                    )
+                }
+                if (isSurfaceVisible.value) {
+                    Surface(
+                        color = Color.White,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(top = 25.dp, bottom = 60.dp, start = 16.dp, end = 16.dp)
+                            .fillMaxSize(0.9f)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(32.dp),
-                            verticalArrangement = Arrangement.SpaceBetween,
-                            horizontalAlignment = Alignment.CenterHorizontally
+
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.TopEnd
                         ) {
-                            Greeting(preferences = sharedPrefHelper)
-                            val showNews = remember { mutableStateOf(true) }
-                            val newsList = remember { getNews() }
-                            val leaderboardList = remember { getUsersForLeaderboard() }
-
-                            Button(
-                                onClick = { showNews.value = !showNews.value },
-                                colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                modifier = Modifier.padding(bottom = 16.dp),
-                                border = BorderStroke(width = 1.dp, color = Turquoise)
-                            ) {
-                                Text(if (showNews.value) "To Leaderboards" else "To News")
-                            }
-                            if (showLeaderBoardsDialog.value) {
-                                selectedPlayer.value?.let {
-                                    PlayerStatsDialog(
-                                        it,
-                                        showLeaderBoardsDialog
-                                    )
-                                }
-                            }
-                            if (showNewsDialog.value) {
-                                selectedNews.value?.let { NewsDialog(it, showNewsDialog) }
-                            }
-
-                            if (showNews.value) {
-                                LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
-                                    items(newsList) { news ->
-                                        NewsItem(news, showNewsDialog, selectedNews)
-
-                                    }
-                                }
-                            } else {
-                                LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
-                                    itemsIndexed(leaderboardList) { index, user ->
-                                        LeaderboardItem(
-                                            user,
-                                            index,
-                                            showLeaderBoardsDialog,
-                                            selectedPlayer
-                                        )
-                                    }
-                                }
-                            }
                             Column(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(32.dp),
+                                verticalArrangement = Arrangement.SpaceBetween,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Spacer(modifier = Modifier.height(32.dp))
+                                Greeting(preferences = sharedPrefHelper)
+                                val showNews = remember { mutableStateOf(true) }
+                                val newsList = remember { getNews() }
+                                val leaderboardList = remember { getUsersForLeaderboard() }
 
                                 Button(
-                                    onClick = {
-                                        generatedId.value = getRandomID().toString()
-
-                                        val firstUser = User(
-                                            sharedPrefHelper.getID()!!.toInt(),
-                                            sharedPrefHelper.getNickname()!!
-                                        )
-
-                                        createRoom(generatedId.value.toInt())
-                                        addUserToRoom(generatedId.value.toInt(), firstUser)
-
-                                        navController.navigate("lobbyScreen/${generatedId.value}")
-                                    },
+                                    onClick = { showNews.value = !showNews.value },
                                     colors = ButtonDefaults.buttonColors(LightTurquoise),
+                                    modifier = Modifier.padding(bottom = 16.dp),
                                     border = BorderStroke(width = 1.dp, color = Turquoise)
                                 ) {
-                                    Text("Create Lobby")
+                                    Text(if (showNews.value) "To Leaderboards" else "To News")
+                                }
+                                if (showLeaderBoardsDialog.value) {
+                                    selectedPlayer.value?.let {
+                                        PlayerStatsDialog(
+                                            it,
+                                            showLeaderBoardsDialog
+                                        )
+                                    }
+                                }
+                                if (showNewsDialog.value) {
+                                    selectedNews.value?.let { NewsDialog(it, showNewsDialog) }
                                 }
 
-                                Spacer(modifier = Modifier.height(32.dp))
+                                if (showNews.value) {
+                                    LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
+                                        items(newsList) { news ->
+                                            NewsItem(news, showNewsDialog, selectedNews)
 
-                                Row(
+                                        }
+                                    }
+                                } else {
+                                    LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
+                                        itemsIndexed(leaderboardList) { index, user ->
+                                            LeaderboardItem(
+                                                user,
+                                                index,
+                                                showLeaderBoardsDialog,
+                                                selectedPlayer
+                                            )
+                                        }
+                                    }
+                                }
+                                Column(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    HorizontalDivider(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(end = 8.dp),
-                                        color = Color.Gray
-                                    )
-                                    Text(text = "or", textAlign = TextAlign.Center)
-                                    HorizontalDivider(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(start = 8.dp),
-                                        color = Color.Gray
-                                    )
-                                }
+                                    Spacer(modifier = Modifier.height(32.dp))
 
-                                Spacer(modifier = Modifier.height(32.dp))
+                                    Button(
+                                        onClick = {
+                                            generatedId.value = getRandomID().toString()
 
-                                OutlinedTextField(
-
-                                    value = lobbyCode.value,
-                                    onValueChange = { lobbyCode.value = it },
-                                    label = { Text("Input lobby code to join") },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 16.dp),
-
-
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                    keyboardActions = KeyboardActions(onDone = {
-                                        if (lobbyCode.value.isNotBlank()) {
-                                            val lobbyId = lobbyCode.value
-
-                                            val newUser = User(
+                                            val firstUser = User(
                                                 sharedPrefHelper.getID()!!.toInt(),
                                                 sharedPrefHelper.getNickname()!!
                                             )
-                                            addUserToRoom(lobbyId.toInt(), newUser)
 
-                                            navController.navigate("lobbyScreen/$lobbyId")
-                                        }
-                                    })
-                                )
+                                            createRoom(generatedId.value.toInt())
+                                            addUserToRoom(generatedId.value.toInt(), firstUser)
+
+                                            navController.navigate("lobbyScreen/${generatedId.value}")
+                                        },
+                                        colors = ButtonDefaults.buttonColors(LightTurquoise),
+                                        border = BorderStroke(width = 1.dp, color = Turquoise)
+                                    ) {
+                                        Text("Create Lobby")
+                                    }
+
+                                    Spacer(modifier = Modifier.height(32.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        HorizontalDivider(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .padding(end = 8.dp),
+                                            color = Color.Gray
+                                        )
+                                        Text(text = "or", textAlign = TextAlign.Center)
+                                        HorizontalDivider(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .padding(start = 8.dp),
+                                            color = Color.Gray
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(32.dp))
+
+                                    OutlinedTextField(
+
+                                        value = lobbyCode.value,
+                                        onValueChange = { lobbyCode.value = it },
+                                        label = { Text("Input lobby code to join") },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 16.dp),
+
+
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                        keyboardActions = KeyboardActions(onDone = {
+                                            if (lobbyCode.value.isNotBlank()) {
+                                                val lobbyId = lobbyCode.value
+
+                                                val newUser = User(
+                                                    sharedPrefHelper.getID()!!.toInt(),
+                                                    sharedPrefHelper.getNickname()!!
+                                                )
+                                                addUserToRoom(lobbyId.toInt(), newUser)
+
+                                                navController.navigate("lobbyScreen/$lobbyId")
+                                            }
+                                        })
+                                    )
+                                }
                             }
                         }
                     }
