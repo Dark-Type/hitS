@@ -36,15 +36,17 @@ import com.example.hits.R
 import com.example.hits.ui.theme.Bronze
 import com.example.hits.ui.theme.Gold
 import com.example.hits.ui.theme.Silver
+import com.example.hits.utility.getUsersForResultsScreen
+import com.example.hits.utility.removeUserFromRoom
+import com.example.hits.utility.ScoreData
 import java.util.Random
 
 class ScreenForResults {
-    data class ScoreData(val id: Int, val score: Int)
 
     @Composable
-    fun ResultsScreen(lobbyId: Int, navController: NavController) {
+    fun ResultsScreen(lobbyId: Int, userID: Int, gamemodePlayed: String, navController: NavController) {
 
-        val scores = remember { mutableStateOf(generateRandomScores()) }
+        val scores = remember { getUsersForResultsScreen(lobbyId, gamemodePlayed) }
         val showDialog = remember { mutableStateOf(false) }
         Box(modifier = Modifier.fillMaxSize()) {
 
@@ -68,7 +70,7 @@ class ScreenForResults {
                         fontSize = 52.sp
                     )
                     LazyColumn(modifier = Modifier.fillMaxHeight(0.6f)) {
-                        itemsIndexed(scores.value) { index, scoreData ->
+                        itemsIndexed(scores) { index, scoreData ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -114,7 +116,10 @@ class ScreenForResults {
                     }
 
                     Button(
-                        onClick = { navController.navigate("joinLobbyScreen") },
+                        onClick = {
+                            removeUserFromRoom(lobbyId, userID)
+                            navController.navigate("joinLobbyScreen")
+                                  },
                         modifier = Modifier.padding(8.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(whiteColor)
@@ -123,7 +128,9 @@ class ScreenForResults {
                     }
 
                     Button(
-                        onClick = { navController.navigate("lobbyScreen/$lobbyId") },
+                        onClick = {
+                            println(scores.size)
+                            navController.navigate("lobbyScreen/$lobbyId") },
                         modifier = Modifier.padding(8.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(whiteColor)
@@ -154,11 +161,5 @@ class ScreenForResults {
 
             }
         }
-    }
-
-    fun generateRandomScores(): List<ScoreData> {
-        val random = Random()
-        return List(10) { ScoreData(random.nextInt(100), random.nextInt(100)) }
-            .sortedByDescending { it.score }
     }
 }

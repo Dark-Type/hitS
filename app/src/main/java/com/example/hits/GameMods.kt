@@ -1,10 +1,10 @@
 package com.example.hits
 
+const val GAMEMODE_FFA = "Free For All"
+const val GAMEMODE_TDM = "Team Deathmatch"
 const val GAMEMODE_ONE_HIT_ELIMINATION = "One Hit Elimination"
 const val GAMEMODE_CS_GO = "CS:GO"
 const val GAMEMODE_BATTLE_ROYALE = "Battle Royale"
-const val GAMEMODE_FFA = "Free For All"
-const val GAMEMODE_TDM = "Team Deathmatch"
 
 enum class GameMods {
     ONE_HIT_ELIMINATION_1,
@@ -23,10 +23,10 @@ enum class GameMods {
 fun getGamemodes() : List<String> {
 
     return listOf(
+        GAMEMODE_FFA,
+        GAMEMODE_TDM,
         GAMEMODE_ONE_HIT_ELIMINATION,
         GAMEMODE_CS_GO,
-        GAMEMODE_BATTLE_ROYALE,
-        GAMEMODE_FFA,
-        GAMEMODE_TDM
+        GAMEMODE_BATTLE_ROYALE
     )
 }

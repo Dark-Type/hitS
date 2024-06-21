@@ -67,6 +67,7 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import java.util.Collections.max
 
 
 class LobbyFragment {
@@ -90,6 +91,7 @@ class LobbyFragment {
         val showDialog = remember { mutableStateOf(false) }
         val selectedMode = remember { mutableIntStateOf(-1) }
         val modes = getGamemodes()
+        println(modes)
         val votes = remember { mutableStateOf(List(modes.size) { 0 }) }
 
         listenForChanges(lobbyId, modes, votes, navController, sharedPrefHelper)
@@ -117,6 +119,16 @@ class LobbyFragment {
                         contentDescription = "Settings"
 
                     )
+                }
+
+                Button(
+                    onClick = {
+                        removeUserFromRoom(lobbyId, sharedPrefHelper.getID()!!.toInt())
+                        navController.navigate("joinLobbyScreen")
+                              },
+                    colors = ButtonDefaults.buttonColors(LightTurquoise),
+                ) {
+                    Text(text = "Back")
                 }
             }
             Surface(
@@ -170,7 +182,7 @@ class LobbyFragment {
                         Button(
                             onClick = {
                                 runGame(lobbyId, users)
-                                navController.navigate("gameScreen/$lobbyId/${sharedPrefHelper.getID()}")
+                                navController.navigate("gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${modes[votes.value.indexOf(max(votes.value))]}")
                                       },
 
                             colors = ButtonDefaults.buttonColors(LightTurquoise),
@@ -264,7 +276,7 @@ class LobbyFragment {
                     val currentUser = users.find { it.id == sharedPrefHelper.getID()?.toInt() }
 
                     if (currentUser != null) {
-                        removeUserFromRoom(lobbyId, currentUser)
+                        removeUserFromRoom(lobbyId, currentUser.id)
                     }
 
                     if (selectedMode.intValue != -1) {

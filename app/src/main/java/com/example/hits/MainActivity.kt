@@ -81,10 +81,12 @@ class MainActivity : ComponentActivity() {
                 composable("initUI") { InitUI(navController) }
                 composable("joinLobbyScreen") { JoinLobbyFragment().JoinLobbyScreen(navController) }
                 composable("settingsScreen") { SettingsFragment().SettingsScreen(navController) }
-                composable("resultsScreen/{lobbyId}") { backStackEntry ->
+                composable("resultsScreen/{lobbyId}/{userID}/{gamemodePlayed}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
-                    if (lobbyId != null) {
-                        ScreenForResults().ResultsScreen(lobbyId.toInt(), navController)
+                    val userID = backStackEntry.arguments?.getString("userID")
+                    val gamemodePlayed = backStackEntry.arguments?.getString("gamemodePlayed")
+                    if (lobbyId != null && userID != null && gamemodePlayed != null) {
+                        ScreenForResults().ResultsScreen(lobbyId.toInt(), userID.toInt(), gamemodePlayed, navController)
                     }
                 }
                 composable("lobbyScreen/{lobbyId}") { backStackEntry ->
@@ -93,11 +95,12 @@ class MainActivity : ComponentActivity() {
                         LobbyFragment().LobbyScreen(lobbyId.toInt(), navController)
                     }
                 }
-                composable("gameScreen/{lobbyId}/{userID}") { backStackEntry ->
+                composable("gameScreen/{lobbyId}/{userID}/{currGamemode}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     val userID = backStackEntry.arguments?.getString("userID")
-                    if (lobbyId != null && userID != null) {
-                        ScreenForGame().GameScreen(lobbyId.toInt(), userID.toInt(), navController)
+                    val currGamemode = backStackEntry.arguments?.getString("currGamemode")
+                    if (lobbyId != null && userID != null && currGamemode != null) {
+                        ScreenForGame().GameScreen(lobbyId.toInt(), userID.toInt(), currGamemode, navController)
                     }
                 }
             }

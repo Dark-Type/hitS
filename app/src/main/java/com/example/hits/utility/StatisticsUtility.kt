@@ -13,7 +13,7 @@ fun calculatePointsGainForTDM(kills: Int, deaths: Int, assists: Int, isWon: Bool
     return ((kills * KDR + assists) * winKoeff).toInt()
 }
 
-fun calculatePointsForFFA(kills: Int, deaths: Int, assists: Int) : Int {
+fun calculatePointsGainForFFA(kills: Int, deaths: Int, assists: Int) : Int {
 
     val KDR = calculateKDRCoeff(kills, deaths)
     return (kills * KDR + assists).toInt()

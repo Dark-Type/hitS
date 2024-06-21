@@ -38,8 +38,12 @@ import android.util.Log
 import androidx.compose.material3.IconButton
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
+import com.example.hits.utility.databaseRef
 import com.example.hits.utility.listenForLeaderboardUpdates
 import com.example.hits.utility.runGame
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,13 +59,12 @@ class ScreenForGame {
     private var shakeTime = 0
     private var job: Job? = null
 
-
     @Composable
-    fun GameScreen(lobbyId: Int, userID: Int, navController: NavController) {
+    fun GameScreen(lobbyId: Int, userID: Int, currGamemode: String, navController: NavController) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
-        CameraCompose(context = context, cameraX = cameraX, navController, lobbyId, userID)
+        CameraCompose(context = context, cameraX = cameraX, navController, lobbyId, userID, currGamemode)
     }
 
 
@@ -73,10 +76,11 @@ class ScreenForGame {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        navController: NavController, lobbyId: Int, userID: Int
+        navController: NavController, lobbyId: Int, userID: Int, currGamemode: String
     ) {
         val player = PlayerLogic()
         player.listenForChanges(lobbyId, userID)
+        listenForChanges(navController, lobbyId, userID, currGamemode)
         val neuralNetwork = NeuralNetwork()
 
         var showDialog by remember { mutableStateOf(false) }
@@ -153,7 +157,10 @@ class ScreenForGame {
             }
 
             Button(
-                onClick = { navController.navigate("resultsScreen/$lobbyId") },
+                onClick = {
+                    databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying").setValue(false)
+                    //navController.navigate("resultsScreen/$lobbyId")
+                          },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 15.dp)
@@ -301,9 +308,29 @@ class ScreenForGame {
                 showDialog = false
             }
         }
-
     }
 
+    private fun listenForChanges(navController: NavController, lobbyId: Int, userID: Int, currGamemode: String) {
+
+        val endGameListener = object : ValueEventListener {
+
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                val value = dataSnapshot.getValue(Boolean::class.java)
+
+                if (value == false) {
+                    navController.navigate("resultsScreen/$lobbyId/$userID/$currGamemode")
+                }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Log the error
+            }
+        }
+
+        databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+            .addValueEventListener(endGameListener)
+    }
 }
 
 

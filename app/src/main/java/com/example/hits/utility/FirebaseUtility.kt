@@ -21,6 +21,7 @@ import kotlin.math.max
 val databaseRef: DatabaseReference = FirebaseDatabase.getInstance("https://shooter-24512-default-rtdb.europe-west1.firebasedatabase.app").getReference()
 data class User(val id: Int = 0, val name: String = "", val points: Int = 0, val damage: Int = 0, val kills: Int = 0, val deaths: Int = 0, val assists: Int = 0)
 data class NewsObject(val text: String = "NO TEXT")
+data class ScoreData(val id: Int, val name: String, val score: Int)
 data class UserForLeaderboard(
     val name: String,
     val points: Int,
@@ -160,9 +161,9 @@ fun createUser(id: Int, nickname: String) {
     Log.d("Firebase", "User $nickname with id $id added to main user database")
 }
 
-fun removeUserFromRoom(lobbyId: Int, user: User) {
+fun removeUserFromRoom(lobbyId: Int, userID: Int) {
 
-    databaseRef.child("rooms").child(lobbyId.toString()).child("users").child(user.id.toString()).removeValue()
+    databaseRef.child("rooms").child(lobbyId.toString()).child("users").child(userID.toString()).removeValue()
         .addOnSuccessListener {
             removeRoomIfEmpty(lobbyId)
         }
@@ -277,6 +278,74 @@ fun getUsersForLeaderboard() : SnapshotStateList<UserForLeaderboard> {
     })
 
     return leaderboardUsers
+}
+
+fun getUsersForResultsScreen(roomID: Int,
+                             gamemode: String
+) : SnapshotStateList<ScoreData> {
+
+    val users = SnapshotStateList<User>()
+    val scores = SnapshotStateList<ScoreData>()
+
+    databaseRef.child("rooms").child(roomID.toString()).child("gameInfo")
+        .child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+            users.clear()
+
+            for (userSnapshot in dataSnapshot.children) {
+                users.add(userSnapshot.getValue(User::class.java)!!)
+            }
+
+            val sortedUsers = users.sortedWith(compareBy({ -it.kills }, { it.deaths }))
+
+            for (i in sortedUsers.indices) {
+
+                when (gamemode) {
+
+                    GAMEMODE_FFA -> scores.add(
+
+                        ScoreData(
+
+                            sortedUsers[i].id,
+                            sortedUsers[i].name,
+                            calculatePointsGainForFFA(
+                                sortedUsers[i].kills,
+                                sortedUsers[i].deaths,
+                                sortedUsers[i].assists
+                            )
+                        )
+                    )
+
+                    GAMEMODE_TDM -> scores.add(
+
+                        ScoreData(
+
+                            sortedUsers[i].id,
+                            sortedUsers[i].name,
+                            calculatePointsGainForTDM(
+                                sortedUsers[i].kills,
+                                sortedUsers[i].deaths,
+                                sortedUsers[i].assists,
+                                true //to changge
+                            )
+                        )
+                    )
+                }
+            }
+
+            println(scores.size)
+            println(gamemode)
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+
+            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
+        }
+    })
+
+    return scores
 }
 
 fun addValue(valueRef: DatabaseReference, value: Int) {
