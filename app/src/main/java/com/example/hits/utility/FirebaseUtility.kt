@@ -75,6 +75,8 @@ fun createRoom(roomID: Int) {
         currRoomRef.child("gamemodeVotes").child(gamemode).setValue(0)
     }
 
+    currRoomRef.child("isPlaying").setValue(false)
+
     Log.d("Firebase", "Room $roomID created")
 }
 
@@ -297,6 +299,96 @@ fun addValue(valueRef: DatabaseReference, value: Int) {
         override fun onComplete(databaseError: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
             // Transaction completed
             Log.d("Firebase", "Transaction:onComplete:$databaseError")
+        }
+    })
+}
+
+fun runGame(roomID: Int, users: List<User>) {
+
+    val currRoomRef = databaseRef.child("rooms").child(roomID.toString())
+
+    var maxModeVotes = 0
+    var currMode = GAMEMODE_FFA
+
+    databaseRef.child("rooms").child(roomID.toString()).child("gamemodeVotes").addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+            for (valueSnapshot in dataSnapshot.children) {
+
+                val value = valueSnapshot.getValue(Int::class.java)!!
+
+                if (value > maxModeVotes) {
+                    currMode = valueSnapshot.key!!
+                    maxModeVotes = value
+                }
+            }
+
+            setCurrGameUserStats()
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+
+            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
+        }
+
+        fun setCurrGameUserStats() {
+
+            currRoomRef.child("gameInfo").child("currGamemode").setValue(currMode)
+
+            for (user in users) {
+
+                currRoomRef.child("gameInfo").child("users").child(user.id.toString()).setValue(
+                    User(
+                        user.id,
+                        user.name,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                    )
+                )
+
+                currRoomRef.child("gameInfo").child("users").child(user.id.toString()).child("isAlive").setValue(true)
+                currRoomRef.child("gameInfo").child("users").child(user.id.toString()).child("health").setValue(100)
+            }
+
+            currRoomRef.child("isPlaying").setValue(true)
+        }
+    })
+}
+
+fun listenForLeaderboardUpdates(roomID: Int, onLeaderboardUpdate: (List<UserForLeaderboard>) -> Unit) {
+
+    val usersRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
+
+    usersRef.addValueEventListener(object : ValueEventListener {
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            val users = mutableListOf<User>()
+
+            for (userSnapshot in dataSnapshot.children) {
+                users.add(userSnapshot.getValue(User::class.java)!!)
+            }
+
+            val sortedUsers = users.sortedWith(compareByDescending<User> { it.kills }.thenBy { it.deaths })
+
+            val leaderboardUsers = sortedUsers.mapIndexed { index, user ->
+                UserForLeaderboard(
+                    user.name,
+                    user.points,
+                    index + 1,
+                    user.kills,
+                    user.deaths,
+                    user.assists
+                )
+            }
+
+            onLeaderboardUpdate(leaderboardUsers)
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+            Log.w("Firebase", "listenForLeaderboardUpdates:onCancelled", databaseError.toException())
         }
     })
 }

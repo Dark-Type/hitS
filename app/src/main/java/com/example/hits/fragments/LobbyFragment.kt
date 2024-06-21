@@ -62,9 +62,11 @@ import com.example.hits.utility.addValue
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.getLobbyUsers
 import com.example.hits.utility.removeUserFromRoom
+import com.example.hits.utility.runGame
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 
 
 class LobbyFragment {
@@ -90,7 +92,7 @@ class LobbyFragment {
         val modes = getGamemodes()
         val votes = remember { mutableStateOf(List(modes.size) { 0 }) }
 
-        listenForChanges(lobbyId, modes, votes)
+        listenForChanges(lobbyId, modes, votes, navController, sharedPrefHelper)
 
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -166,7 +168,11 @@ class LobbyFragment {
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Button(
-                            onClick = { navController.navigate("gameScreen/$lobbyId") },
+                            onClick = {
+                                runGame(lobbyId, users)
+                                navController.navigate("gameScreen/$lobbyId/${sharedPrefHelper.getID()}")
+                                      },
+
                             colors = ButtonDefaults.buttonColors(LightTurquoise),
                             border = BorderStroke(width = 1.dp, color = Turquoise),
 
@@ -330,7 +336,12 @@ class LobbyFragment {
         }
     }
 
-    private fun listenForChanges(lobbyId: Int, modes: List<String>, votes: MutableState<List<Int>>) {
+    private fun listenForChanges(lobbyId: Int,
+                                 modes: List<String>,
+                                 votes: MutableState<List<Int>>,
+                                 navController: NavController,
+                                 sharedPrefHelper: SharedPrefHelper
+    ) {
 
         val userJoinListener = object : ChildEventListener {
             override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
@@ -391,9 +402,27 @@ class LobbyFragment {
             override fun onCancelled(databaseError: DatabaseError) {}
         }
 
+        val startGameListener = object : ValueEventListener {
+
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val value = dataSnapshot.getValue(Boolean::class.java)
+                if (value == true) {
+                    println("Called runGame from LobbyFragment")
+                    //navController.navigate("gameScreen/$lobbyId/${sharedPrefHelper.getID()}")
+                }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Log the error
+            }
+        }
+
         databaseRef.child("rooms").child(lobbyId.toString()).child("users")
             .addChildEventListener(userJoinListener)
 
         databaseVotesRef.addChildEventListener(voteChangesListener)
+
+        databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+            .addValueEventListener(startGameListener)
     }
 }

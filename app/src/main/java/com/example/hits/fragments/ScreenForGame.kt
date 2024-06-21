@@ -38,6 +38,8 @@ import android.util.Log
 import androidx.compose.material3.IconButton
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
+import com.example.hits.utility.listenForLeaderboardUpdates
+import com.example.hits.utility.runGame
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,11 +57,11 @@ class ScreenForGame {
 
 
     @Composable
-    fun GameScreen(lobbyId: Int, navController: NavController) {
+    fun GameScreen(lobbyId: Int, userID: Int, navController: NavController) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
-        CameraCompose(context = context, cameraX = cameraX, navController, lobbyId)
+        CameraCompose(context = context, cameraX = cameraX, navController, lobbyId, userID)
     }
 
 
@@ -71,11 +73,11 @@ class ScreenForGame {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        navController: NavController, lobbyId: Int
+        navController: NavController, lobbyId: Int, userID: Int
     ) {
         val player = PlayerLogic()
+        player.listenForChanges(lobbyId, userID)
         val neuralNetwork = NeuralNetwork()
-
 
         var showDialog by remember { mutableStateOf(false) }
         var bitmapToShow by remember { mutableStateOf<Bitmap?>(null) }
@@ -128,8 +130,8 @@ class ScreenForGame {
                 )
             }
             if (elapsedTime == 10000L) {
-                val playerID = 0 //prop
-                player.revive(playerID)
+                val playerID = userID //хз че ты тут хотел сделать
+                player.revive(lobbyId, playerID)
                 Log.d("revive", "revive $playerID")
             }
 
@@ -227,12 +229,11 @@ class ScreenForGame {
                 }
                 IconButton(onClick = {
                     val playerId = neuralNetwork.predictIfHit()
-                    if (playerId != -1){
-                        player.doDamage(playerId)
+                    if (playerId != -1) {
+                        player.doDamage(lobbyId, playerId)
                         Toast.makeText(context, "Hit", Toast.LENGTH_SHORT).show()
                         // display damage, id and animation
-                    }
-                    else {
+                    } else {
                         // display miss animation
                     }
 
