@@ -48,10 +48,19 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    sourceSets {
+        getByName("main") {
+            assets {
+                srcDirs("src/main/assets")
+            }
+        }
+    }
 }
 val camerax_version = "1.2.0-alpha02"
 
 dependencies {
+    implementation(libs.sceneview)
+    implementation (libs.arsceneview)
     implementation( libs.androidx.camera.core)
     implementation (libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.extensions)
@@ -59,7 +68,6 @@ dependencies {
     implementation(libs.coil.compose)
     implementation (libs.androidx.camera.view)
     implementation (libs.core)
-    implementation (libs.sceneform.ux)
     implementation (libs.rive.android.v870)
     implementation(libs.androidx.startup.runtime)
     implementation (libs.coil.compose)

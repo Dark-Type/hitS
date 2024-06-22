@@ -82,7 +82,8 @@ class LobbyFragment {
 
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
-        databaseVotesRef = databaseRef.child("rooms").child(lobbyId.toString()).child("gamemodeVotes")
+        databaseVotesRef =
+            databaseRef.child("rooms").child(lobbyId.toString()).child("gamemodeVotes")
 
         lobbyIdToCheck = lobbyId
 
@@ -121,14 +122,17 @@ class LobbyFragment {
                     )
                 }
 
-                Button(
+                IconButton(
                     onClick = {
                         removeUserFromRoom(lobbyId, sharedPrefHelper.getID()!!.toInt())
                         navController.navigate("joinLobbyScreen")
-                              },
-                    colors = ButtonDefaults.buttonColors(LightTurquoise),
+                    },
+                    modifier = Modifier.padding(16.dp).align(Alignment.TopStart)
                 ) {
-                    Text(text = "Back")
+                    Image(
+                        painter = painterResource(id = R.drawable.go_back),
+                        contentDescription = "Back"
+                    )
                 }
             }
             Surface(
@@ -179,17 +183,13 @@ class LobbyFragment {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                            val isReady = remember { mutableStateOf(false) }
                         Button(
-                            onClick = {
-                                runGame(lobbyId, users)
-                                navController.navigate("gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${modes[votes.value.indexOf(max(votes.value))]}")
-                                      },
-
+                            onClick = { isReady.value = !isReady.value },
                             colors = ButtonDefaults.buttonColors(LightTurquoise),
                             border = BorderStroke(width = 1.dp, color = Turquoise),
-
-                            ) {
-                            Text(text = "Start session")
+                        ) {
+                            Text(text = if (!isReady.value) "Currently Not Ready" else "Currently Ready")
                         }
                     }
                 }
@@ -237,7 +237,12 @@ class LobbyFragment {
                                                                         .toMutableList()
                                                                         .also {
                                                                             it[selectedMode.intValue]--
-                                                                            addValue(databaseVotesRef.child(modes[selectedMode.intValue]), -1)
+                                                                            addValue(
+                                                                                databaseVotesRef.child(
+                                                                                    modes[selectedMode.intValue]
+                                                                                ),
+                                                                                -1
+                                                                            )
                                                                         }
                                                             }
                                                             votes.value =
@@ -245,7 +250,11 @@ class LobbyFragment {
                                                                     .toMutableList()
                                                                     .also {
                                                                         it[index]++
-                                                                        addValue(databaseVotesRef.child(modes[index]), 1)
+                                                                        addValue(
+                                                                            databaseVotesRef.child(
+                                                                                modes[index]
+                                                                            ), 1
+                                                                        )
                                                                     }
                                                             selectedMode.intValue = index
                                                         } else {
@@ -254,7 +263,11 @@ class LobbyFragment {
                                                                     .toMutableList()
                                                                     .also {
                                                                         it[index]--
-                                                                        addValue(databaseVotesRef.child(modes[selectedMode.intValue]), -1)
+                                                                        addValue(
+                                                                            databaseVotesRef.child(
+                                                                                modes[selectedMode.intValue]
+                                                                            ), -1
+                                                                        )
                                                                     }
 
                                                             selectedMode.intValue = -1
@@ -348,11 +361,12 @@ class LobbyFragment {
         }
     }
 
-    private fun listenForChanges(lobbyId: Int,
-                                 modes: List<String>,
-                                 votes: MutableState<List<Int>>,
-                                 navController: NavController,
-                                 sharedPrefHelper: SharedPrefHelper
+    private fun listenForChanges(
+        lobbyId: Int,
+        modes: List<String>,
+        votes: MutableState<List<Int>>,
+        navController: NavController,
+        sharedPrefHelper: SharedPrefHelper
     ) {
 
         val userJoinListener = object : ChildEventListener {
@@ -395,9 +409,7 @@ class LobbyFragment {
                 if (didLocalDeviceInitiateChange) {
 
                     didLocalDeviceInitiateChange = false
-                }
-
-                else {
+                } else {
                     val key = dataSnapshot.key
                     val value = dataSnapshot.getValue(Int::class.java)
 
@@ -420,7 +432,14 @@ class LobbyFragment {
                 val value = dataSnapshot.getValue(Boolean::class.java)
                 if (value == true) {
                     println("Called runGame from LobbyFragment")
-                    //navController.navigate("gameScreen/$lobbyId/${sharedPrefHelper.getID()}")
+                    runGame(lobbyId, users)
+                    navController.navigate(
+                        "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
+                            modes[votes.value.indexOf(
+                                max(votes.value)
+                            )]
+                        }"
+                    )
                 }
             }
 

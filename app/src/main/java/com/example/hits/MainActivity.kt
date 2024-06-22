@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.BorderStroke
@@ -44,6 +45,7 @@ import app.rive.runtime.kotlin.core.Rive
 import com.example.hits.fragments.ScreenForGame
 import com.example.hits.fragments.JoinLobbyFragment
 import com.example.hits.fragments.LobbyFragment
+import com.example.hits.fragments.ScreenForAR
 import com.example.hits.fragments.ScreenForResults
 import com.example.hits.fragments.SettingsFragment
 import com.example.hits.ui.theme.HitSTheme
@@ -55,7 +57,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private lateinit var sharedPrefHelper: SharedPrefHelper
-
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,6 +91,7 @@ class MainActivity : ComponentActivity() {
                         ScreenForResults().ResultsScreen(lobbyId.toInt(), userID.toInt(), gamemodePlayed, navController)
                     }
                 }
+                composable("arScreen") { ScreenForAR().arScreen(navController) }
                 composable("lobbyScreen/{lobbyId}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     if (lobbyId != null) {
@@ -123,11 +126,8 @@ class MainActivity : ComponentActivity() {
         val requestPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
         ) { isGranted: Boolean ->
-            if (isGranted) {
-
-            } else {
-
-
+            if (!isGranted) {
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
         }
         LaunchedEffect(Unit) {
@@ -214,7 +214,7 @@ class MainActivity : ComponentActivity() {
                             },
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
-                                .padding(32.dp)
+                                .padding(64.dp)
                                 .fillMaxWidth(0.6f),
                             shape = MaterialTheme.shapes.extraLarge,
                             colors = ButtonDefaults.buttonColors(LightTurquoise),

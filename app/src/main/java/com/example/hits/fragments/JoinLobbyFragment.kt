@@ -264,11 +264,16 @@ class JoinLobbyFragment {
                     contentDescription = "Background",
                     modifier = Modifier
                         .fillMaxSize()
-                        .clickable(onClick = {
-                            if (isSurfaceVisible.value) isSurfaceVisible.value = false
-                        }),
+                        .let { if (isSurfaceVisible.value) it.clickable(onClick = { isSurfaceVisible.value = false }) else it },
                     contentScale = ContentScale.FillBounds
                 )
+                Button(
+                    onClick = { navController.navigate("arScreen") },
+                    colors = ButtonDefaults.buttonColors(LightTurquoise),
+                    border = BorderStroke(width = 1.dp, color = Turquoise)
+                ) {
+                    Text("Open AR Screen")
+                }
 
                 IconButton(
                     onClick = { isSurfaceVisible.value = true },

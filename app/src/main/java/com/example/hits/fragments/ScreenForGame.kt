@@ -39,8 +39,6 @@ import androidx.compose.material3.IconButton
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.databaseRef
-import com.example.hits.utility.listenForLeaderboardUpdates
-import com.example.hits.utility.runGame
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -64,7 +62,14 @@ class ScreenForGame {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
-        CameraCompose(context = context, cameraX = cameraX, navController, lobbyId, userID, currGamemode)
+        CameraCompose(
+            context = context,
+            cameraX = cameraX,
+            navController,
+            lobbyId,
+            userID,
+            currGamemode
+        )
     }
 
 
@@ -158,9 +163,10 @@ class ScreenForGame {
 
             Button(
                 onClick = {
-                    databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying").setValue(false)
+                    databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                        .setValue(false)
                     //navController.navigate("resultsScreen/$lobbyId")
-                          },
+                },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 15.dp)
@@ -310,7 +316,12 @@ class ScreenForGame {
         }
     }
 
-    private fun listenForChanges(navController: NavController, lobbyId: Int, userID: Int, currGamemode: String) {
+    private fun listenForChanges(
+        navController: NavController,
+        lobbyId: Int,
+        userID: Int,
+        currGamemode: String
+    ) {
 
         val endGameListener = object : ValueEventListener {
 

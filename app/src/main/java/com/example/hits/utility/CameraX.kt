@@ -3,10 +3,9 @@ package com.example.hits.utility
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.graphics.Rect
 import android.os.SystemClock
 import android.util.Log
+import android.view.Surface
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
@@ -24,16 +23,14 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.IO
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.async
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
-import java.io.OutputStream
 import java.nio.ByteBuffer
 
 class CameraX(
@@ -97,20 +94,23 @@ class CameraX(
             it.setSurfaceProvider(previewView.surfaceProvider)
         }
 
-        imageCapture = ImageCapture.Builder().build()
+        imageCapture = ImageCapture.Builder()
+            .setJpegQuality(85)
+            .setTargetRotation(Surface.ROTATION_0)
+            .build()
 
         val camSelector =
             CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
-        try {
-            cameraProviderFuture.get().bindToLifecycle(
-                owner,
-                camSelector,
-                preview,
-                imageCapture
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+
+        cameraProviderFuture.addListener({
+            try {
+                val cameraProvider = cameraProviderFuture.get()
+                cameraProvider.bindToLifecycle(owner, camSelector, preview, imageCapture)
+            } catch (e: Exception) {
+                Log.e("CameraX", "Error binding camera preview", e)
+            }
+        }, ContextCompat.getMainExecutor(context))
+
         return previewView
     }
 
@@ -121,64 +121,67 @@ class CameraX(
             ImageCapture.OnImageCapturedCallback(), ImageCapture.OnImageSavedCallback {
             override fun onCaptureSuccess(image: ImageProxy) {
                 super.onCaptureSuccess(image)
-                owner.lifecycleScope.launch {
+                owner.lifecycleScope.launch(Dispatchers.Default) {
+                    val fileName = StringBuilder().apply {
+                        append("IMG_")
+                        append(System.currentTimeMillis())
+                    }.toString()
                     photoPath.value = saveMediaToCache(
                         imageProxyToBitmap(image),
-                        System.currentTimeMillis().toString()
+                        fileName
                     )
-                    onCaptureFinished(photoPath.value)
+                    withContext(Dispatchers.Main) {
+                        onCaptureFinished(photoPath.value)
+                    }
                 }
             }
 
             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-
                 Toast.makeText(context, "Image Saved to ${photoPath.value}", Toast.LENGTH_SHORT)
                     .show()
             }
 
             override fun onError(exception: ImageCaptureException) {
-                super.onError(exception)
+                Log.e("CameraX", "Image capture error", exception)
                 Toast.makeText(context, "Image Error", Toast.LENGTH_SHORT).show()
-
             }
         })
     }
 
+    private var byteArray: ByteArray? = null
     private suspend fun imageProxyToBitmap(image: ImageProxy): Bitmap =
         withContext(owner.lifecycleScope.coroutineContext) {
             val planeProxy = image.planes[0]
             val buffer: ByteBuffer = planeProxy.buffer
-            val bytes = ByteArray(buffer.remaining())
-            buffer.get(bytes)
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            val remaining = buffer.remaining()
+
+            if (byteArray == null || byteArray!!.size != remaining) {
+                byteArray = ByteArray(remaining)
+            }
+
+            buffer.get(byteArray!!)
+            BitmapFactory.decodeByteArray(byteArray, 0, remaining)
         }
 
-    private suspend fun saveMediaToCache(bitmap: Bitmap, name: String): String {
-        var path = ""
+    private suspend fun saveMediaToCache(bitmap: Bitmap, name: String): String =
         withContext(IO) {
             val filename = "$name.jpg"
-            val fos: OutputStream?
-            val matrix = Matrix()
-            matrix.postRotate(90f)
-            val rotatedBitmap =
-                Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-
             val imageFile = File(context.cacheDir, filename)
-            fos = FileOutputStream(imageFile)
+            val fos = FileOutputStream(imageFile)
 
             fos.use {
-                val success = async(IO) {
-                    rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, it)
-                }
-                if (success.await()) {
-                    path = imageFile.absolutePath
+                val success = bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it)
+                if (success) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Saved Successfully to $path", Toast.LENGTH_SHORT)
-                            .show()
+                        Toast.makeText(
+                            context,
+                            "Saved Successfully to ${imageFile.absolutePath}",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
+                    return@withContext imageFile.absolutePath
                 }
             }
+            return@withContext ""
         }
-        return path
-    }
 }
