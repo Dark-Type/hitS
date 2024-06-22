@@ -77,6 +77,7 @@ fun createRoom(roomID: Int) {
     }
 
     currRoomRef.child("isPlaying").setValue(false)
+    currRoomRef.child("playersReady").setValue(0)
 
     Log.d("Firebase", "Room $roomID created")
 }
@@ -424,6 +425,7 @@ fun runGame(roomID: Int, users: List<User>) {
             }
 
             currRoomRef.child("isPlaying").setValue(true)
+            currRoomRef.child("playersReady").setValue(0)
         }
     })
 }

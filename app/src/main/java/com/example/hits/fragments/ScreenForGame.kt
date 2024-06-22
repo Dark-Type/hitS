@@ -35,6 +35,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.IconButton
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
@@ -70,6 +71,38 @@ class ScreenForGame {
             userID,
             currGamemode
         )
+
+        DisposableEffect(Unit) {
+
+            val endGameListener = object : ValueEventListener {
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    val value = dataSnapshot.getValue(Boolean::class.java)
+
+                    if (value == false) {
+                        navController.navigate("resultsScreen/$lobbyId/$userID/$currGamemode")
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    // Log the error
+                }
+            }
+
+            databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                .addValueEventListener(endGameListener)
+
+            onDispose {
+                // Detach your listeners when the composable is disposed
+                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                    .removeEventListener(endGameListener)
+            }
+        }
+
+        BackHandler {
+
+        }
     }
 
 
@@ -85,7 +118,6 @@ class ScreenForGame {
     ) {
         val player = PlayerLogic(if (currGamemode=="One Hit Elimination") 50 else 100)
         player.listenForChanges(lobbyId, userID)
-        listenForChanges(navController, lobbyId, userID, currGamemode)
         val neuralNetwork = NeuralNetwork()
 
         var showDialog by remember { mutableStateOf(false) }
@@ -314,33 +346,6 @@ class ScreenForGame {
                 showDialog = false
             }
         }
-    }
-
-    private fun listenForChanges(
-        navController: NavController,
-        lobbyId: Int,
-        userID: Int,
-        currGamemode: String
-    ) {
-
-        val endGameListener = object : ValueEventListener {
-
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-
-                val value = dataSnapshot.getValue(Boolean::class.java)
-
-                if (value == false) {
-                    navController.navigate("resultsScreen/$lobbyId/$userID/$currGamemode")
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                // Log the error
-            }
-        }
-
-        databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
-            .addValueEventListener(endGameListener)
     }
 }
 

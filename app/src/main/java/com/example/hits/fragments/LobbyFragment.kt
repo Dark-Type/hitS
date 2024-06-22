@@ -37,6 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -80,6 +81,7 @@ class LobbyFragment {
     var lobbyIdToCheck = 0
     var databaseVotesRef = databaseRef
     var didLocalDeviceInitiateChange = false
+    var calledTransition = false
 
 
     //I need a listener on event of all users being ready
@@ -188,10 +190,7 @@ class LobbyFragment {
         val showDialog = remember { mutableStateOf(false) }
         val selectedMode = remember { mutableIntStateOf(-1) }
         val modes = getGamemodes()
-        println(modes)
         val votes = remember { mutableStateOf(List(modes.size) { 0 }) }
-
-        listenForChanges(lobbyId, modes, votes, navController, sharedPrefHelper)
 
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -287,7 +286,18 @@ class LobbyFragment {
                             onClick = {
                                 isReady.value = !isReady.value
                                 shouldChooseTeams.value = isReady.value
-                            },
+
+                                if (isReady.value) {
+                                    addValue( databaseRef.child("rooms").child(lobbyId.toString())
+                                        .child("playersReady"), 1)
+                                }
+
+                                else {
+                                    addValue( databaseRef.child("rooms").child(lobbyId.toString())
+                                        .child("playersReady"), -1)
+                                }
+
+                                      },
                             colors = ButtonDefaults.buttonColors(LightTurquoise),
                             border = BorderStroke(width = 1.dp, color = Turquoise),
                         ) {
@@ -299,6 +309,7 @@ class LobbyFragment {
                         }
                     }
                 }
+
                 if (showDialog.value) {
                     Dialog(onDismissRequest = { showDialog.value = false }) {
                         Box(
@@ -390,19 +401,132 @@ class LobbyFragment {
                         }
                     }
                 }
+
+                DisposableEffect(Unit) {
+
+                    val userJoinListener = object : ChildEventListener {
+                        override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                            val newUser = dataSnapshot.getValue(User::class.java)
+                            val existingUser = users.find { it.id == newUser?.id }
+
+                            if (existingUser == null && newUser != null) {
+                                users.add(newUser)
+                            }
+
+                        }
+
+                        override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+
+                            val newUser = dataSnapshot.getValue(User::class.java)
+                            val oldUser = users.find { it.id == newUser?.id }
+                            oldUser?.let {
+                                users[users.indexOf(it)] = newUser!!
+                            }
+
+                        }
+
+                        override fun onChildRemoved(dataSnapshot: DataSnapshot) {
+                            val user = dataSnapshot.getValue(User::class.java)
+                            users.remove(user)
+
+                        }
+
+                        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                        override fun onCancelled(databaseError: DatabaseError) {}
+                    }
+
+                    val voteChangesListener = object : ChildEventListener {
+
+                        override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+
+                        override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+
+                            if (didLocalDeviceInitiateChange) {
+
+                                didLocalDeviceInitiateChange = false
+                            } else {
+                                val key = dataSnapshot.key
+                                val value = dataSnapshot.getValue(Int::class.java)
+
+                                val updatedVotes = votes.value.toMutableList()
+                                updatedVotes[modes.indexOf(key)] = value ?: updatedVotes[modes.indexOf(key)]
+                                votes.value = updatedVotes
+
+                                Log.d("Firebase", "Vote for $key changed to $value")
+                            }
+                        }
+
+                        override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
+                        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                        override fun onCancelled(databaseError: DatabaseError) {}
+                    }
+
+                    val startGameListener = object : ValueEventListener {
+
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                            val value = dataSnapshot.getValue(Int::class.java)
+
+                            if (value != null) {
+                                if (value >= users.size && !calledTransition) {
+
+                                    Log.d("Firebase", "Data changed: ${dataSnapshot.value}")
+
+                                    calledTransition = true
+
+                                    runGame(lobbyId, users)
+
+                                    navController.navigate(
+                                        "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
+                                            modes[votes.value.indexOf(
+                                                max(votes.value)
+                                            )]
+                                        }"
+                                    )
+                                }
+                            }
+                        }
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                val value = dataSnapshot.getValue(Boolean::class.java)
+                if (value == true) {
+                    //  if (team1.size + team2.size == users.size) {
+                    println("Called runGame from LobbyFragment")
+                    runGame(lobbyId, users)
+                    navController.navigate(
+                        "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
+                            modes[votes.value.indexOf(
+                                max(votes.value)
+                            )]
+                        }"
+                    )
+                }
+            }
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            // Log the error
+                        }
+                    }
+
+                    databaseRef.child("rooms").child(lobbyId.toString()).child("users")
+                        .addChildEventListener(userJoinListener)
+
+                    databaseVotesRef.addChildEventListener(voteChangesListener)
+
+                    databaseRef.child("rooms").child(lobbyId.toString()).child("playersReady")
+                        .addValueEventListener(startGameListener)
+
+                    onDispose {
+                        // Detach your listeners when the composable is disposed
+                        databaseRef.child("rooms").child(lobbyId.toString()).child("users")
+                            .removeEventListener(userJoinListener)
+                        databaseVotesRef.removeEventListener(voteChangesListener)
+                        databaseRef.child("rooms").child(lobbyId.toString()).child("playersReady")
+                            .removeEventListener(startGameListener)
+                    }
+                }
+
                 BackHandler {
 
-                    val currentUser = users.find { it.id == sharedPrefHelper.getID()?.toInt() }
-
-                    if (currentUser != null) {
-                        removeUserFromRoom(lobbyId, currentUser.id)
-                    }
-
-                    if (selectedMode.intValue != -1) {
-                        addValue(databaseVotesRef.child(modes[selectedMode.intValue]), -1)
-                    }
-
-                    navController.popBackStack()
                 }
             }
         }
@@ -465,102 +589,5 @@ class LobbyFragment {
                 }
             }
         }
-    }
-
-    private fun listenForChanges(
-        lobbyId: Int,
-        modes: List<String>,
-        votes: MutableState<List<Int>>,
-        navController: NavController,
-        sharedPrefHelper: SharedPrefHelper
-    ) {
-
-        val userJoinListener = object : ChildEventListener {
-            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
-                val newUser = dataSnapshot.getValue(User::class.java)
-                val existingUser = users.find { it.id == newUser?.id }
-
-                if (existingUser == null && newUser != null) {
-                    users.add(newUser)
-                }
-
-            }
-
-            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
-
-                val newUser = dataSnapshot.getValue(User::class.java)
-                val oldUser = users.find { it.id == newUser?.id }
-                oldUser?.let {
-                    users[users.indexOf(it)] = newUser!!
-                }
-
-            }
-
-            override fun onChildRemoved(dataSnapshot: DataSnapshot) {
-                val user = dataSnapshot.getValue(User::class.java)
-                users.remove(user)
-
-            }
-
-            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
-            override fun onCancelled(databaseError: DatabaseError) {}
-        }
-
-        val voteChangesListener = object : ChildEventListener {
-
-            override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {}
-
-            override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
-
-                if (didLocalDeviceInitiateChange) {
-
-                    didLocalDeviceInitiateChange = false
-                } else {
-                    val key = dataSnapshot.key
-                    val value = dataSnapshot.getValue(Int::class.java)
-
-                    val updatedVotes = votes.value.toMutableList()
-                    updatedVotes[modes.indexOf(key)] = value ?: updatedVotes[modes.indexOf(key)]
-                    votes.value = updatedVotes
-
-                    Log.d("Firebase", "Vote for $key changed to $value")
-                }
-            }
-
-            override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
-            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
-            override fun onCancelled(databaseError: DatabaseError) {}
-        }
-
-        val startGameListener = object : ValueEventListener {
-
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val value = dataSnapshot.getValue(Boolean::class.java)
-                if (value == true) {
-                    //  if (team1.size + team2.size == users.size) {
-                    println("Called runGame from LobbyFragment")
-                    runGame(lobbyId, users)
-                    navController.navigate(
-                        "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
-                            modes[votes.value.indexOf(
-                                max(votes.value)
-                            )]
-                        }"
-                    )
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                // Log the error
-            }
-        }
-
-        databaseRef.child("rooms").child(lobbyId.toString()).child("users")
-            .addChildEventListener(userJoinListener)
-
-        databaseVotesRef.addChildEventListener(voteChangesListener)
-
-        databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
-            .addValueEventListener(startGameListener)
     }
 }
