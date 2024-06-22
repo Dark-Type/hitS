@@ -86,7 +86,7 @@ class ScreenForGame {
         val player = PlayerLogic()
         player.listenForChanges(lobbyId, userID)
         listenForChanges(navController, lobbyId, userID, currGamemode)
-        val neuralNetwork = NeuralNetwork()
+        val neuralNetwork = NeuralNetwork(context)
 
         var showDialog by remember { mutableStateOf(false) }
         var bitmapToShow by remember { mutableStateOf<Bitmap?>(null) }

@@ -122,7 +122,7 @@ class NeuralNetwork(private val context: Context) {
     }
 
     private fun readAutoencoder(): ByteArray {
-        val modelID = R.raw.autoencoder
+        val modelID = R.raw.autoencoder_quant
         return context.resources.openRawResource(modelID).readBytes()
     }
 
@@ -134,7 +134,7 @@ class NeuralNetwork(private val context: Context) {
         this.image = image
     }
 
-    fun predictIfHit(): Boolean {
-        return true
+    fun predictIfHit(): Int {
+        return 0
     }
 }
