@@ -98,7 +98,7 @@ class ScreenForAR {
                 onTrackingFailureChanged = {
                     trackingFailureReason = it
                 },
-                onSessionUpdated = { session, updatedFrame ->
+                onSessionUpdated = { _, updatedFrame ->
                     frame = updatedFrame
 
                     if (childNodes.isEmpty()) {
@@ -147,12 +147,10 @@ class ScreenForAR {
                 textAlign = TextAlign.Center,
                 fontSize = 28.sp,
                 color = Color.White,
-                text = trackingFailureReason?.let {
-                    it.getDescription(LocalContext.current)
-                } ?: if (childNodes.isEmpty()) {
+                text = trackingFailureReason?.getDescription(LocalContext.current) ?: if (childNodes.isEmpty()) {
                     "point your phone down"
                 } else {
-                    "tap anywhere to add model"
+                    "tap anywhere to place the trophy"
                 }
             )
             IconButton(
@@ -179,7 +177,7 @@ class ScreenForAR {
         val modelNode = ModelNode(
             modelInstance = modelInstances.apply {
                 if (isEmpty()) {
-                    this += modelLoader.createInstancedModel("models/balloons.glb", 10)
+                    this += modelLoader.createInstancedModel("models/trophy.glb", 10)
                 }
             }.removeLast(),
 

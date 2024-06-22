@@ -36,7 +36,15 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.databaseRef
@@ -60,7 +68,7 @@ class ScreenForGame {
     private var job: Job? = null
 
     @Composable
-    fun GameScreen(lobbyId: Int, userID: Int, currGamemode: String, navController: NavController) {
+    fun GameScreen(lobbyId: Int, userID: Int, currGameMode: String, navController: NavController) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
@@ -70,7 +78,7 @@ class ScreenForGame {
             navController,
             lobbyId,
             userID,
-            currGamemode
+            currGameMode
         )
 
         DisposableEffect(Unit) {
@@ -82,12 +90,12 @@ class ScreenForGame {
                     val value = dataSnapshot.getValue(Boolean::class.java)
 
                     if (value == false) {
-                        navController.navigate("resultsScreen/$lobbyId/$userID/$currGamemode")
+                        navController.navigate("resultsScreen/$lobbyId/$userID/$currGameMode")
                     }
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
-                    // Log the error
+
                 }
             }
 
@@ -95,7 +103,6 @@ class ScreenForGame {
                 .addValueEventListener(endGameListener)
 
             onDispose {
-                // Detach your listeners when the composable is disposed
                 databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
                     .removeEventListener(endGameListener)
             }
@@ -115,9 +122,9 @@ class ScreenForGame {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        navController: NavController, lobbyId: Int, userID: Int, currGamemode: String
+        navController: NavController, lobbyId: Int, userID: Int, currGameMode: String
     ) {
-        val player = PlayerLogic(if (currGamemode=="One Hit Elimination") 50 else 100)
+        val player = PlayerLogic(if (currGameMode == "One Hit Elimination") 50 else 100)
         player.listenForChanges(lobbyId, userID)
         val neuralNetwork = NeuralNetwork()
 
@@ -176,9 +183,10 @@ class ScreenForGame {
                 player.revive(lobbyId, playerID)
                 Log.d("revive", "revive $playerID")
             }
+            var showStatsDialog by remember { mutableStateOf(false) }
 
             IconButton(
-                onClick = { },
+                onClick = { showStatsDialog = true },
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .size(50.dp)
@@ -186,12 +194,46 @@ class ScreenForGame {
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.stats),
-                    contentDescription = "Settings",
+                    contentDescription = "Stats",
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .size(50.dp)
 
                 )
+            }
+            if (showStatsDialog) {
+                Dialog(onDismissRequest = { showStatsDialog = false }) {
+                    Surface(color = Color.White) {
+                        val leaderboardData = listOf("Player 1", "Player 2", "Player 3", "Player 4")
+
+                        LazyColumn(modifier = Modifier.padding(16.dp)) {
+                            itemsIndexed(leaderboardData) { index, player ->
+                                val cardColor = when (index) {
+                                    0 -> Color(0xFFD4AF37)
+                                    1 -> Color(0xFFC0C0C0)
+                                    2 -> Color(0xFFCD7F32)
+                                    else -> Color.Gray
+                                }
+
+                                ElevatedCard(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    elevation = CardDefaults.cardElevation(
+                                        defaultElevation = 12.dp
+                                    ),
+                                    colors = CardColors(cardColor, Color.White, Color.Gray, Color.White),
+                                ) {
+                                    Text(
+                                        text = player,
+                                        modifier = Modifier.padding(16.dp),
+                                        fontSize = 20.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             Button(
@@ -329,6 +371,7 @@ class ScreenForGame {
                 }
             }
         }
+
 
         if (showDialog) {
             Dialog(onDismissRequest = { showDialog = false }) {

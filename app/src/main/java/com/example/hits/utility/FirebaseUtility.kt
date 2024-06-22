@@ -2,10 +2,7 @@ package com.example.hits.utility
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.example.hits.GAMEMODE_BATTLE_ROYALE
-import com.example.hits.GAMEMODE_CS_GO
 import com.example.hits.GAMEMODE_FFA
-import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
 import com.example.hits.GAMEMODE_TDM
 import com.example.hits.getGamemodes
 import com.google.firebase.database.DataSnapshot
@@ -18,8 +15,20 @@ import com.google.firebase.database.ValueEventListener
 import java.util.concurrent.CompletableFuture
 import kotlin.math.max
 
-val databaseRef: DatabaseReference = FirebaseDatabase.getInstance("https://shooter-24512-default-rtdb.europe-west1.firebasedatabase.app").getReference()
-data class User(val id: Int = 0, val name: String = "", val points: Int = 0, val damage: Int = 0, val kills: Int = 0, val deaths: Int = 0, val assists: Int = 0)
+val databaseRef: DatabaseReference =
+    FirebaseDatabase.getInstance("https://shooter-24512-default-rtdb.europe-west1.firebasedatabase.app")
+        .getReference()
+
+data class User(
+    val id: Int = 0,
+    val name: String = "",
+    val points: Int = 0,
+    val damage: Int = 0,
+    val kills: Int = 0,
+    val deaths: Int = 0,
+    val assists: Int = 0
+)
+
 data class NewsObject(val text: String = "NO TEXT")
 data class ScoreData(val id: Int, val name: String, val score: Int)
 data class UserForLeaderboard(
@@ -30,7 +39,17 @@ data class UserForLeaderboard(
     val deaths: Int,
     val assists: Int
 )
-data class UserForTDM(val id: Int = 0, val name: String = "", val points: Int = 0, val damage: Int = 0, val kills: Int = 0, val deaths: Int = 0, val assists: Int = 0, val team: Int)
+
+data class UserForTDM(
+    val id: Int = 0,
+    val name: String = "",
+    val points: Int = 0,
+    val damage: Int = 0,
+    val kills: Int = 0,
+    val deaths: Int = 0,
+    val assists: Int = 0,
+    val team: Int
+)
 
 const val TEAM_UNKNOWN = -1
 const val TEAM_RED = 0
@@ -89,7 +108,8 @@ fun createRoom(roomID: Int) {
 
 fun addUserToRoom(roomID: Int, firstUser: User) {
 
-    val newUserRef = databaseRef.child("rooms").child(roomID.toString()).child("users").child(firstUser.id.toString())
+    val newUserRef = databaseRef.child("rooms").child(roomID.toString()).child("users")
+        .child(firstUser.id.toString())
 
     newUserRef.setValue(firstUser)
     newUserRef.child("team").setValue(TEAM_UNKNOWN)
@@ -101,31 +121,32 @@ fun addUserToRoom(roomID: Int, firstUser: User) {
     Log.d("Firebase", "User ${firstUser.name} with id ${firstUser.id} added to room $roomID")
 }
 
-fun getLobbyUsers(lobbyID: Int) : SnapshotStateList<User> {
+fun getLobbyUsers(lobbyID: Int): SnapshotStateList<User> {
 
     val users = SnapshotStateList<User>()
 
-    databaseRef.child("rooms").child(lobbyID.toString()).child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+    databaseRef.child("rooms").child(lobbyID.toString()).child("users")
+        .addListenerForSingleValueEvent(object : ValueEventListener {
 
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-            users.clear()
+                users.clear()
 
-            for (userSnapshot in dataSnapshot.children) {
-                users.add(userSnapshot.getValue(User::class.java)!!)
+                for (userSnapshot in dataSnapshot.children) {
+                    users.add(userSnapshot.getValue(User::class.java)!!)
+                }
             }
-        }
 
-        override fun onCancelled(databaseError: DatabaseError) {
+            override fun onCancelled(databaseError: DatabaseError) {
 
-            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
-        }
-    })
+                Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
+            }
+        })
 
     return users
 }
 
-fun getNewID() : CompletableFuture<Int> {
+fun getNewID(): CompletableFuture<Int> {
 
     val future = CompletableFuture<Int>()
     var newID = 0
@@ -164,8 +185,8 @@ fun createUser(id: Int, nickname: String) {
 }
 
 fun removeUserFromRoom(lobbyId: Int, userID: Int) {
-
-    databaseRef.child("rooms").child(lobbyId.toString()).child("users").child(userID.toString()).removeValue()
+    databaseRef.child("rooms").child(lobbyId.toString()).child("users").child(userID.toString())
+        .removeValue()
         .addOnSuccessListener {
             removeRoomIfEmpty(lobbyId)
         }
@@ -175,29 +196,30 @@ fun removeRoomIfEmpty(lobbyId: Int) {
 
     val users = mutableListOf<User>()
 
-    databaseRef.child("rooms").child(lobbyId.toString()).child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+    databaseRef.child("rooms").child(lobbyId.toString()).child("users")
+        .addListenerForSingleValueEvent(object : ValueEventListener {
 
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-            users.clear()
+                users.clear()
 
-            for (userSnapshot in dataSnapshot.children) {
-                users.add(userSnapshot.getValue(User::class.java)!!)
+                for (userSnapshot in dataSnapshot.children) {
+                    users.add(userSnapshot.getValue(User::class.java)!!)
+                }
+
+                if (users.isEmpty()) {
+                    databaseRef.child("rooms").child(lobbyId.toString()).removeValue()
+                }
             }
 
-            if (users.isEmpty()) {
-                databaseRef.child("rooms").child(lobbyId.toString()).removeValue()
+            override fun onCancelled(databaseError: DatabaseError) {
+
+                Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
             }
-        }
-
-        override fun onCancelled(databaseError: DatabaseError) {
-
-            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
-        }
-    })
+        })
 }
 
-fun getNews() : SnapshotStateList<String> {
+fun getNews(): SnapshotStateList<String> {
 
     val news = SnapshotStateList<String>()
 
@@ -244,7 +266,7 @@ fun updateNicknameInDatabase(id: Int, newName: String) {
     Log.d("Nickname change", newName)
 }
 
-fun getUsersForLeaderboard() : SnapshotStateList<UserForLeaderboard> {
+fun getUsersForLeaderboard(): SnapshotStateList<UserForLeaderboard> {
 
     val users = SnapshotStateList<User>()
     val leaderboardUsers = SnapshotStateList<UserForLeaderboard>()
@@ -262,14 +284,16 @@ fun getUsersForLeaderboard() : SnapshotStateList<UserForLeaderboard> {
             val sortedUsers = users.sortedWith(compareBy({ -it.points }, { it.id }))
 
             for (i in sortedUsers.indices) {
-                leaderboardUsers.add(UserForLeaderboard(
-                    sortedUsers[i].name,
-                    sortedUsers[i].points,
-                    i,
-                    sortedUsers[i].kills,
-                    sortedUsers[i].deaths,
-                    sortedUsers[i].assists
-                ))
+                leaderboardUsers.add(
+                    UserForLeaderboard(
+                        sortedUsers[i].name,
+                        sortedUsers[i].points,
+                        i,
+                        sortedUsers[i].kills,
+                        sortedUsers[i].deaths,
+                        sortedUsers[i].assists
+                    )
+                )
             }
         }
 
@@ -282,9 +306,10 @@ fun getUsersForLeaderboard() : SnapshotStateList<UserForLeaderboard> {
     return leaderboardUsers
 }
 
-fun getUsersForResultsScreen(roomID: Int,
-                             gamemode: String
-) : SnapshotStateList<ScoreData> {
+fun getUsersForResultsScreen(
+    roomID: Int,
+    gamemode: String
+): SnapshotStateList<ScoreData> {
 
     val users = SnapshotStateList<User>()
     val scores = SnapshotStateList<ScoreData>()
@@ -292,60 +317,60 @@ fun getUsersForResultsScreen(roomID: Int,
     databaseRef.child("rooms").child(roomID.toString()).child("gameInfo")
         .child("users").addListenerForSingleValueEvent(object : ValueEventListener {
 
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-            users.clear()
+                users.clear()
 
-            for (userSnapshot in dataSnapshot.children) {
-                users.add(userSnapshot.getValue(User::class.java)!!)
-            }
-
-            val sortedUsers = users.sortedWith(compareBy({ -it.kills }, { it.deaths }))
-
-            for (i in sortedUsers.indices) {
-
-                when (gamemode) {
-
-                    GAMEMODE_FFA -> scores.add(
-
-                        ScoreData(
-
-                            sortedUsers[i].id,
-                            sortedUsers[i].name,
-                            calculatePointsGainForFFA(
-                                sortedUsers[i].kills,
-                                sortedUsers[i].deaths,
-                                sortedUsers[i].assists
-                            )
-                        )
-                    )
-
-                    GAMEMODE_TDM -> scores.add(
-
-                        ScoreData(
-
-                            sortedUsers[i].id,
-                            sortedUsers[i].name,
-                            calculatePointsGainForTDM(
-                                sortedUsers[i].kills,
-                                sortedUsers[i].deaths,
-                                sortedUsers[i].assists,
-                                true //to changge
-                            )
-                        )
-                    )
+                for (userSnapshot in dataSnapshot.children) {
+                    users.add(userSnapshot.getValue(User::class.java)!!)
                 }
+
+                val sortedUsers = users.sortedWith(compareBy({ -it.kills }, { it.deaths }))
+
+                for (i in sortedUsers.indices) {
+
+                    when (gamemode) {
+
+                        GAMEMODE_FFA -> scores.add(
+
+                            ScoreData(
+
+                                sortedUsers[i].id,
+                                sortedUsers[i].name,
+                                calculatePointsGainForFFA(
+                                    sortedUsers[i].kills,
+                                    sortedUsers[i].deaths,
+                                    sortedUsers[i].assists
+                                )
+                            )
+                        )
+
+                        GAMEMODE_TDM -> scores.add(
+
+                            ScoreData(
+
+                                sortedUsers[i].id,
+                                sortedUsers[i].name,
+                                calculatePointsGainForTDM(
+                                    sortedUsers[i].kills,
+                                    sortedUsers[i].deaths,
+                                    sortedUsers[i].assists,
+                                    true //to changge
+                                )
+                            )
+                        )
+                    }
+                }
+
+                println(scores.size)
+                println(gamemode)
             }
 
-            println(scores.size)
-            println(gamemode)
-        }
+            override fun onCancelled(databaseError: DatabaseError) {
 
-        override fun onCancelled(databaseError: DatabaseError) {
-
-            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
-        }
-    })
+                Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
+            }
+        })
 
     return scores
 }
@@ -367,7 +392,11 @@ fun addValue(valueRef: DatabaseReference, value: Int) {
             return Transaction.success(mutableData)
         }
 
-        override fun onComplete(databaseError: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
+        override fun onComplete(
+            databaseError: DatabaseError?,
+            committed: Boolean,
+            dataSnapshot: DataSnapshot?
+        ) {
             // Transaction completed
             Log.d("Firebase", "Transaction:onComplete:$databaseError")
         }
@@ -383,68 +412,99 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
     for (user in users) {
 
         if (teamRed.contains(user.name))
-            usersWithTeam.add(UserForTDM(user.id, user.name, user.points, user.damage, user.kills, user.deaths, user.assists, TEAM_RED))
+            usersWithTeam.add(
+                UserForTDM(
+                    user.id,
+                    user.name,
+                    user.points,
+                    user.damage,
+                    user.kills,
+                    user.deaths,
+                    user.assists,
+                    TEAM_RED
+                )
+            )
 
         if (teamBlue.contains(user.name))
-            usersWithTeam.add(UserForTDM(user.id, user.name, user.points, user.damage, user.kills, user.deaths, user.assists, TEAM_BLUE))
+            usersWithTeam.add(
+                UserForTDM(
+                    user.id,
+                    user.name,
+                    user.points,
+                    user.damage,
+                    user.kills,
+                    user.deaths,
+                    user.assists,
+                    TEAM_BLUE
+                )
+            )
     }
 
     var maxModeVotes = 0
     var currMode = GAMEMODE_FFA
 
-    databaseRef.child("rooms").child(roomID.toString()).child("gamemodeVotes").addListenerForSingleValueEvent(object : ValueEventListener {
+    databaseRef.child("rooms").child(roomID.toString()).child("gamemodeVotes")
+        .addListenerForSingleValueEvent(object : ValueEventListener {
 
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-            for (valueSnapshot in dataSnapshot.children) {
+                for (valueSnapshot in dataSnapshot.children) {
 
-                val value = valueSnapshot.getValue(Int::class.java)!!
+                    val value = valueSnapshot.getValue(Int::class.java)!!
 
-                if (value > maxModeVotes) {
-                    currMode = valueSnapshot.key!!
-                    maxModeVotes = value
+                    if (value > maxModeVotes) {
+                        currMode = valueSnapshot.key!!
+                        maxModeVotes = value
+                    }
                 }
+
+                setCurrGameUserStats()
             }
 
-            setCurrGameUserStats()
-        }
+            override fun onCancelled(databaseError: DatabaseError) {
 
-        override fun onCancelled(databaseError: DatabaseError) {
-
-            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
-        }
-
-        fun setCurrGameUserStats() {
-
-            currRoomRef.child("gameInfo").child("currGamemode").setValue(currMode)
-
-            for (userWithTeam in usersWithTeam) {
-
-                currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString()).setValue(
-                    UserForTDM(
-                        userWithTeam.id,
-                        userWithTeam.name,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        userWithTeam.team
-                    ))
-
-                currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString()).child("isAlive").setValue(true)
-                currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString()).child("health").setValue(100)
+                Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
             }
 
-            currRoomRef.child("isPlaying").setValue(true)
-            currRoomRef.child("playersReady").setValue(0)
-        }
-    })
+            fun setCurrGameUserStats() {
+
+                currRoomRef.child("gameInfo").child("currGamemode").setValue(currMode)
+
+                for (userWithTeam in usersWithTeam) {
+
+                    currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
+                        .setValue(
+                            UserForTDM(
+                                userWithTeam.id,
+                                userWithTeam.name,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                userWithTeam.team
+                            )
+                        )
+
+                    currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
+                        .child("isAlive").setValue(true)
+                    currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
+                        .child("health").setValue(100)
+                }
+
+                currRoomRef.child("isPlaying").setValue(true)
+                currRoomRef.child("playersReady").setValue(0)
+            }
+        })
 }
 
-fun listenForLeaderboardUpdates(roomID: Int, onLeaderboardUpdate: (List<UserForLeaderboard>) -> Unit) {
+fun listenForLeaderboardUpdates(
+    roomID: Int,
+    onLeaderboardUpdate: (List<UserForLeaderboard>) -> Unit
+) {
 
-    val usersRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
+    val usersRef =
+        databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
 
     usersRef.addValueEventListener(object : ValueEventListener {
         override fun onDataChange(dataSnapshot: DataSnapshot) {
@@ -454,7 +514,8 @@ fun listenForLeaderboardUpdates(roomID: Int, onLeaderboardUpdate: (List<UserForL
                 users.add(userSnapshot.getValue(User::class.java)!!)
             }
 
-            val sortedUsers = users.sortedWith(compareByDescending<User> { it.kills }.thenBy { it.deaths })
+            val sortedUsers =
+                users.sortedWith(compareByDescending<User> { it.kills }.thenBy { it.deaths })
 
             val leaderboardUsers = sortedUsers.mapIndexed { index, user ->
                 UserForLeaderboard(
@@ -471,14 +532,19 @@ fun listenForLeaderboardUpdates(roomID: Int, onLeaderboardUpdate: (List<UserForL
         }
 
         override fun onCancelled(databaseError: DatabaseError) {
-            Log.w("Firebase", "listenForLeaderboardUpdates:onCancelled", databaseError.toException())
+            Log.w(
+                "Firebase",
+                "listenForLeaderboardUpdates:onCancelled",
+                databaseError.toException()
+            )
         }
     })
 }
 
 fun setUserTeam(roomID: Int, userID: Int, team: Int) {
 
-    databaseRef.child("rooms").child(roomID.toString()).child("users").child(userID.toString()).child("team").setValue(team)
+    databaseRef.child("rooms").child(roomID.toString()).child("users").child(userID.toString())
+        .child("team").setValue(team)
 }
 
 fun endGame(roomID: Int) {
@@ -488,21 +554,23 @@ fun endGame(roomID: Int) {
     currRoomRef.child("isPlaying").setValue(false)
     currRoomRef.child("playersReady").setValue(0)
 
-    currRoomRef.child("gameInfo").child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+    currRoomRef.child("gameInfo").child("users")
+        .addListenerForSingleValueEvent(object : ValueEventListener {
 
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-            for (userSnapshot in dataSnapshot.children) {
+                for (userSnapshot in dataSnapshot.children) {
 
-                val user = userSnapshot.getValue(User::class.java)!!
+                    val user = userSnapshot.getValue(User::class.java)!!
 
-                currRoomRef.child("users").child(user.id.toString()).child("team").setValue(TEAM_UNKNOWN)
+                    currRoomRef.child("users").child(user.id.toString()).child("team")
+                        .setValue(TEAM_UNKNOWN)
+                }
             }
-        }
 
-        override fun onCancelled(databaseError: DatabaseError) {
+            override fun onCancelled(databaseError: DatabaseError) {
 
-            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
-        }
-    })
+                Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
+            }
+        })
 }
