@@ -34,26 +34,7 @@ class NeuralNetwork(private val context: Context) {
         }
     }
 
-    @Throws(IOException::class)
-    fun assetFilePath(context: Context, assetName: String): String {
-        val file = File(context.filesDir, assetName)
-        if (file.exists() && file.length() > 0) {
-            return file.absolutePath
-        }
-        context.assets.open(assetName).use { `is` ->
-            FileOutputStream(file).use { os ->
-                val buffer = ByteArray(4 * 1024)
-                var read: Int
-                while (`is`.read(buffer).also { read = it } != -1) {
-                    os.write(buffer, 0, read)
-                }
-                os.flush()
-            }
-            return file.absolutePath
-        }
-    }
-
-    // Resize to 256 x 256 + bitmap to bytebuffer
+    // Resize to 256 x 256 + bitmap to bytearray
     private fun preprocessImage(bitmap: Bitmap): ByteArray {
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 256, 256, true)
         val byteBuffer = ByteBuffer.allocate(3 * resizedBitmap.width * resizedBitmap.height)
@@ -70,7 +51,46 @@ class NeuralNetwork(private val context: Context) {
         return byteBuffer.array()
     }
 
-    fun encode(inputBitmap: Bitmap): Array<FloatArray> {
+    fun getSimilarity(vector1: FloatArray, vector2: FloatArray): Float {
+        /*
+        Выдает число в диапазоне [0;1], выражающее
+        сходство между эмбеддингами двух картинок
+        */
+        var dotProduct = 0f
+        var magnitude1 = 0f
+        var magnitude2 = 0f
+
+        for (i in vector1.indices) {
+            dotProduct += vector1[i] * vector2[i]
+            magnitude1 += vector1[i] * vector1[i]
+            magnitude2 += vector2[i] * vector2[i]
+        }
+
+        magnitude1 = kotlin.math.sqrt(magnitude1)
+        magnitude2 = kotlin.math.sqrt(magnitude2)
+
+        return dotProduct / (magnitude1 * magnitude2)
+    }
+
+    private fun flatten(array: Array<FloatArray>): FloatArray {
+        val size = array.sumBy { it.size }
+        val result = FloatArray(size)
+        var index = 0
+
+        array.forEach { floatArr ->
+            floatArr.forEach { value ->
+                result[index] = value
+                index++
+            }
+        }
+
+        return result
+    }
+
+    fun encode(inputBitmap: Bitmap): FloatArray {
+        /*
+        Переводит картинку в эмбеддинг
+        */
         val environment = OrtEnvironment.getEnvironment()
         val session = environment.createSession(
             readAutoencoder(),
@@ -96,7 +116,7 @@ class NeuralNetwork(private val context: Context) {
 
         val latent_code = ((output.get(1)?.value) as Array<FloatArray>)
 
-        return latent_code
+        return flatten(latent_code)
     }
 
     private fun performObjectDetection(
@@ -129,10 +149,6 @@ class NeuralNetwork(private val context: Context) {
 
     fun readInputImage(): InputStream {
         return context.assets.open("test_image.jpg")
-    }
-
-    fun putImage(image: Bitmap) {
-        this.image = image
     }
 
     fun predictIfHit(): Int {
