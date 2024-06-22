@@ -40,6 +40,7 @@ import androidx.compose.material3.IconButton
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.databaseRef
+import com.example.hits.utility.endGame
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -171,7 +172,7 @@ class ScreenForGame {
                 )
             }
             if (elapsedTime == 10000L) {
-                val playerID = userID //хз че ты тут хотел сделать
+                val playerID = userID //эт нейронкой мб?
                 player.revive(lobbyId, playerID)
                 Log.d("revive", "revive $playerID")
             }
@@ -195,9 +196,7 @@ class ScreenForGame {
 
             Button(
                 onClick = {
-                    databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
-                        .setValue(false)
-                    //navController.navigate("resultsScreen/$lobbyId")
+                    endGame(lobbyId)
                 },
                 modifier = Modifier
                     .align(Alignment.TopEnd)

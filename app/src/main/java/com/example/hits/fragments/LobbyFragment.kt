@@ -62,12 +62,17 @@ import com.example.hits.getGamemodes
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
 import com.example.hits.ui.theme.Turquoise
+import com.example.hits.utility.TEAM_BLUE
+import com.example.hits.utility.TEAM_RED
+import com.example.hits.utility.TEAM_UNKNOWN
 import com.example.hits.utility.User
 import com.example.hits.utility.addValue
+import com.example.hits.utility.createUser
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.getLobbyUsers
 import com.example.hits.utility.removeUserFromRoom
 import com.example.hits.utility.runGame
+import com.example.hits.utility.setUserTeam
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -82,18 +87,14 @@ class LobbyFragment {
     var databaseVotesRef = databaseRef
     var didLocalDeviceInitiateChange = false
     var calledTransition = false
+    var readyUsers = 0
 
 
     //I need a listener on event of all users being ready
     @Composable
-    fun chooseTeams(chosenGameMode: String, playersInLobby: Int) {
+    fun chooseTeams(chosenGameMode: String, playersInLobby: Int, lobbyId: Int, userID: Int, shouldChooseTeams: MutableState<Boolean>,
+                    teamRed: SnapshotStateList<String>, teamBlue: SnapshotStateList<String>) {
         var showDialog by remember { mutableStateOf(false) }
-
-        val team1 = remember { mutableStateListOf<String>() }
-        val team2 = remember { mutableStateListOf<String>() }
-
-        // name goes here
-        val nickname = "UserNickname"
 
         showDialog = true
 
@@ -108,17 +109,17 @@ class LobbyFragment {
                     // Team 1
                     Column {
                         Button(onClick = {
-                            if (team2.contains(nickname)) {
-                                team2.remove(nickname)
-                            }
-                            if (!team1.contains(nickname)) {
-                                team1.add(nickname)
-                            }
+
+                            addValue( databaseRef.child("rooms").child(lobbyId.toString())
+                                .child("playersReady"), 1)
+                            setUserTeam(lobbyId, userID, TEAM_RED)
+                            shouldChooseTeams.value = false
+
                         }) {
                             Text("Join Red")
                         }
                         LazyColumn(Modifier.weight(1f)) {
-                            items(team1) { user ->
+                            items(teamRed) { user ->
                                 Card(
                                     colors = CardColors(
                                         Color.Red,
@@ -144,17 +145,17 @@ class LobbyFragment {
                             .fillMaxWidth()
                     ) {
                         Button(onClick = {
-                            if (team1.contains(nickname)) {
-                                team1.remove(nickname)
-                            }
-                            if (!team2.contains(nickname)) {
-                                team2.add(nickname)
-                            }
+
+                            addValue( databaseRef.child("rooms").child(lobbyId.toString())
+                                .child("playersReady"), 1)
+                            setUserTeam(lobbyId, userID, TEAM_BLUE)
+                            shouldChooseTeams.value = false
+
                         }) {
                             Text("Join Blue")
                         }
                         LazyColumn(Modifier.weight(1f)) {
-                            items(team2) { user ->
+                            items(teamBlue) { user ->
                                 Card(
                                     colors = CardColors(
                                         Color.Blue,
@@ -186,6 +187,8 @@ class LobbyFragment {
         lobbyIdToCheck = lobbyId
 
         users = remember { getLobbyUsers(lobbyId) }
+        val teamRed = remember { mutableStateListOf<String>() }
+        val teamBlue = remember { mutableStateListOf<String>() }
 
         val showDialog = remember { mutableStateOf(false) }
         val selectedMode = remember { mutableIntStateOf(-1) }
@@ -288,13 +291,13 @@ class LobbyFragment {
                                 shouldChooseTeams.value = isReady.value
 
                                 if (isReady.value) {
-                                    addValue( databaseRef.child("rooms").child(lobbyId.toString())
-                                        .child("playersReady"), 1)
+
                                 }
 
                                 else {
                                     addValue( databaseRef.child("rooms").child(lobbyId.toString())
                                         .child("playersReady"), -1)
+                                    setUserTeam(lobbyId, sharedPrefHelper.getID()!!.toInt(), TEAM_UNKNOWN)
                                 }
 
                                       },
@@ -305,7 +308,7 @@ class LobbyFragment {
                         }
 
                         if (shouldChooseTeams.value) {
-                            chooseTeams(modes[votes.value.indexOf(max(votes.value))], users.size)
+                            chooseTeams(modes[votes.value.indexOf(max(votes.value))], users.size, lobbyId, sharedPrefHelper.getID()!!.toInt(), shouldChooseTeams, teamRed, teamBlue)
                         }
                     }
                 }
@@ -412,7 +415,6 @@ class LobbyFragment {
                             if (existingUser == null && newUser != null) {
                                 users.add(newUser)
                             }
-
                         }
 
                         override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
@@ -465,45 +467,81 @@ class LobbyFragment {
 
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-                            val value = dataSnapshot.getValue(Int::class.java)
+                            readyUsers = dataSnapshot.getValue(Int::class.java)!!
 
-                            if (value != null) {
-                                if (value >= users.size && !calledTransition) {
-
-                                    Log.d("Firebase", "Data changed: ${dataSnapshot.value}")
-
-                                    calledTransition = true
-
-                                    runGame(lobbyId, users)
-
-                                    navController.navigate(
-                                        "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
-                                            modes[votes.value.indexOf(
-                                                max(votes.value)
-                                            )]
-                                        }"
-                                    )
-                                }
-                            }
+                            println(teamRed.size + teamBlue.size)
+                            println(teamRed.size)
+                            println(teamBlue.size)
                         }
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                val value = dataSnapshot.getValue(Boolean::class.java)
-                if (value == true) {
-                    //  if (team1.size + team2.size == users.size) {
-                    println("Called runGame from LobbyFragment")
-                    runGame(lobbyId, users)
-                    navController.navigate(
-                        "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
-                            modes[votes.value.indexOf(
-                                max(votes.value)
-                            )]
-                        }"
-                    )
-                }
-            }
 
                         override fun onCancelled(databaseError: DatabaseError) {
                             // Log the error
+                        }
+                    }
+
+                    val teamChangeListener = object : ChildEventListener {
+
+                        override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+
+                        override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+
+                            val user = dataSnapshot.getValue(User::class.java)
+                            val team = dataSnapshot.child("team").getValue(Int::class.java)
+
+                            if (user != null && team != null) {
+
+                                if (team == TEAM_RED) {
+
+                                    if (!teamRed.contains(user.name)) {
+                                        user.name.let { teamRed.add(it) }
+                                    }
+
+                                    teamBlue.remove(user.name)
+                                }
+
+                                else if (team == TEAM_BLUE) {
+
+                                    if (!teamBlue.contains(user.name)) {
+                                        user.name.let { teamBlue.add(it) }
+                                    }
+
+                                    teamRed.remove(user.name)
+                                }
+
+                                else {
+                                    teamRed.remove(user.name)
+                                    teamBlue.remove(user.name)
+                                }
+
+                                println("Team change detected for ${user.name} to $team")
+
+                                checkIfTransition()
+                            }
+                        }
+
+                        override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
+
+                        override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+
+                        override fun onCancelled(databaseError: DatabaseError) {}
+
+                        fun checkIfTransition() {
+
+                            if (readyUsers >= users.size && !calledTransition && (teamRed.size + teamBlue.size == users.size)) {
+
+                                println("Called runGame from LobbyFragment")
+
+                                calledTransition = true
+
+                                runGame(lobbyId, users, teamRed, teamBlue)
+
+                                navController.navigate(
+                                    "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${modes[votes.value.indexOf(max(votes.value))]}") {
+                                    modes[votes.value.indexOf(
+                                        max(votes.value)
+                                    )]
+                                }
+                            }
                         }
                     }
 
@@ -515,13 +553,21 @@ class LobbyFragment {
                     databaseRef.child("rooms").child(lobbyId.toString()).child("playersReady")
                         .addValueEventListener(startGameListener)
 
+                    databaseRef.child("rooms").child(lobbyId.toString()).child("users")
+                        .addChildEventListener(teamChangeListener)
+
                     onDispose {
                         // Detach your listeners when the composable is disposed
                         databaseRef.child("rooms").child(lobbyId.toString()).child("users")
                             .removeEventListener(userJoinListener)
+
                         databaseVotesRef.removeEventListener(voteChangesListener)
+
                         databaseRef.child("rooms").child(lobbyId.toString()).child("playersReady")
                             .removeEventListener(startGameListener)
+
+                        databaseRef.child("rooms").child(lobbyId.toString()).child("users")
+                            .removeEventListener(teamChangeListener)
                     }
                 }
 
@@ -584,7 +630,6 @@ class LobbyFragment {
 
                             )
                         }
-
                     }
                 }
             }

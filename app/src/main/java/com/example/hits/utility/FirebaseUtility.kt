@@ -30,6 +30,11 @@ data class UserForLeaderboard(
     val deaths: Int,
     val assists: Int
 )
+data class UserForTDM(val id: Int = 0, val name: String = "", val points: Int = 0, val damage: Int = 0, val kills: Int = 0, val deaths: Int = 0, val assists: Int = 0, val team: Int)
+
+const val TEAM_UNKNOWN = -1
+const val TEAM_RED = 0
+const val TEAM_BLUE = 1
 
 fun getRandomID(): Int {
 
@@ -86,14 +91,10 @@ fun addUserToRoom(roomID: Int, firstUser: User) {
 
     val newUserRef = databaseRef.child("rooms").child(roomID.toString()).child("users").child(firstUser.id.toString())
 
-    val startTime = System.currentTimeMillis()
-    newUserRef.setValue(firstUser).addOnSuccessListener {
-        val endTime = System.currentTimeMillis()
-        Log.d("TIME", (endTime - startTime).toString())
-    }
+    newUserRef.setValue(firstUser)
+    newUserRef.child("team").setValue(TEAM_UNKNOWN)
 
     newUserRef.onDisconnect().removeValue().addOnSuccessListener {
-        Log.d("CALLED", "a")
         removeRoomIfEmpty(roomID)
     }
 
@@ -373,9 +374,20 @@ fun addValue(valueRef: DatabaseReference, value: Int) {
     })
 }
 
-fun runGame(roomID: Int, users: List<User>) {
+fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: List<String>) {
 
     val currRoomRef = databaseRef.child("rooms").child(roomID.toString())
+
+    val usersWithTeam = mutableListOf<UserForTDM>()
+
+    for (user in users) {
+
+        if (teamRed.contains(user.name))
+            usersWithTeam.add(UserForTDM(user.id, user.name, user.points, user.damage, user.kills, user.deaths, user.assists, TEAM_RED))
+
+        if (teamBlue.contains(user.name))
+            usersWithTeam.add(UserForTDM(user.id, user.name, user.points, user.damage, user.kills, user.deaths, user.assists, TEAM_BLUE))
+    }
 
     var maxModeVotes = 0
     var currMode = GAMEMODE_FFA
@@ -406,22 +418,22 @@ fun runGame(roomID: Int, users: List<User>) {
 
             currRoomRef.child("gameInfo").child("currGamemode").setValue(currMode)
 
-            for (user in users) {
+            for (userWithTeam in usersWithTeam) {
 
-                currRoomRef.child("gameInfo").child("users").child(user.id.toString()).setValue(
-                    User(
-                        user.id,
-                        user.name,
+                currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString()).setValue(
+                    UserForTDM(
+                        userWithTeam.id,
+                        userWithTeam.name,
                         0,
                         0,
                         0,
                         0,
-                        0
-                    )
-                )
+                        0,
+                        userWithTeam.team
+                    ))
 
-                currRoomRef.child("gameInfo").child("users").child(user.id.toString()).child("isAlive").setValue(true)
-                currRoomRef.child("gameInfo").child("users").child(user.id.toString()).child("health").setValue(100)
+                currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString()).child("isAlive").setValue(true)
+                currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString()).child("health").setValue(100)
             }
 
             currRoomRef.child("isPlaying").setValue(true)
@@ -460,6 +472,37 @@ fun listenForLeaderboardUpdates(roomID: Int, onLeaderboardUpdate: (List<UserForL
 
         override fun onCancelled(databaseError: DatabaseError) {
             Log.w("Firebase", "listenForLeaderboardUpdates:onCancelled", databaseError.toException())
+        }
+    })
+}
+
+fun setUserTeam(roomID: Int, userID: Int, team: Int) {
+
+    databaseRef.child("rooms").child(roomID.toString()).child("users").child(userID.toString()).child("team").setValue(team)
+}
+
+fun endGame(roomID: Int) {
+
+    val currRoomRef = databaseRef.child("rooms").child(roomID.toString())
+
+    currRoomRef.child("isPlaying").setValue(false)
+    currRoomRef.child("playersReady").setValue(0)
+
+    currRoomRef.child("gameInfo").child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+            for (userSnapshot in dataSnapshot.children) {
+
+                val user = userSnapshot.getValue(User::class.java)!!
+
+                currRoomRef.child("users").child(user.id.toString()).child("team").setValue(TEAM_UNKNOWN)
+            }
+        }
+
+        override fun onCancelled(databaseError: DatabaseError) {
+
+            Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
         }
     })
 }
