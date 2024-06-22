@@ -56,21 +56,21 @@ class NeuralNetwork(private val context: Context) {
     // Resize to 256 x 256 + bitmap to bytebuffer
     private fun preprocessImage(bitmap: Bitmap): ByteArray {
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 256, 256, true)
-        val byteBuffer = ByteBuffer.allocate(4 * resizedBitmap.width * resizedBitmap.height)
+        val byteBuffer = ByteBuffer.allocate(3 * resizedBitmap.width * resizedBitmap.height)
 
         for (y in 0 until resizedBitmap.height) {
             for (x in 0 until resizedBitmap.width) {
                 val pixel = resizedBitmap.getPixel(x, y)
-                byteBuffer.put((pixel shr 16 and 0xFF).toByte()) // Red component
-                byteBuffer.put((pixel shr 8 and 0xFF).toByte()) // Green component
-                byteBuffer.put((pixel and 0xFF).toByte()) // Blue component
+                byteBuffer.put((pixel shr 16 and 0xFF).toByte()) // Red
+                byteBuffer.put((pixel shr 8 and 0xFF).toByte()) // Green
+                byteBuffer.put((pixel and 0xFF).toByte()) // Blue
             }
         }
 
         return byteBuffer.array()
     }
 
-    fun encode(inputBitmap: Bitmap): FloatArray {
+    fun encode(inputBitmap: Bitmap): Array<FloatArray> {
         val environment = OrtEnvironment.getEnvironment()
         val session = environment.createSession(
             readAutoencoder(),
@@ -90,12 +90,13 @@ class NeuralNetwork(private val context: Context) {
         )
 
         val output = session.run(
-            Collections.singletonMap("input", inputTensor),
-            setOf("output")
+            Collections.singletonMap("input_image", inputTensor),
+            setOf("reconstructed", "latent_code")
         ) as Result
 
-        // Постобработка изображения
-        return (output.get(1)?.value) as FloatArray
+        val latent_code = ((output.get(1)?.value) as Array<FloatArray>)
+
+        return latent_code
     }
 
     private fun performObjectDetection(
