@@ -8,14 +8,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class PlayerLogic {
-    private var health = 100
+class PlayerLogic(private val healthThreshold:Int) {
     private var isAlive = true
     private var isPlanted = false
+    private var health = healthThreshold
     private var killsCount = 0
     private var deathsCount = 0
     private var assistsCount = 0
@@ -66,7 +65,7 @@ class PlayerLogic {
     }
 
     fun isDamaged(): Boolean {
-        return health < 100
+        return health < healthThreshold
     }
 
     fun revive(roomID: Int, IDtoRevive: Int) {
@@ -87,7 +86,7 @@ class PlayerLogic {
     }
 
     fun heal() {
-        health = if (health + 30 >= 100) 100 else health + 30
+        health = if (health + 30 >= healthThreshold) healthThreshold else health + 30
     }
 
     fun listenForChanges(roomID: Int, userID: Int) {

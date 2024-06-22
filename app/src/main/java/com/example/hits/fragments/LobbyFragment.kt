@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,6 +28,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -36,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Text
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -76,6 +80,98 @@ class LobbyFragment {
     var lobbyIdToCheck = 0
     var databaseVotesRef = databaseRef
     var didLocalDeviceInitiateChange = false
+
+
+    //I need a listener on event of all users being ready
+    @Composable
+    fun chooseTeams(chosenGameMode: String, playersInLobby: Int) {
+        var showDialog by remember { mutableStateOf(false) }
+
+        val team1 = remember { mutableStateListOf<String>() }
+        val team2 = remember { mutableStateListOf<String>() }
+
+        // name goes here
+        val nickname = "UserNickname"
+
+        showDialog = true
+
+        if (showDialog) {
+            Dialog(onDismissRequest = { showDialog = false }) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Team 1
+                    Column {
+                        Button(onClick = {
+                            if (team2.contains(nickname)) {
+                                team2.remove(nickname)
+                            }
+                            if (!team1.contains(nickname)) {
+                                team1.add(nickname)
+                            }
+                        }) {
+                            Text("Join Red")
+                        }
+                        LazyColumn(Modifier.weight(1f)) {
+                            items(team1) { user ->
+                                Card(
+                                    colors = CardColors(
+                                        Color.Red,
+                                        Color.White,
+                                        StrokeBlue,
+                                        Color.Gray
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.5f)
+                                        .align(Alignment.CenterHorizontally),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+
+                                    Text(user, modifier = Modifier.padding(8.dp))
+                                }
+                            }
+                        }
+                    }
+
+                    // Team 2
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Button(onClick = {
+                            if (team1.contains(nickname)) {
+                                team1.remove(nickname)
+                            }
+                            if (!team2.contains(nickname)) {
+                                team2.add(nickname)
+                            }
+                        }) {
+                            Text("Join Blue")
+                        }
+                        LazyColumn(Modifier.weight(1f)) {
+                            items(team2) { user ->
+                                Card(
+                                    colors = CardColors(
+                                        Color.Blue,
+                                        Color.White,
+                                        StrokeBlue,
+                                        Color.Gray
+                                    ), modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(0.2f), shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(user, modifier = Modifier.padding(8.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     @Composable
     fun LobbyScreen(lobbyId: Int, navController: NavController) {
@@ -127,7 +223,9 @@ class LobbyFragment {
                         removeUserFromRoom(lobbyId, sharedPrefHelper.getID()!!.toInt())
                         navController.navigate("joinLobbyScreen")
                     },
-                    modifier = Modifier.padding(16.dp).align(Alignment.TopStart)
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.TopStart)
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.go_back),
@@ -183,13 +281,21 @@ class LobbyFragment {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                            val isReady = remember { mutableStateOf(false) }
+                        val isReady = remember { mutableStateOf(false) }
+                        val shouldChooseTeams = remember { mutableStateOf(false) }
                         Button(
-                            onClick = { isReady.value = !isReady.value },
+                            onClick = {
+                                isReady.value = !isReady.value
+                                shouldChooseTeams.value = isReady.value
+                            },
                             colors = ButtonDefaults.buttonColors(LightTurquoise),
                             border = BorderStroke(width = 1.dp, color = Turquoise),
                         ) {
                             Text(text = if (!isReady.value) "Currently Not Ready" else "Currently Ready")
+                        }
+
+                        if (shouldChooseTeams.value) {
+                            chooseTeams(modes[votes.value.indexOf(max(votes.value))], users.size)
                         }
                     }
                 }
@@ -431,6 +537,7 @@ class LobbyFragment {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 val value = dataSnapshot.getValue(Boolean::class.java)
                 if (value == true) {
+                    //  if (team1.size + team2.size == users.size) {
                     println("Called runGame from LobbyFragment")
                     runGame(lobbyId, users)
                     navController.navigate(

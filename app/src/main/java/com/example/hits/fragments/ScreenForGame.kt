@@ -83,7 +83,7 @@ class ScreenForGame {
         cameraX: CameraX,
         navController: NavController, lobbyId: Int, userID: Int, currGamemode: String
     ) {
-        val player = PlayerLogic()
+        val player = PlayerLogic(if (currGamemode=="One Hit Elimination") 50 else 100)
         player.listenForChanges(lobbyId, userID)
         listenForChanges(navController, lobbyId, userID, currGamemode)
         val neuralNetwork = NeuralNetwork()
