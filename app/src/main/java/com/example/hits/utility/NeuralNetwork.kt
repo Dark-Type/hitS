@@ -20,12 +20,52 @@ class NeuralNetwork(private val context: Context) {
     private var detectorOrtSession: OrtSession
     private var autoencoderOrtSession: OrtSession
 
-    fun detect() {
+    fun detect(bitmap: Bitmap) {
         try {
-            performObjectDetection(autoencoderOrtSession, readInputImage())
+            val input = preprocessImage(bitmap)
+            var result = detectionProcess(input, ortEnvironment, autoencoderOrtSession)
+
+            // Вывод боксов в консоль для проверки
+            val boxit = result.iterator()
+            while(boxit.hasNext()) {
+                var box_info = boxit.next()
+                Log.d("ObjectDetection", (box_info[0] - box_info[2] / 2).toString())
+                Log.d("ObjectDetection", (box_info[1] - box_info[3] / 2).toString())
+            }
             Log.d("ObjectDetection", "Successful ObjectDetection")
         } catch (e: Exception) {
             Log.d("ObjectDetection", "Error in ObjectDetection ${Exception(e)}")
+        }
+    }
+
+    fun detectionProcess(
+        input: ByteArray,
+        ortEnv: OrtEnvironment,
+        ortSession: OrtSession
+    ): Array<FloatArray> {
+        // Normalize the byte values to float values
+        val floatImageBytes = input.map { it.toFloat() / 255.0f }.toFloatArray()
+
+        // Step 2: get the shape of the byte array and make ort tensor
+        val shape = longArrayOf(1, 3, 500, 500)
+
+        val inputTensor = OnnxTensor.createTensor(
+            ortEnv,
+            FloatBuffer.wrap(floatImageBytes),
+            shape
+        )
+
+        inputTensor.use {
+            // Step 3: call ort inferenceSession run
+            val output = ortSession.run(Collections.singletonMap("input", inputTensor),
+                setOf("output")
+            )
+
+            // Step 4: output analysis
+            output.use {
+                // Step 5: set output result
+                return (output.get(0)?.value) as Array<FloatArray>
+            }
         }
     }
 
@@ -106,24 +146,6 @@ class NeuralNetwork(private val context: Context) {
         val latent_code = ((output.get(1)?.value) as Array<FloatArray>)
 
         return flatten(latent_code)
-    }
-
-    private fun performObjectDetection(
-        ortSession: OrtSession,
-        inputStream: InputStream
-    ) {
-        var objDetector = ObjectDetector()
-        var imageStream = inputStream
-        imageStream.reset()
-        var result = objDetector.detect(imageStream, ortEnvironment, ortSession)
-
-        // Вывод боксов в консоль для проверки
-        val boxit = result.iterator()
-        while(boxit.hasNext()) {
-            var box_info = boxit.next()
-            Log.d("ObjectDetection", (box_info[0] - box_info[2] / 2).toString())
-            Log.d("ObjectDetection", (box_info[1] - box_info[3] / 2).toString())
-        }
     }
 
     private fun readSsd(): ByteArray {

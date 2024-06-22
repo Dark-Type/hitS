@@ -67,7 +67,9 @@ class MainActivity : ComponentActivity() {
         sharedPrefHelper = SharedPrefHelper(this)
 
         val neuralNetwork = NeuralNetwork(applicationContext)
-        neuralNetwork.detect()
+        neuralNetwork.detect(
+            BitmapFactory.decodeStream(neuralNetwork.readInputImage())
+        )
         neuralNetwork.encode(
             BitmapFactory.decodeStream(neuralNetwork.readInputImage())
         )
