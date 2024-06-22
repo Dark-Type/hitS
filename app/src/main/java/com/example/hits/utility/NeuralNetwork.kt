@@ -86,11 +86,6 @@ class NeuralNetwork(private val context: Context) {
         /*
         Переводит картинку в эмбеддинг
         */
-        val session = ortEnvironment.createSession(
-            readAutoencoder(),
-            OrtSession.SessionOptions()
-        )
-
         // Предобработка изображения
         val input = preprocessImage(inputBitmap)
 
@@ -103,7 +98,7 @@ class NeuralNetwork(private val context: Context) {
             shape
         )
 
-        val output = session.run(
+        val output = autoencoderOrtSession.run(
             Collections.singletonMap("input_image", inputTensor),
             setOf("reconstructed", "latent_code")
         ) as Result
@@ -154,7 +149,7 @@ class NeuralNetwork(private val context: Context) {
             readSsd(),
             OrtSession.SessionOptions()
         )
-        autoencoderOrtSession= ortEnvironment.createSession(
+        autoencoderOrtSession = ortEnvironment.createSession(
             readAutoencoder(),
             OrtSession.SessionOptions()
         )
