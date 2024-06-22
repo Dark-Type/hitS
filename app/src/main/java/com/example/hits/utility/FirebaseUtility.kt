@@ -494,6 +494,10 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
 
                 currRoomRef.child("isPlaying").setValue(true)
                 currRoomRef.child("playersReady").setValue(0)
+
+                for (gamemode in getGamemodes()) {
+                    currRoomRef.child("gamemodeVotes").child(gamemode).setValue(0)
+                }
             }
         })
 }
