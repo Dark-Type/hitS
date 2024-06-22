@@ -5,9 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.hits.R
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStream
 
 import ai.onnxruntime.OrtEnvironment
@@ -19,15 +16,13 @@ import java.util.Collections
 
 class NeuralNetwork(private val context: Context) {
     private var image: Bitmap ? = null
-    private var ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment()
-    private lateinit var ortSession: OrtSession
+    private var ortEnvironment: OrtEnvironment = OrtEnvironment.getEnvironment()
+    private var detectorOrtSession: OrtSession
+    private var autoencoderOrtSession: OrtSession
 
     fun detect() {
-        val sessionOptions: OrtSession.SessionOptions = OrtSession.SessionOptions()
-        ortSession = ortEnv.createSession(readSsd(), sessionOptions)
-
         try {
-            performObjectDetection(ortSession, readInputImage())
+            performObjectDetection(autoencoderOrtSession, readInputImage())
             Log.d("ObjectDetection", "Successful ObjectDetection")
         } catch (e: Exception) {
             Log.d("ObjectDetection", "Error in ObjectDetection ${Exception(e)}")
@@ -91,8 +86,7 @@ class NeuralNetwork(private val context: Context) {
         /*
         Переводит картинку в эмбеддинг
         */
-        val environment = OrtEnvironment.getEnvironment()
-        val session = environment.createSession(
+        val session = ortEnvironment.createSession(
             readAutoencoder(),
             OrtSession.SessionOptions()
         )
@@ -104,7 +98,7 @@ class NeuralNetwork(private val context: Context) {
         val shape = longArrayOf(1, 3, 256, 256)
 
         val inputTensor = OnnxTensor.createTensor(
-            ortEnv,
+            ortEnvironment,
             FloatBuffer.wrap(floatImageBytes),
             shape
         )
@@ -126,7 +120,7 @@ class NeuralNetwork(private val context: Context) {
         var objDetector = ObjectDetector()
         var imageStream = inputStream
         imageStream.reset()
-        var result = objDetector.detect(imageStream, ortEnv, ortSession)
+        var result = objDetector.detect(imageStream, ortEnvironment, ortSession)
 
         // Вывод боксов в консоль для проверки
         val boxit = result.iterator()
@@ -153,5 +147,16 @@ class NeuralNetwork(private val context: Context) {
 
     fun predictIfHit(): Int {
         return 0
+    }
+
+    init {
+        detectorOrtSession = ortEnvironment.createSession(
+            readSsd(),
+            OrtSession.SessionOptions()
+        )
+        autoencoderOrtSession= ortEnvironment.createSession(
+            readAutoencoder(),
+            OrtSession.SessionOptions()
+        )
     }
 }
