@@ -397,7 +397,7 @@ class ScreenForGame {
                         val bitmap = getPhotoFromPath(pathToPhoto)
                         if (bitmap != null) {
                             val playerId = neuralNetwork.predictIfHit(bitmap)
-                            if (playerId != -1) {
+                            if (playerId != null) {
                                 player.doDamage(lobbyId, playerId)
                                 Toast.makeText(context, "Hit", Toast.LENGTH_SHORT).show()
                                 // display damage, id and animation
