@@ -8,6 +8,8 @@ import java.io.InputStream
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtSession.Result
+import android.graphics.Canvas
+import android.graphics.Rect
 import java.nio.FloatBuffer
 import java.util.Collections
 
@@ -261,8 +263,81 @@ class NeuralNetwork private constructor(context: Context) {
         return applicationContext.assets.open("test_image.jpg")
     }
 
-    fun predictIfHit(image: Bitmap): Int {
-        return 0
+    private fun isPointInRectangle(
+        pointX: Int,
+        pointY: Int,
+        xMin: Int,
+        yMin: Int,
+        xMax: Int,
+        yMax: Int
+    ): Boolean {
+        return pointX in xMin..xMax && pointY in yMin .. yMax
+    }
+
+    // Обрезка bitmap по координатам bb
+    private fun cropBitmap(
+        bitmap: Bitmap,
+        xMin: Int,
+        yMin: Int,
+        xMax: Int,
+        yMax: Int
+    ): Bitmap {
+        val width = xMax - xMin
+        val height = yMax - yMin
+        val croppedBitmap = Bitmap.createBitmap(
+            width,
+            height,
+            Bitmap.Config.ARGB_8888
+        )
+
+        val canvas = Canvas(croppedBitmap)
+        val srcRect = Rect(xMin, yMin, xMax, yMax)
+        val destRect = Rect(0, 0, width, height)
+
+        canvas.drawBitmap(bitmap, srcRect, destRect, null)
+
+        return croppedBitmap
+    }
+
+    /*
+    Возвращает id игрока, в которого попал игрок, или null,
+    если попадания не было
+     */
+    fun predictIfHit(image: Bitmap): Int? {
+        val aimCoordinates = arrayOf(
+            image.width / 2,
+            image.height / 2
+        )
+
+        val persons = detect(image)
+
+        for (person in persons) {
+            // Если прицел внутри bb
+            if (
+                isPointInRectangle(
+                    aimCoordinates[0],
+                    aimCoordinates[1],
+                    person[0],
+                    person[1],
+                    person[2],
+                    person[3]
+                )
+            ) {
+                // Обрезка bitmap по координатам bb
+                val croppedPersonImage = cropBitmap(
+                    image,
+                    person[0],
+                    person[1],
+                    person[2],
+                    person[3]
+                )
+
+                // я хз че делать с roomID
+                return recognizePerson(0, croppedPersonImage)
+            }
+        }
+
+        return null
     }
 
     init {
