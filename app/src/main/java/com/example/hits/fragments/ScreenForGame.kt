@@ -11,7 +11,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -35,10 +34,24 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
+import com.example.hits.utility.User
+import com.example.hits.utility.UserForLeaderboard
 import com.example.hits.utility.databaseRef
+import com.example.hits.utility.endGame
+import com.example.hits.utility.getUsersForCurrGameLeaderboard
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -56,20 +69,98 @@ class ScreenForGame {
     private var shakeCount = 0
     private var shakeTime = 0
     private var job: Job? = null
+    private lateinit var leaderboardData: SnapshotStateList<UserForLeaderboard>
 
     @Composable
-    fun GameScreen(lobbyId: Int, userID: Int, currGamemode: String, navController: NavController) {
+    fun GameScreen(lobbyId: Int, userID: Int, currGameMode: String, navController: NavController) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
+
+        leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }
+
         CameraCompose(
             context = context,
             cameraX = cameraX,
             navController,
             lobbyId,
             userID,
-            currGamemode
+            currGameMode
         )
+
+        DisposableEffect(Unit) {
+
+            val endGameListener = object : ValueEventListener {
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    val value = dataSnapshot.getValue(Boolean::class.java)
+
+                    if (value == false) {
+                        navController.navigate("resultsScreen/$lobbyId/$userID/$currGameMode")
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+
+                }
+            }
+
+            val leaderboardListener = object : ValueEventListener {
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    leaderboardData.clear()
+                    val users = mutableListOf<User>()
+
+                    for (userSnapshot in dataSnapshot.children) {
+
+                        users.add(userSnapshot.getValue(User::class.java)!!)
+                    }
+
+                    users.sortWith(compareByDescending<User> { it.kills }.thenBy { it.deaths })
+
+                    var i = 0
+
+                    for (user in users) {
+
+                        leaderboardData.add(
+                            UserForLeaderboard(
+                                user.name,
+                                0,
+                                i + 1,
+                                user.kills,
+                                user.deaths,
+                                user.assists
+                            )
+                        )
+
+                        i++
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            }
+
+            databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
+                .addValueEventListener(leaderboardListener)
+
+            databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                .addValueEventListener(endGameListener)
+
+            onDispose {
+                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                    .removeEventListener(endGameListener)
+
+                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                    .child("users")
+                    .removeEventListener(leaderboardListener)
+            }
+        }
+
+        BackHandler {
+
+        }
     }
 
 
@@ -81,12 +172,11 @@ class ScreenForGame {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        navController: NavController, lobbyId: Int, userID: Int, currGamemode: String
+        navController: NavController, lobbyId: Int, userID: Int, currGameMode: String
     ) {
-        val player = PlayerLogic()
+        val player = PlayerLogic(if (currGameMode == "One Hit Elimination") 50 else 100)
         player.listenForChanges(lobbyId, userID)
-        listenForChanges(navController, lobbyId, userID, currGamemode)
-        val neuralNetwork = NeuralNetwork(context)
+        val neuralNetwork = NeuralNetwork.getInstance(context)
 
         var showDialog by remember { mutableStateOf(false) }
         var bitmapToShow by remember { mutableStateOf<Bitmap?>(null) }
@@ -139,13 +229,14 @@ class ScreenForGame {
                 )
             }
             if (elapsedTime == 10000L) {
-                val playerID = userID //хз че ты тут хотел сделать
+                val playerID = userID //эт нейронкой мб?
                 player.revive(lobbyId, playerID)
                 Log.d("revive", "revive $playerID")
             }
+            var showStatsDialog by remember { mutableStateOf(false) }
 
             IconButton(
-                onClick = { },
+                onClick = { showStatsDialog = true },
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .size(50.dp)
@@ -153,19 +244,73 @@ class ScreenForGame {
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.stats),
-                    contentDescription = "Settings",
+                    contentDescription = "Stats",
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .size(50.dp)
 
                 )
             }
+            if (showStatsDialog) {
+                Dialog(onDismissRequest = { showStatsDialog = false }) {
+                    Surface(color = Color.White) {
+
+                        LazyColumn(modifier = Modifier.padding(16.dp)) {
+                            itemsIndexed(leaderboardData) { index, player ->
+                                val cardColor = when (index) {
+                                    0 -> Color(0xFFD4AF37)
+                                    1 -> Color(0xFFC0C0C0)
+                                    2 -> Color(0xFFCD7F32)
+                                    else -> Color.Gray
+                                }
+
+                                ElevatedCard(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    elevation = CardDefaults.cardElevation(
+                                        defaultElevation = 12.dp
+                                    ),
+                                    colors = CardColors(
+                                        cardColor,
+                                        Color.White,
+                                        Color.Gray,
+                                        Color.White
+                                    ),
+                                ) {
+                                    Text(
+                                        text = player.name,
+                                        modifier = Modifier.padding(16.dp),
+                                        fontSize = 20.sp
+                                    )
+
+                                    Text(
+                                        text = player.kills.toString(),
+                                        modifier = Modifier.padding(16.dp),
+                                        fontSize = 20.sp
+                                    )
+
+                                    Text(
+                                        text = player.deaths.toString(),
+                                        modifier = Modifier.padding(16.dp),
+                                        fontSize = 20.sp
+                                    )
+
+                                    Text(
+                                        text = player.assists.toString(),
+                                        modifier = Modifier.padding(16.dp),
+                                        fontSize = 20.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             Button(
                 onClick = {
-                    databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
-                        .setValue(false)
-                    //navController.navigate("resultsScreen/$lobbyId")
+                    endGame(lobbyId)
                 },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -241,13 +386,35 @@ class ScreenForGame {
                     )
                 }
                 IconButton(onClick = {
-                    val playerId = neuralNetwork.predictIfHit()
-                    if (playerId != -1) {
-                        player.doDamage(lobbyId, playerId)
-                        Toast.makeText(context, "Hit", Toast.LENGTH_SHORT).show()
-                        // display damage, id and animation
-                    } else {
-                        // display miss animation
+                    cameraX.capturePhoto { pathToPhoto ->
+                        Toast
+                            .makeText(
+                                context,
+                                "Image Saved to $pathToPhoto",
+                                Toast.LENGTH_SHORT
+                            )
+                            .show()
+                        val bitmap = getPhotoFromPath(pathToPhoto)
+                        if (bitmap != null) {
+                            val playerId = neuralNetwork.predictIfHit(bitmap)
+                            if (playerId != -1) {
+                                player.doDamage(lobbyId, playerId)
+                                Toast.makeText(context, "Hit", Toast.LENGTH_SHORT).show()
+                                // display damage, id and animation
+                            } else {
+                                // display miss animation
+                            }
+                            Toast
+                                .makeText(
+                                    context,
+                                    "BITMAP IS NOT NULL",
+                                    Toast.LENGTH_SHORT
+                                )
+                                .show()
+                            bitmapToShow = bitmap
+                            showDialog = true
+                        }
+
                     }
 
                 }) {
@@ -258,31 +425,6 @@ class ScreenForGame {
                         contentDescription = "Shoot",
                         modifier = Modifier
                             .size(120.dp)
-                            .clickable {
-
-                                cameraX.capturePhoto { pathToPhoto ->
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Image Saved to $pathToPhoto",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                                    val bitmap = getPhotoFromPath(pathToPhoto)
-                                    if (bitmap != null) {
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                "BITMAP IS NOT NULL",
-                                                Toast.LENGTH_SHORT
-                                            )
-                                            .show()
-                                        bitmapToShow = bitmap
-                                        showDialog = true
-                                    }
-
-                                }
-                            }
                     )
                 }
 
@@ -298,6 +440,7 @@ class ScreenForGame {
                 }
             }
         }
+
 
         if (showDialog) {
             Dialog(onDismissRequest = { showDialog = false }) {
@@ -315,37 +458,4 @@ class ScreenForGame {
             }
         }
     }
-
-    private fun listenForChanges(
-        navController: NavController,
-        lobbyId: Int,
-        userID: Int,
-        currGamemode: String
-    ) {
-
-        val endGameListener = object : ValueEventListener {
-
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-
-                val value = dataSnapshot.getValue(Boolean::class.java)
-
-                if (value == false) {
-                    navController.navigate("resultsScreen/$lobbyId/$userID/$currGamemode")
-                }
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                // Log the error
-            }
-        }
-
-        databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
-            .addValueEventListener(endGameListener)
-    }
 }
-
-
-
-
-
-

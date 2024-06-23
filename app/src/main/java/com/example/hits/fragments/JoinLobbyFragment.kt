@@ -1,5 +1,6 @@
 package com.example.hits.fragments
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -444,6 +445,10 @@ class JoinLobbyFragment {
                     }
                 }
             }
+        }
+
+        BackHandler {
+
         }
     }
 }

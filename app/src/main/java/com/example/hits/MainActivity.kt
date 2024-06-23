@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
         Rive.init(this)
         sharedPrefHelper = SharedPrefHelper(this)
 
-        val neuralNetwork = NeuralNetwork(applicationContext)
+        val neuralNetwork = NeuralNetwork.getInstance(this)
         neuralNetwork.detect(
             BitmapFactory.decodeStream(neuralNetwork.readInputImage())
         )

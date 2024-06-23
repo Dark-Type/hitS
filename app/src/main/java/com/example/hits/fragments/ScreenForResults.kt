@@ -1,5 +1,6 @@
 package com.example.hits.fragments
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -141,8 +142,11 @@ class ScreenForResults {
                 }
             }
 
+            BackHandler {
 
+            }
         }
+
         if (showDialog.value) {
             Dialog(onDismissRequest = { showDialog.value = false }) {
                 Card(
