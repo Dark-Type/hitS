@@ -14,6 +14,7 @@ import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.getValue
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 import kotlin.math.max
 
 val databaseRef: DatabaseReference =
@@ -575,4 +576,61 @@ fun getUsersForCurrGameLeaderboard(roomID: Int) : SnapshotStateList<UserForLeade
     })
 
     return usersForCurrGameLeaderboard
+}
+
+fun addEmbeddingToDatabase(roomID: Int, userID: Int, embedding: FloatArray) {
+
+    val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings").child(userID.toString())
+
+    var maxEmbedding = 0
+
+    embeddingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(snapshot: DataSnapshot) {
+
+            for (embeddingSnapshot in snapshot.children) {
+
+                maxEmbedding = max(embeddingSnapshot.key!!.toInt(), maxEmbedding)
+            }
+
+            embeddingsRef.child((maxEmbedding + 1).toString()).setValue(embedding)
+        }
+
+        override fun onCancelled(error: DatabaseError) {}
+    })
+}
+
+fun getEmbeddings(roomID: Int) : Array<Pair<FloatArray, Int>>{
+
+    val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings")
+
+    val embeddings = mutableListOf<Pair<FloatArray, Int>>()
+
+    val latch = CountDownLatch(1)
+
+    embeddingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(snapshot: DataSnapshot) {
+
+            for (userSnapshot in snapshot.children) {
+
+                val id = userSnapshot.key!!.toInt()
+
+                for (embeddingSnapshot in userSnapshot.children) {
+
+                        val embedding = embeddingSnapshot.getValue(FloatArray::class.java)!!
+                        embeddings.add(Pair(embedding, id))
+                }
+            }
+            latch.countDown()
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            latch.countDown()
+        }
+    })
+
+    latch.await()
+
+    return embeddings.toTypedArray()
 }

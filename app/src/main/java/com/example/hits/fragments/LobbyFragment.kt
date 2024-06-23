@@ -279,7 +279,7 @@ class LobbyFragment {
                             .padding(top = 64.dp)
                     ) {
 
-                        UserList(users)
+                        UserList(users, lobbyId)
                     }
 
 
@@ -534,7 +534,11 @@ class LobbyFragment {
 
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-                            readyUsers = dataSnapshot.getValue(Int::class.java)!!
+                            val readies = dataSnapshot.getValue(Int::class.java)
+
+                            if (readies != null) {
+                                readyUsers = readies
+                            }
 
                             println(teamRed.size + teamBlue.size)
                             println(teamRed.size)
@@ -665,7 +669,7 @@ class LobbyFragment {
 
 
     @Composable
-    fun UserList(users: List<User>) {
+    fun UserList(users: List<User>, lobbyId: Int) {
         LazyColumn {
             items(users) { user ->
                 ElevatedCard(
@@ -695,7 +699,7 @@ class LobbyFragment {
 
 
                         val triggerCapture = remember { mutableStateOf(false) }
-                        val bitmapState = makePhoto(triggerCapture, user.id)
+                        val bitmapState = makePhoto(triggerCapture, lobbyId, user.id)
                         Button(
 
                             onClick = {
@@ -738,14 +742,14 @@ class LobbyFragment {
     }
 
     @Composable
-    fun makePhoto(triggerCapture: MutableState<Boolean>, id: Int): MutableState<Bitmap?> {
+    fun makePhoto(triggerCapture: MutableState<Boolean>, roomID: Int, userToScanID: Int): MutableState<Bitmap?> {
         val neuralNetwork = NeuralNetwork.getInstance(LocalContext.current)
         val bitmapState = remember { mutableStateOf<Bitmap?>(null) }
         val takePictureLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicturePreview()) { bitmap: Bitmap? ->
             if (bitmap != null) {
                 bitmapState.value = bitmap
-                neuralNetwork.rememberPerson(id, bitmap)
-                println("Photo taken and remembered for user: $id")
+                neuralNetwork.rememberPerson(roomID, userToScanID, bitmap)
+                println("Photo taken and remembered for user: $userToScanID")
             }
         }
 

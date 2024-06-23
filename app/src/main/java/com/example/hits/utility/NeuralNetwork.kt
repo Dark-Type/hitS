@@ -32,8 +32,11 @@ class NeuralNetwork private constructor(context: Context) {
     }
 
 
-    fun rememberPerson(id: Int, image: Bitmap) {
+    fun rememberPerson(roomID: Int, userToScanID: Int, image: Bitmap) {
+
         val embedding = encode(image)
+
+        addEmbeddingToDatabase(roomID, userToScanID, embedding)
 
         /*
         тут нужно положить id и соответствующий ей эмбеддинг в бд
@@ -41,11 +44,11 @@ class NeuralNetwork private constructor(context: Context) {
         */
     }
 
-    fun recognizePerson(image: Bitmap): Int {
+    fun recognizePerson(roomID: Int, image: Bitmap): Int {
         val embedding = encode(image)
 
         // Логика получения из бд массива пар <Эмбеддинг, id>
-        val embeddings: Array<Pair<FloatArray, Int>> = arrayOf(Pair(floatArrayOf(), 0))
+        val embeddings: Array<Pair<FloatArray, Int>> = getEmbeddings(roomID)
 
         var result = embeddings[0].second
         var maxSimilarity = 0.0f
