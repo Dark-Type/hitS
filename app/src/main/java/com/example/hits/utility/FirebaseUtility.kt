@@ -593,7 +593,7 @@ fun addEmbeddingToDatabase(roomID: Int, userID: Int, embedding: FloatArray) {
                 maxEmbedding = max(embeddingSnapshot.key!!.toInt(), maxEmbedding)
             }
 
-            embeddingsRef.child((maxEmbedding + 1).toString()).setValue(embedding)
+            embeddingsRef.child((maxEmbedding + 1).toString()).setValue(embedding.toList())
         }
 
         override fun onCancelled(error: DatabaseError) {}
@@ -618,8 +618,8 @@ fun getEmbeddings(roomID: Int) : Array<Pair<FloatArray, Int>>{
 
                 for (embeddingSnapshot in userSnapshot.children) {
 
-                        val embedding = embeddingSnapshot.getValue(FloatArray::class.java)!!
-                        embeddings.add(Pair(embedding, id))
+                    val embedding = embeddingSnapshot.getValue(FloatArray::class.java)!!
+                    embeddings.add(Pair(embedding, id))
                 }
             }
             latch.countDown()
