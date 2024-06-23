@@ -459,9 +459,3 @@ class ScreenForGame {
         }
     }
 }
-
-
-
-
-
-

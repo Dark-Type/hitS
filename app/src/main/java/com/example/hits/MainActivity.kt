@@ -2,6 +2,7 @@ package com.example.hits
 
 import android.Manifest
 import android.content.res.Configuration
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -51,6 +52,7 @@ import com.example.hits.fragments.SettingsFragment
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Turquoise
+import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.createUser
 import com.example.hits.utility.getNewID
 import kotlinx.coroutines.launch
@@ -63,6 +65,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Rive.init(this)
         sharedPrefHelper = SharedPrefHelper(this)
+
+        val neuralNetwork = NeuralNetwork(applicationContext)
+        neuralNetwork.detect(
+            BitmapFactory.decodeStream(neuralNetwork.readInputImage())
+        )
+        neuralNetwork.encode(
+            BitmapFactory.decodeStream(neuralNetwork.readInputImage())
+        )
 
         if (sharedPrefHelper.getDamage() == null) sharedPrefHelper.saveDamage("0")
         if (sharedPrefHelper.getKills() == null) sharedPrefHelper.saveKills("0")

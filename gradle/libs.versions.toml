@@ -25,8 +25,8 @@ navigationRuntimeKtx = "2.7.7"
 firebaseDatabaseKtx = "21.0.0"
 googleServices = "4.4.2"
 firebaseDatabase = "21.0.0"
-onnxruntime = "1.9.0"
-onnxruntimeMobile = "1.9.0"
+onnxruntimeAndroid = "latest.release"
+onnxruntimeExtensionsAndroid = "latest.release"
 playServicesMlkitTextRecognition = "19.0.0"
 riveAndroid = "8.7.0"
 riveAndroidVersion = "8.7.0"
@@ -77,8 +77,8 @@ androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navig
 firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx", version.ref = "firebaseDatabaseKtx" }
 google-services = { group = "com.google.gms", name = "google-services", version.ref = "googleServices" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
-onnxruntime = { module = "ai.onnxruntime:onnxruntime", version.ref = "onnxruntime" }
-onnxruntime-mobile = { module = "ai.onnxruntime:onnxruntime-mobile", version.ref = "onnxruntimeMobile" }
+onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntimeAndroid" }
+onnxruntime-extensions-android = { module = "com.microsoft.onnxruntime:onnxruntime-extensions-android", version.ref = "onnxruntimeExtensionsAndroid" }
 play-services-mlkit-text-recognition = { module = "com.google.android.gms:play-services-mlkit-text-recognition", version.ref = "playServicesMlkitTextRecognition" }
 rive-android = { module = "app.rive:rive-android", version.ref = "riveAndroid" }
 rive-android-v870 = { module = "app.rive:rive-android", version.ref = "riveAndroidVersion" }
