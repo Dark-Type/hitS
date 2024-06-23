@@ -176,7 +176,7 @@ class ScreenForGame {
     ) {
         val player = PlayerLogic(if (currGameMode == "One Hit Elimination") 50 else 100)
         player.listenForChanges(lobbyId, userID)
-        val neuralNetwork = NeuralNetwork(context)
+        val neuralNetwork = NeuralNetwork.getInstance(context)
 
         var showDialog by remember { mutableStateOf(false) }
         var bitmapToShow by remember { mutableStateOf<Bitmap?>(null) }

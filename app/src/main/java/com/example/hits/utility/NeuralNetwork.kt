@@ -3,7 +3,6 @@ package com.example.hits.utility
 import ai.onnxruntime.OnnxTensor
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import com.example.hits.R
 import java.io.InputStream
 import ai.onnxruntime.OrtEnvironment
@@ -13,10 +12,25 @@ import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.Collections
 
-class NeuralNetwork(private val context: Context) {
+class NeuralNetwork private constructor(context: Context) {
+
+    private val applicationContext = context.applicationContext
     private var ortEnvironment: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var detectorOrtSession: OrtSession
     private var autoencoderOrtSession: OrtSession
+
+    companion object {
+        @Volatile
+        private var INSTANCE: NeuralNetwork? = null
+
+        fun getInstance(context: Context): NeuralNetwork =
+            INSTANCE ?: synchronized(this) {
+                INSTANCE ?: NeuralNetwork(context).also {
+                    INSTANCE = it
+                }
+            }
+    }
+
 
     fun rememberPerson(id: Int, image: Bitmap) {
         val embedding = encode(image)
@@ -160,16 +174,16 @@ class NeuralNetwork(private val context: Context) {
 
     private fun readSsd(): ByteArray {
         val modelID = R.raw.ssd_onnx
-        return context.resources.openRawResource(modelID).readBytes()
+        return applicationContext.resources.openRawResource(modelID).readBytes()
     }
 
     private fun readAutoencoder(): ByteArray {
         val modelID = R.raw.autoencoder_quant
-        return context.resources.openRawResource(modelID).readBytes()
+        return applicationContext.resources.openRawResource(modelID).readBytes()
     }
 
     fun readInputImage(): InputStream {
-        return context.assets.open("test_image.jpg")
+        return applicationContext.assets.open("test_image.jpg")
     }
 
     fun predictIfHit(image: Bitmap): Int {
