@@ -1,8 +1,11 @@
 package com.example.hits.fragments
 
 
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,6 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Text
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -55,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
@@ -62,6 +67,7 @@ import com.example.hits.getGamemodes
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
 import com.example.hits.ui.theme.Turquoise
+import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.TEAM_BLUE
 import com.example.hits.utility.TEAM_RED
 import com.example.hits.utility.TEAM_UNKNOWN
@@ -76,6 +82,7 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.delay
 import java.util.Collections.max
 
 
@@ -191,6 +198,7 @@ class LobbyFragment {
 
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
+
         databaseVotesRef =
             databaseRef.child("rooms").child(lobbyId.toString()).child("gamemodeVotes")
 
@@ -271,7 +279,7 @@ class LobbyFragment {
                             .padding(top = 64.dp)
                     ) {
 
-                        UserList(users)
+                        UserList(users, lobbyId)
                     }
 
 
@@ -301,14 +309,19 @@ class LobbyFragment {
                                 shouldChooseTeams.value = isReady.value
 
                                 if (isReady.value) {
-                                    val mostPopularMode = modes[votes.value.indexOf(max(votes.value))]
+                                    val mostPopularMode =
+                                        modes[votes.value.indexOf(max(votes.value))]
                                     if (mostPopularMode == "Free For All") {
 
                                         addValue(
                                             databaseRef.child("rooms").child(lobbyId.toString())
                                                 .child("playersReady"), 1
                                         )
-                                        setUserTeam(lobbyId, sharedPrefHelper.getID()!!.toInt(), TEAM_RED)
+                                        setUserTeam(
+                                            lobbyId,
+                                            sharedPrefHelper.getID()!!.toInt(),
+                                            TEAM_RED
+                                        )
                                         shouldChooseTeams.value = false
                                     }
                                 } else {
@@ -521,7 +534,11 @@ class LobbyFragment {
 
                         override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-                            readyUsers = dataSnapshot.getValue(Int::class.java)!!
+                            val readies = dataSnapshot.getValue(Int::class.java)
+
+                            if (readies != null) {
+                                readyUsers = readies
+                            }
 
                             println(teamRed.size + teamBlue.size)
                             println(teamRed.size)
@@ -560,6 +577,7 @@ class LobbyFragment {
 
                                         teamBlue.remove(user.name)
                                     }
+
                                     TEAM_BLUE -> {
 
                                         if (!teamBlue.contains(user.name)) {
@@ -568,6 +586,7 @@ class LobbyFragment {
 
                                         teamRed.remove(user.name)
                                     }
+
                                     else -> {
                                         teamRed.remove(user.name)
                                         teamBlue.remove(user.name)
@@ -650,7 +669,7 @@ class LobbyFragment {
 
 
     @Composable
-    fun UserList(users: List<User>) {
+    fun UserList(users: List<User>, lobbyId: Int) {
         LazyColumn {
             items(users) { user ->
                 ElevatedCard(
@@ -675,9 +694,20 @@ class LobbyFragment {
                                 .padding(start = 8.dp)
                         )
 
+
                         Spacer(modifier = Modifier.width(30.dp))
+
+
+                        val triggerCapture = remember { mutableStateOf(false) }
+                        val bitmapState = makePhoto(triggerCapture, lobbyId, user.id)
                         Button(
-                            onClick = { println("Button clicked for user: ${user.name}") },
+
+                            onClick = {
+                                println("Button clicked for user: ${user.id}")
+                                triggerCapture.value = true
+                                val bitmap = bitmapState.value
+
+                            },
                             shape = RoundedCornerShape(6.dp),
                             colors = ButtonDefaults.buttonColors(
                                 LightTurquoise
@@ -701,8 +731,36 @@ class LobbyFragment {
                             )
                         }
                     }
+
                 }
+
+            }
+
+        }
+
+
+    }
+
+    @Composable
+    fun makePhoto(triggerCapture: MutableState<Boolean>, roomID: Int, userToScanID: Int): MutableState<Bitmap?> {
+        val neuralNetwork = NeuralNetwork.getInstance(LocalContext.current)
+        val bitmapState = remember { mutableStateOf<Bitmap?>(null) }
+        val takePictureLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicturePreview()) { bitmap: Bitmap? ->
+            if (bitmap != null) {
+                bitmapState.value = bitmap
+                neuralNetwork.rememberPerson(roomID, userToScanID, bitmap)
+                println("Photo taken and remembered for user: $userToScanID")
             }
         }
+
+        LaunchedEffect(key1 = triggerCapture.value) {
+            if (triggerCapture.value) {
+                takePictureLauncher.launch(null)
+                triggerCapture.value = false
+            }
+        }
+
+        return bitmapState
     }
+
 }
