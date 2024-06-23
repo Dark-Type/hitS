@@ -43,12 +43,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
+import com.example.hits.utility.User
+import com.example.hits.utility.UserForLeaderboard
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.endGame
+import com.example.hits.utility.getUsersForCurrGameLeaderboard
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -66,12 +70,16 @@ class ScreenForGame {
     private var shakeCount = 0
     private var shakeTime = 0
     private var job: Job? = null
+    private lateinit var leaderboardData: SnapshotStateList<UserForLeaderboard>
 
     @Composable
     fun GameScreen(lobbyId: Int, userID: Int, currGameMode: String, navController: NavController) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
+
+        leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }
+
         CameraCompose(
             context = context,
             cameraX = cameraX,
@@ -99,12 +107,54 @@ class ScreenForGame {
                 }
             }
 
+            val leaderboardListener = object : ValueEventListener {
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    leaderboardData.clear()
+                    val users = mutableListOf<User>()
+
+                    for (userSnapshot in dataSnapshot.children) {
+
+                        users.add(userSnapshot.getValue(User::class.java)!!)
+                    }
+
+                    users.sortWith(compareByDescending<User> { it.kills }.thenBy { it.deaths })
+
+                    var i = 0
+
+                    for (user in users) {
+
+                        leaderboardData.add(
+                            UserForLeaderboard(
+                                user.name,
+                                0,
+                                i + 1,
+                                user.kills,
+                                user.deaths,
+                                user.assists
+                            )
+                        )
+
+                        i++
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            }
+
+            databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
+                .addValueEventListener(leaderboardListener)
+
             databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
                 .addValueEventListener(endGameListener)
 
             onDispose {
                 databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
                     .removeEventListener(endGameListener)
+
+                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
+                    .removeEventListener(leaderboardListener)
             }
         }
 
@@ -204,7 +254,6 @@ class ScreenForGame {
             if (showStatsDialog) {
                 Dialog(onDismissRequest = { showStatsDialog = false }) {
                     Surface(color = Color.White) {
-                        val leaderboardData = listOf("Player 1", "Player 2", "Player 3", "Player 4")
 
                         LazyColumn(modifier = Modifier.padding(16.dp)) {
                             itemsIndexed(leaderboardData) { index, player ->
@@ -225,7 +274,25 @@ class ScreenForGame {
                                     colors = CardColors(cardColor, Color.White, Color.Gray, Color.White),
                                 ) {
                                     Text(
-                                        text = player,
+                                        text = player.name,
+                                        modifier = Modifier.padding(16.dp),
+                                        fontSize = 20.sp
+                                    )
+
+                                    Text(
+                                        text = player.kills.toString(),
+                                        modifier = Modifier.padding(16.dp),
+                                        fontSize = 20.sp
+                                    )
+
+                                    Text(
+                                        text = player.deaths.toString(),
+                                        modifier = Modifier.padding(16.dp),
+                                        fontSize = 20.sp
+                                    )
+
+                                    Text(
+                                        text = player.assists.toString(),
                                         modifier = Modifier.padding(16.dp),
                                         fontSize = 20.sp
                                     )

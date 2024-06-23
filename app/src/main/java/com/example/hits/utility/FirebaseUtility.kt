@@ -12,6 +12,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.getValue
 import java.util.concurrent.CompletableFuture
 import kotlin.math.max
 
@@ -502,49 +503,6 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
         })
 }
 
-fun listenForLeaderboardUpdates(
-    roomID: Int,
-    onLeaderboardUpdate: (List<UserForLeaderboard>) -> Unit
-) {
-
-    val usersRef =
-        databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
-
-    usersRef.addValueEventListener(object : ValueEventListener {
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
-            val users = mutableListOf<User>()
-
-            for (userSnapshot in dataSnapshot.children) {
-                users.add(userSnapshot.getValue(User::class.java)!!)
-            }
-
-            val sortedUsers =
-                users.sortedWith(compareByDescending<User> { it.kills }.thenBy { it.deaths })
-
-            val leaderboardUsers = sortedUsers.mapIndexed { index, user ->
-                UserForLeaderboard(
-                    user.name,
-                    user.points,
-                    index + 1,
-                    user.kills,
-                    user.deaths,
-                    user.assists
-                )
-            }
-
-            onLeaderboardUpdate(leaderboardUsers)
-        }
-
-        override fun onCancelled(databaseError: DatabaseError) {
-            Log.w(
-                "Firebase",
-                "listenForLeaderboardUpdates:onCancelled",
-                databaseError.toException()
-            )
-        }
-    })
-}
-
 fun setUserTeam(roomID: Int, userID: Int, team: Int) {
 
     databaseRef.child("rooms").child(roomID.toString()).child("users").child(userID.toString())
@@ -577,4 +535,44 @@ fun endGame(roomID: Int) {
                 Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
             }
         })
+}
+
+fun getUsersForCurrGameLeaderboard(roomID: Int) : SnapshotStateList<UserForLeaderboard> {
+
+    val usersForCurrGameLeaderboard = SnapshotStateList<UserForLeaderboard>()
+    val users = mutableListOf<User>()
+
+    databaseRef.child("rooms").child(roomID.toString()).child("users")
+        .addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+            for (userSnapshot in dataSnapshot.children) {
+
+                users.add(userSnapshot.getValue(User::class.java)!!)
+            }
+
+            var i = 0
+
+            for (user in users) {
+
+                usersForCurrGameLeaderboard.add(
+                    UserForLeaderboard(
+                        user.name,
+                        0,
+                        i + 1,
+                        0,
+                        0,
+                        0
+                    )
+                )
+
+                i++
+            }
+        }
+
+        override fun onCancelled(error: DatabaseError) {}
+    })
+
+    return usersForCurrGameLeaderboard
 }
