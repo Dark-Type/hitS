@@ -12,7 +12,6 @@ import java.nio.FloatBuffer
 import java.util.Collections
 
 class NeuralNetwork private constructor(context: Context) {
-
     private val applicationContext = context.applicationContext
     private var ortEnvironment: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var detectorOrtSession: OrtSession
@@ -31,22 +30,16 @@ class NeuralNetwork private constructor(context: Context) {
     }
 
 
+    // Положить эмбеддинг человека в бд
     fun rememberPerson(roomID: Int, userToScanID: Int, image: Bitmap) {
-
         val embedding = encode(image)
-
         addEmbeddingToDatabase(roomID, userToScanID, embedding)
-
-        /*
-        тут нужно положить id и соответствующий ей эмбеддинг в бд
-        может быть несколько, но не меньше 4 эмбеддингов для одного id
-        */
     }
 
+    // Распознать человека по фото
     fun recognizePerson(roomID: Int, image: Bitmap): Int {
         val embedding = encode(image)
 
-        // Логика получения из бд массива пар <Эмбеддинг, id>
         val embeddings: Array<Pair<FloatArray, Int>> = getEmbeddings(roomID)
 
         var result = embeddings[0].second
@@ -62,7 +55,8 @@ class NeuralNetwork private constructor(context: Context) {
         return result
     }
 
-    fun getSimilarity(vector1: FloatArray, vector2: FloatArray): Float {
+    // Сравнить два эмбеддинга с помощью cosine similarity
+    private fun getSimilarity(vector1: FloatArray, vector2: FloatArray): Float {
         /*
         Выдает число в диапазоне [0;1], выражающее
         сходство между эмбеддингами двух картинок
@@ -83,6 +77,10 @@ class NeuralNetwork private constructor(context: Context) {
         return dotProduct / (magnitude1 * magnitude2)
     }
 
+    /*
+    Отшкалировать bb из prediction модели для
+    предобработанного изображения в формат изначального
+    */
     private fun scaleBoundingBox(
         width: Int,
         height: Int,
@@ -99,9 +97,21 @@ class NeuralNetwork private constructor(context: Context) {
         )
     }
 
-    fun detect(bitmap: Bitmap) {
-        val resizedBitmap = bitmap.let { Bitmap.createScaledBitmap(it, 500, 500, false) }
-        val input = preprocessImage(resizedBitmap, 500, 500)
+    // Найти людей на фото
+    fun detect(bitmap: Bitmap): ArrayList<Array<Int>> {
+        val resizedBitmap = bitmap.let {
+            Bitmap.createScaledBitmap(
+                it,
+                500,
+                500,
+                false
+            )
+        }
+        val input = preprocessImage(
+            resizedBitmap,
+            500,
+            500
+        )
 
         val shape = longArrayOf(1, 3, 500, 500)
 
@@ -118,52 +128,66 @@ class NeuralNetwork private constructor(context: Context) {
 
         val result = (output.get(0)?.value) as Array<FloatArray>
 
-        // Вывод боксов в консоль для проверки
-        val boxit = result.iterator()
+        val boxIt = result.iterator()
 
-        println("Кол-во боксов: ")
-        println(result.size)
+        // bounding boxes in (xmin, ymin, xmax, ymax) format
+        var boundingBoxes = ArrayList<Array<Int>>()
 
-        // bb in (xmin, ymin, xmax, ymax) format
-
-        while(boxit.hasNext()) {
-            var box_info = boxit.next()
-            println("ща будут боксы детектора: ")
+        while(boxIt.hasNext()) {
+            var box = boxIt.next()
 
             val scaledBoundingBoxes = scaleBoundingBox(
                 bitmap.width,
                 bitmap.height,
-                box_info[0].toInt(),
-                box_info[1].toInt(),
-                box_info[2].toInt(),
-                box_info[3].toInt(),
+                box[0].toInt(),
+                box[1].toInt(),
+                box[2].toInt(),
+                box[3].toInt()
             )
 
-            println(scaledBoundingBoxes[0])
-            println(scaledBoundingBoxes[1])
-            println(scaledBoundingBoxes[2])
-            println(scaledBoundingBoxes[3])
+            boundingBoxes.add(scaledBoundingBoxes)
         }
+
+        return boundingBoxes
     }
 
-    // Resize to width x height + bitmap to floatArray
-    fun preprocessImage(
+    private fun preprocessImage(
         bitmap: Bitmap,
         width: Int,
         height: Int
     ): FloatBuffer {
-        val imgData = FloatBuffer.allocate(1 * 3 * width * height)
+        val imgData = FloatBuffer.allocate(
+            3 * width * height
+        )
         imgData.rewind()
         val stride = width * height
         val bmpData = IntArray(stride)
-        bitmap.getPixels(bmpData, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-        for (i in 0..<width) {
-            for (j in 0..<height) {
+
+        bitmap.getPixels(
+            bmpData,
+            0,
+            bitmap.width,
+            0,
+            0,
+            bitmap.width,
+            bitmap.height
+        )
+
+        for (i in 0..< width) {
+            for (j in 0..< height) {
                 val idx = height * i + j
                 val pixelValue = bmpData[idx]
-                imgData.put(idx, (((pixelValue shr 16 and 0xFF) / 255f - 0.485f) / 0.229f))
-                imgData.put(idx + stride, (((pixelValue shr 8 and 0xFF) / 255f - 0.456f) / 0.224f))
-                imgData.put(idx + stride * 2, (((pixelValue and 0xFF) / 255f - 0.406f) / 0.225f))
+                imgData.put(
+                    idx,
+                    (((pixelValue shr 16 and 0xFF) / 255f - 0.485f) / 0.229f)
+                )
+                imgData.put(
+                    idx + stride,
+                    (((pixelValue shr 8 and 0xFF) / 255f - 0.456f) / 0.224f)
+                )
+                imgData.put(idx + stride * 2,
+                    (((pixelValue and 0xFF) / 255f - 0.406f) / 0.225f)
+                )
             }
         }
 
@@ -171,6 +195,7 @@ class NeuralNetwork private constructor(context: Context) {
         return imgData
     }
 
+    // "Выравнивание" тензора до размерности 1
     private fun flatten(array: Array<FloatArray>): FloatArray {
         val size = array.sumBy { it.size }
         val result = FloatArray(size)
@@ -186,13 +211,23 @@ class NeuralNetwork private constructor(context: Context) {
         return result
     }
 
+    /*
+    Переводит картинку в эмбеддинг
+    */
     fun encode(bitmap: Bitmap): FloatArray {
-        /*
-        Переводит картинку в эмбеддинг
-        */
-        // Предобработка изображения
-        val resizedBitmap = bitmap.let { Bitmap.createScaledBitmap(it, 256, 256, false) }
-        val input = preprocessImage(resizedBitmap, 256, 256)
+        val resizedBitmap = bitmap.let {
+            Bitmap.createScaledBitmap(
+                it,
+                256,
+                256,
+                false
+            )
+        }
+        val input = preprocessImage(
+            resizedBitmap,
+            256,
+            256
+        )
 
         val shape = longArrayOf(1, 3, 256, 256)
 
@@ -207,9 +242,9 @@ class NeuralNetwork private constructor(context: Context) {
             setOf("reconstructed", "latent_code")
         ) as Result
 
-        val latent_code = ((output.get(1)?.value) as Array<FloatArray>)
+        val latentCode = (output.get(1)?.value) as Array<FloatArray>
 
-        return flatten(latent_code)
+        return flatten(latentCode)
     }
 
     private fun readSsd(): ByteArray {
@@ -231,6 +266,7 @@ class NeuralNetwork private constructor(context: Context) {
     }
 
     init {
+        // Загрузка моделей в ort сессии
         detectorOrtSession = ortEnvironment.createSession(
             readSsd(),
             OrtSession.SessionOptions()
