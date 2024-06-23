@@ -67,7 +67,6 @@ import com.example.hits.utility.TEAM_RED
 import com.example.hits.utility.TEAM_UNKNOWN
 import com.example.hits.utility.User
 import com.example.hits.utility.addValue
-import com.example.hits.utility.createUser
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.getLobbyUsers
 import com.example.hits.utility.removeUserFromRoom
@@ -92,8 +91,15 @@ class LobbyFragment {
 
     //I need a listener on event of all users being ready
     @Composable
-    fun chooseTeams(chosenGameMode: String, playersInLobby: Int, lobbyId: Int, userID: Int, shouldChooseTeams: MutableState<Boolean>,
-                    teamRed: SnapshotStateList<String>, teamBlue: SnapshotStateList<String>) {
+    fun chooseTeams(
+        chosenGameMode: String,
+        playersInLobby: Int,
+        lobbyId: Int,
+        userID: Int,
+        shouldChooseTeams: MutableState<Boolean>,
+        teamRed: SnapshotStateList<String>,
+        teamBlue: SnapshotStateList<String>
+    ) {
         var showDialog by remember { mutableStateOf(false) }
 
         showDialog = true
@@ -110,8 +116,10 @@ class LobbyFragment {
                     Column {
                         Button(onClick = {
 
-                            addValue( databaseRef.child("rooms").child(lobbyId.toString())
-                                .child("playersReady"), 1)
+                            addValue(
+                                databaseRef.child("rooms").child(lobbyId.toString())
+                                    .child("playersReady"), 1
+                            )
                             setUserTeam(lobbyId, userID, TEAM_RED)
                             shouldChooseTeams.value = false
 
@@ -146,8 +154,10 @@ class LobbyFragment {
                     ) {
                         Button(onClick = {
 
-                            addValue( databaseRef.child("rooms").child(lobbyId.toString())
-                                .child("playersReady"), 1)
+                            addValue(
+                                databaseRef.child("rooms").child(lobbyId.toString())
+                                    .child("playersReady"), 1
+                            )
                             setUserTeam(lobbyId, userID, TEAM_BLUE)
                             shouldChooseTeams.value = false
 
@@ -291,16 +301,28 @@ class LobbyFragment {
                                 shouldChooseTeams.value = isReady.value
 
                                 if (isReady.value) {
+                                    val mostPopularMode = modes[votes.value.indexOf(max(votes.value))]
+                                    if (mostPopularMode == "Free For All") {
 
+                                        addValue(
+                                            databaseRef.child("rooms").child(lobbyId.toString())
+                                                .child("playersReady"), 1
+                                        )
+                                        setUserTeam(lobbyId, sharedPrefHelper.getID()!!.toInt(), TEAM_RED)
+                                        shouldChooseTeams.value = false
+                                    }
+                                } else {
+                                    addValue(
+                                        databaseRef.child("rooms").child(lobbyId.toString())
+                                            .child("playersReady"), -1
+                                    )
+                                    setUserTeam(
+                                        lobbyId,
+                                        sharedPrefHelper.getID()!!.toInt(),
+                                        TEAM_UNKNOWN
+                                    )
                                 }
-
-                                else {
-                                    addValue( databaseRef.child("rooms").child(lobbyId.toString())
-                                        .child("playersReady"), -1)
-                                    setUserTeam(lobbyId, sharedPrefHelper.getID()!!.toInt(), TEAM_UNKNOWN)
-                                }
-
-                                      },
+                            },
                             colors = ButtonDefaults.buttonColors(LightTurquoise),
                             border = BorderStroke(width = 1.dp, color = Turquoise),
                         ) {
@@ -308,7 +330,15 @@ class LobbyFragment {
                         }
 
                         if (shouldChooseTeams.value) {
-                            chooseTeams(modes[votes.value.indexOf(max(votes.value))], users.size, lobbyId, sharedPrefHelper.getID()!!.toInt(), shouldChooseTeams, teamRed, teamBlue)
+                            chooseTeams(
+                                modes[votes.value.indexOf(max(votes.value))],
+                                users.size,
+                                lobbyId,
+                                sharedPrefHelper.getID()!!.toInt(),
+                                shouldChooseTeams,
+                                teamRed,
+                                teamBlue
+                            )
                         }
                     }
                 }
@@ -408,7 +438,10 @@ class LobbyFragment {
                 DisposableEffect(Unit) {
 
                     val userJoinListener = object : ChildEventListener {
-                        override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                        override fun onChildAdded(
+                            dataSnapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
                             val newUser = dataSnapshot.getValue(User::class.java)
                             val existingUser = users.find { it.id == newUser?.id }
 
@@ -417,7 +450,10 @@ class LobbyFragment {
                             }
                         }
 
-                        override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                        override fun onChildChanged(
+                            dataSnapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
 
                             val newUser = dataSnapshot.getValue(User::class.java)
                             val oldUser = users.find { it.id == newUser?.id }
@@ -433,15 +469,27 @@ class LobbyFragment {
 
                         }
 
-                        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                        override fun onChildMoved(
+                            snapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
+                        }
+
                         override fun onCancelled(databaseError: DatabaseError) {}
                     }
 
                     val voteChangesListener = object : ChildEventListener {
 
-                        override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+                        override fun onChildAdded(
+                            dataSnapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
+                        }
 
-                        override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                        override fun onChildChanged(
+                            dataSnapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
 
                             if (didLocalDeviceInitiateChange) {
 
@@ -451,7 +499,8 @@ class LobbyFragment {
                                 val value = dataSnapshot.getValue(Int::class.java)
 
                                 val updatedVotes = votes.value.toMutableList()
-                                updatedVotes[modes.indexOf(key)] = value ?: updatedVotes[modes.indexOf(key)]
+                                updatedVotes[modes.indexOf(key)] =
+                                    value ?: updatedVotes[modes.indexOf(key)]
                                 votes.value = updatedVotes
 
                                 Log.d("Firebase", "Vote for $key changed to $value")
@@ -459,7 +508,12 @@ class LobbyFragment {
                         }
 
                         override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
-                        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                        override fun onChildMoved(
+                            snapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
+                        }
+
                         override fun onCancelled(databaseError: DatabaseError) {}
                     }
 
@@ -481,36 +535,43 @@ class LobbyFragment {
 
                     val teamChangeListener = object : ChildEventListener {
 
-                        override fun onChildAdded(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+                        override fun onChildAdded(
+                            dataSnapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
+                        }
 
-                        override fun onChildChanged(dataSnapshot: DataSnapshot, previousChildName: String?) {
+                        override fun onChildChanged(
+                            dataSnapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
 
                             val user = dataSnapshot.getValue(User::class.java)
                             val team = dataSnapshot.child("team").getValue(Int::class.java)
 
                             if (user != null && team != null) {
 
-                                if (team == TEAM_RED) {
+                                when (team) {
+                                    TEAM_RED -> {
 
-                                    if (!teamRed.contains(user.name)) {
-                                        user.name.let { teamRed.add(it) }
+                                        if (!teamRed.contains(user.name)) {
+                                            user.name.let { teamRed.add(it) }
+                                        }
+
+                                        teamBlue.remove(user.name)
                                     }
+                                    TEAM_BLUE -> {
 
-                                    teamBlue.remove(user.name)
-                                }
+                                        if (!teamBlue.contains(user.name)) {
+                                            user.name.let { teamBlue.add(it) }
+                                        }
 
-                                else if (team == TEAM_BLUE) {
-
-                                    if (!teamBlue.contains(user.name)) {
-                                        user.name.let { teamBlue.add(it) }
+                                        teamRed.remove(user.name)
                                     }
-
-                                    teamRed.remove(user.name)
-                                }
-
-                                else {
-                                    teamRed.remove(user.name)
-                                    teamBlue.remove(user.name)
+                                    else -> {
+                                        teamRed.remove(user.name)
+                                        teamBlue.remove(user.name)
+                                    }
                                 }
 
                                 println("Team change detected for ${user.name} to $team")
@@ -521,7 +582,11 @@ class LobbyFragment {
 
                         override fun onChildRemoved(dataSnapshot: DataSnapshot) {}
 
-                        override fun onChildMoved(dataSnapshot: DataSnapshot, previousChildName: String?) {}
+                        override fun onChildMoved(
+                            dataSnapshot: DataSnapshot,
+                            previousChildName: String?
+                        ) {
+                        }
 
                         override fun onCancelled(databaseError: DatabaseError) {}
 
@@ -536,7 +601,12 @@ class LobbyFragment {
                                 runGame(lobbyId, users, teamRed, teamBlue)
 
                                 navController.navigate(
-                                    "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${modes[votes.value.indexOf(max(votes.value))]}") {
+                                    "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
+                                        modes[votes.value.indexOf(
+                                            max(votes.value)
+                                        )]
+                                    }"
+                                ) {
                                     modes[votes.value.indexOf(
                                         max(votes.value)
                                     )]
