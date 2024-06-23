@@ -147,11 +147,12 @@ class ScreenForAR {
                 textAlign = TextAlign.Center,
                 fontSize = 28.sp,
                 color = Color.White,
-                text = trackingFailureReason?.getDescription(LocalContext.current) ?: if (childNodes.isEmpty()) {
-                    "point your phone down"
-                } else {
-                    "tap anywhere to place the trophy"
-                }
+                text = trackingFailureReason?.getDescription(LocalContext.current)
+                    ?: if (childNodes.isEmpty()) {
+                        "point your phone down"
+                    } else {
+                        "tap anywhere to place the trophy"
+                    }
             )
             IconButton(
                 onClick = { navController.popBackStack() }, modifier = Modifier.padding(top = 16.dp)
@@ -161,7 +162,6 @@ class ScreenForAR {
                     contentDescription = "Go back",
                 )
             }
-
         }
     }
 

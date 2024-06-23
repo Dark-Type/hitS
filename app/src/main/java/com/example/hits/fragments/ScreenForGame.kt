@@ -11,7 +11,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -153,7 +152,8 @@ class ScreenForGame {
                 databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
                     .removeEventListener(endGameListener)
 
-                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
+                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                    .child("users")
                     .removeEventListener(leaderboardListener)
             }
         }
@@ -271,7 +271,12 @@ class ScreenForGame {
                                     elevation = CardDefaults.cardElevation(
                                         defaultElevation = 12.dp
                                     ),
-                                    colors = CardColors(cardColor, Color.White, Color.Gray, Color.White),
+                                    colors = CardColors(
+                                        cardColor,
+                                        Color.White,
+                                        Color.Gray,
+                                        Color.White
+                                    ),
                                 ) {
                                     Text(
                                         text = player.name,
@@ -381,13 +386,35 @@ class ScreenForGame {
                     )
                 }
                 IconButton(onClick = {
-                    val playerId = neuralNetwork.predictIfHit()
-                    if (playerId != -1) {
-                        player.doDamage(lobbyId, playerId)
-                        Toast.makeText(context, "Hit", Toast.LENGTH_SHORT).show()
-                        // display damage, id and animation
-                    } else {
-                        // display miss animation
+                    cameraX.capturePhoto { pathToPhoto ->
+                        Toast
+                            .makeText(
+                                context,
+                                "Image Saved to $pathToPhoto",
+                                Toast.LENGTH_SHORT
+                            )
+                            .show()
+                        val bitmap = getPhotoFromPath(pathToPhoto)
+                        if (bitmap != null) {
+                            val playerId = neuralNetwork.predictIfHit(bitmap)
+                            if (playerId != -1) {
+                                player.doDamage(lobbyId, playerId)
+                                Toast.makeText(context, "Hit", Toast.LENGTH_SHORT).show()
+                                // display damage, id and animation
+                            } else {
+                                // display miss animation
+                            }
+                            Toast
+                                .makeText(
+                                    context,
+                                    "BITMAP IS NOT NULL",
+                                    Toast.LENGTH_SHORT
+                                )
+                                .show()
+                            bitmapToShow = bitmap
+                            showDialog = true
+                        }
+
                     }
 
                 }) {
@@ -398,31 +425,6 @@ class ScreenForGame {
                         contentDescription = "Shoot",
                         modifier = Modifier
                             .size(120.dp)
-                            .clickable {
-
-                                cameraX.capturePhoto { pathToPhoto ->
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Image Saved to $pathToPhoto",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                                    val bitmap = getPhotoFromPath(pathToPhoto)
-                                    if (bitmap != null) {
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                "BITMAP IS NOT NULL",
-                                                Toast.LENGTH_SHORT
-                                            )
-                                            .show()
-                                        bitmapToShow = bitmap
-                                        showDialog = true
-                                    }
-
-                                }
-                            }
                     )
                 }
 
