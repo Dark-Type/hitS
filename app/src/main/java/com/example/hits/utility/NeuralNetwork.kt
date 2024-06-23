@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.example.hits.R
 import java.io.InputStream
-
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtSession.Result
@@ -21,57 +20,40 @@ class NeuralNetwork(private val context: Context) {
     private var autoencoderOrtSession: OrtSession
 
     fun detect(bitmap: Bitmap) {
-        try {
-            val input = preprocessImage(bitmap)
-            var result = detectionProcess(input, ortEnvironment, autoencoderOrtSession)
+        val input = preprocessImage(bitmap, 500, 500)
 
-            // Вывод боксов в консоль для проверки
-            val boxit = result.iterator()
-            while(boxit.hasNext()) {
-                var box_info = boxit.next()
-                Log.d("ObjectDetection", (box_info[0] - box_info[2] / 2).toString())
-                Log.d("ObjectDetection", (box_info[1] - box_info[3] / 2).toString())
-            }
-            Log.d("ObjectDetection", "Successful ObjectDetection")
-        } catch (e: Exception) {
-            Log.d("ObjectDetection", "Error in ObjectDetection ${Exception(e)}")
-        }
-    }
+        val floatImageBytes = input.map { it.toFloat() }.toFloatArray()
 
-    fun detectionProcess(
-        input: ByteArray,
-        ortEnv: OrtEnvironment,
-        ortSession: OrtSession
-    ): Array<FloatArray> {
-        // Normalize the byte values to float values
-        val floatImageBytes = input.map { it.toFloat() / 255.0f }.toFloatArray()
-
-        // Step 2: get the shape of the byte array and make ort tensor
         val shape = longArrayOf(1, 3, 500, 500)
 
         val inputTensor = OnnxTensor.createTensor(
-            ortEnv,
+            ortEnvironment,
             FloatBuffer.wrap(floatImageBytes),
             shape
         )
 
-        inputTensor.use {
-            // Step 3: call ort inferenceSession run
-            val output = ortSession.run(Collections.singletonMap("input", inputTensor),
-                setOf("output")
-            )
+        val output = detectorOrtSession.run(
+            Collections.singletonMap("input", inputTensor),
+            setOf("output")
+        )
 
-            // Step 4: output analysis
-            output.use {
-                // Step 5: set output result
-                return (output.get(0)?.value) as Array<FloatArray>
-            }
+        val result =  (output.get(0)?.value) as Array<FloatArray>
+
+        // Вывод боксов в консоль для проверки
+        val boxit = result.iterator()
+        println("Кол-во боксов: ")
+        println(result.size)
+        while(boxit.hasNext()) {
+            var box_info = boxit.next()
+            println("ща будут боксы детектора: ")
+            println(box_info[0] - box_info[2] / 2)
+            println(box_info[1] - box_info[3] / 2)
         }
     }
 
-    // Resize to 256 x 256 + bitmap to bytearray
-    private fun preprocessImage(bitmap: Bitmap): ByteArray {
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 256, 256, true)
+    // Resize to width x height + bitmap to bytearray
+    private fun preprocessImage(bitmap: Bitmap, width: Int, height: Int): ByteArray {
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, true)
         val byteBuffer = ByteBuffer.allocate(3 * resizedBitmap.width * resizedBitmap.height)
 
         for (y in 0 until resizedBitmap.height) {
@@ -127,9 +109,9 @@ class NeuralNetwork(private val context: Context) {
         Переводит картинку в эмбеддинг
         */
         // Предобработка изображения
-        val input = preprocessImage(inputBitmap)
+        val input = preprocessImage(inputBitmap, 256, 256)
 
-        val floatImageBytes = input.map { it.toFloat() / 255.0f }.toFloatArray()
+        val floatImageBytes = input.map { it.toFloat() }.toFloatArray()
         val shape = longArrayOf(1, 3, 256, 256)
 
         val inputTensor = OnnxTensor.createTensor(
