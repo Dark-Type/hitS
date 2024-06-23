@@ -14,10 +14,57 @@ import java.nio.FloatBuffer
 import java.util.Collections
 
 class NeuralNetwork(private val context: Context) {
-    private var image: Bitmap ? = null
     private var ortEnvironment: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var detectorOrtSession: OrtSession
     private var autoencoderOrtSession: OrtSession
+
+    fun rememberPerson(id: Int, image: Bitmap) {
+        val embedding = encode(image)
+
+        /*
+        тут нужно положить id и соответствующий ей эмбеддинг в бд
+        может быть несколько, но не меньше 4 эмбеддингов для одного id
+        */
+    }
+
+    fun recognizePerson(image: Bitmap): Int {
+        val embedding = encode(image)
+
+        // Логика получения из бд массива пар <Эмбеддинг, id>
+        val embeddings: Array<Pair<FloatArray, Int>> = arrayOf(Pair(floatArrayOf(), 0))
+
+        var result = embeddings[0].second
+        var maxSimilarity = 0.0f
+        for (i in embeddings.indices) {
+            val similarity = getSimilarity(embedding, embeddings[i].first)
+            if (similarity > maxSimilarity) {
+                maxSimilarity = similarity
+                result = embeddings[i].second
+            }
+        }
+
+        return result
+    }
+    fun getSimilarity(vector1: FloatArray, vector2: FloatArray): Float {
+        /*
+        Выдает число в диапазоне [0;1], выражающее
+        сходство между эмбеддингами двух картинок
+        */
+        var dotProduct = 0f
+        var magnitude1 = 0f
+        var magnitude2 = 0f
+
+        for (i in vector1.indices) {
+            dotProduct += vector1[i] * vector2[i]
+            magnitude1 += vector1[i] * vector1[i]
+            magnitude2 += vector2[i] * vector2[i]
+        }
+
+        magnitude1 = kotlin.math.sqrt(magnitude1)
+        magnitude2 = kotlin.math.sqrt(magnitude2)
+
+        return dotProduct / (magnitude1 * magnitude2)
+    }
 
     fun detect(bitmap: Bitmap) {
         val input = preprocessImage(bitmap, 500, 500)
@@ -41,8 +88,10 @@ class NeuralNetwork(private val context: Context) {
 
         // Вывод боксов в консоль для проверки
         val boxit = result.iterator()
+
         println("Кол-во боксов: ")
         println(result.size)
+
         while(boxit.hasNext()) {
             var box_info = boxit.next()
             println("ща будут боксы детектора: ")
@@ -66,27 +115,6 @@ class NeuralNetwork(private val context: Context) {
         }
 
         return byteBuffer.array()
-    }
-
-    fun getSimilarity(vector1: FloatArray, vector2: FloatArray): Float {
-        /*
-        Выдает число в диапазоне [0;1], выражающее
-        сходство между эмбеддингами двух картинок
-        */
-        var dotProduct = 0f
-        var magnitude1 = 0f
-        var magnitude2 = 0f
-
-        for (i in vector1.indices) {
-            dotProduct += vector1[i] * vector2[i]
-            magnitude1 += vector1[i] * vector1[i]
-            magnitude2 += vector2[i] * vector2[i]
-        }
-
-        magnitude1 = kotlin.math.sqrt(magnitude1)
-        magnitude2 = kotlin.math.sqrt(magnitude2)
-
-        return dotProduct / (magnitude1 * magnitude2)
     }
 
     private fun flatten(array: Array<FloatArray>): FloatArray {
