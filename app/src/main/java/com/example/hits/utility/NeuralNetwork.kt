@@ -172,7 +172,7 @@ class NeuralNetwork(private val context: Context) {
         return context.assets.open("test_image.jpg")
     }
 
-    fun predictIfHit(): Int {
+    fun predictIfHit(image: Bitmap): Int {
         return 0
     }
 
