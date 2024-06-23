@@ -3,13 +3,11 @@ package com.example.hits.utility
 import ai.onnxruntime.OnnxTensor
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import com.example.hits.R
 import java.io.InputStream
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtSession.Result
-import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.Collections
 
@@ -45,6 +43,7 @@ class NeuralNetwork(private val context: Context) {
 
         return result
     }
+
     fun getSimilarity(vector1: FloatArray, vector2: FloatArray): Float {
         /*
         Выдает число в диапазоне [0;1], выражающее
@@ -66,25 +65,40 @@ class NeuralNetwork(private val context: Context) {
         return dotProduct / (magnitude1 * magnitude2)
     }
 
-    fun detect(bitmap: Bitmap) {
-        val input = preprocessImage(bitmap, 500, 500)
+    private fun scaleBoundingBox(
+        width: Int,
+        height: Int,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int
+    ): Array<Int> {
+        return arrayOf(
+            left * width / 500,
+            top * height / 500,
+            right * width / 500,
+            bottom * height / 500
+        )
+    }
 
-        val floatImageBytes = input.map { it.toFloat() }.toFloatArray()
+    fun detect(bitmap: Bitmap) {
+        val resizedBitmap = bitmap.let { Bitmap.createScaledBitmap(it, 500, 500, false) }
+        val input = preprocessImage(resizedBitmap, 500, 500)
 
         val shape = longArrayOf(1, 3, 500, 500)
 
         val inputTensor = OnnxTensor.createTensor(
             ortEnvironment,
-            FloatBuffer.wrap(floatImageBytes),
+            input,
             shape
         )
 
         val output = detectorOrtSession.run(
             Collections.singletonMap("input", inputTensor),
-            setOf("output")
-        )
+            setOf("boxes", "scores", "labels")
+        ) as Result
 
-        val result =  (output.get(0)?.value) as Array<FloatArray>
+        val result = (output.get(0)?.value) as Array<FloatArray>
 
         // Вывод боксов в консоль для проверки
         val boxit = result.iterator()
@@ -92,29 +106,51 @@ class NeuralNetwork(private val context: Context) {
         println("Кол-во боксов: ")
         println(result.size)
 
+        // bb in (xmin, ymin, xmax, ymax) format
+
         while(boxit.hasNext()) {
             var box_info = boxit.next()
             println("ща будут боксы детектора: ")
-            println(box_info[0] - box_info[2] / 2)
-            println(box_info[1] - box_info[3] / 2)
+
+            val scaledBoundingBoxes = scaleBoundingBox(
+                bitmap.width,
+                bitmap.height,
+                box_info[0].toInt(),
+                box_info[1].toInt(),
+                box_info[2].toInt(),
+                box_info[3].toInt(),
+            )
+
+            println(scaledBoundingBoxes[0])
+            println(scaledBoundingBoxes[1])
+            println(scaledBoundingBoxes[2])
+            println(scaledBoundingBoxes[3])
         }
     }
 
-    // Resize to width x height + bitmap to bytearray
-    private fun preprocessImage(bitmap: Bitmap, width: Int, height: Int): ByteArray {
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, true)
-        val byteBuffer = ByteBuffer.allocate(3 * resizedBitmap.width * resizedBitmap.height)
-
-        for (y in 0 until resizedBitmap.height) {
-            for (x in 0 until resizedBitmap.width) {
-                val pixel = resizedBitmap.getPixel(x, y)
-                byteBuffer.put((pixel shr 16 and 0xFF).toByte()) // Red
-                byteBuffer.put((pixel shr 8 and 0xFF).toByte()) // Green
-                byteBuffer.put((pixel and 0xFF).toByte()) // Blue
+    // Resize to width x height + bitmap to floatArray
+    fun preprocessImage(
+        bitmap: Bitmap,
+        width: Int,
+        height: Int
+    ): FloatBuffer {
+        val imgData = FloatBuffer.allocate(1 * 3 * width * height)
+        imgData.rewind()
+        val stride = width * height
+        val bmpData = IntArray(stride)
+        bitmap.getPixels(bmpData, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        for (i in 0..<width) {
+            for (j in 0..<height) {
+                val idx = height * i + j
+                val pixelValue = bmpData[idx]
+                imgData.put(idx, (((pixelValue shr 16 and 0xFF) / 255f - 0.485f) / 0.229f))
+                imgData.put(idx + stride, (((pixelValue shr 8 and 0xFF) / 255f - 0.456f) / 0.224f))
+                imgData.put(idx + stride * 2, (((pixelValue and 0xFF) / 255f - 0.406f) / 0.225f))
             }
         }
 
-        return byteBuffer.array()
+        imgData.rewind()
+        return imgData
     }
 
     private fun flatten(array: Array<FloatArray>): FloatArray {
@@ -132,19 +168,19 @@ class NeuralNetwork(private val context: Context) {
         return result
     }
 
-    fun encode(inputBitmap: Bitmap): FloatArray {
+    fun encode(bitmap: Bitmap): FloatArray {
         /*
         Переводит картинку в эмбеддинг
         */
         // Предобработка изображения
-        val input = preprocessImage(inputBitmap, 256, 256)
+        val resizedBitmap = bitmap.let { Bitmap.createScaledBitmap(it, 256, 256, false) }
+        val input = preprocessImage(resizedBitmap, 256, 256)
 
-        val floatImageBytes = input.map { it.toFloat() }.toFloatArray()
         val shape = longArrayOf(1, 3, 256, 256)
 
         val inputTensor = OnnxTensor.createTensor(
             ortEnvironment,
-            FloatBuffer.wrap(floatImageBytes),
+            input,
             shape
         )
 
