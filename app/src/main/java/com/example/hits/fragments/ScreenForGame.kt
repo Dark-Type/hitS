@@ -415,7 +415,9 @@ class ScreenForGame {
                 IconButton(onClick = {
                     cameraX.capturePhoto() { bitmap ->
 
-                        val playerId = neuralNetwork.predictIfHit(bitmap)
+                        //player.doDamage(lobbyId, thisPlayerID )
+
+                        val playerId = neuralNetwork.predictIfHit(lobbyId, bitmap)
                         if (playerId != null) {
                             player.doDamage(lobbyId, playerId)
                             // to check on yourself

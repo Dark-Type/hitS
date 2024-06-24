@@ -303,7 +303,7 @@ class NeuralNetwork private constructor(context: Context) {
     Возвращает id игрока, в которого попал игрок, или null,
     если попадания не было
      */
-    fun predictIfHit(image: Bitmap): Int? {
+    fun predictIfHit(roomID: Int, image: Bitmap): Int? {
         val aimCoordinates = arrayOf(
             image.width / 2,
             image.height / 2
@@ -332,8 +332,7 @@ class NeuralNetwork private constructor(context: Context) {
                     person[3]
                 )
 
-                // я хз че делать с roomID
-                return recognizePerson(0, croppedPersonImage)
+                return recognizePerson(roomID, croppedPersonImage)
             }
         }
 

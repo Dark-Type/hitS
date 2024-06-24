@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.max
 
 class PlayerLogic(private val healthThreshold: Int) {
     private var isAlive = true
@@ -33,7 +34,7 @@ class PlayerLogic(private val healthThreshold: Int) {
 
 fun doDamage(roomID: Int, playerID : Int) {
 
-    val currPlayerRef = databaseRef.child("rooms").child(roomID.toString()).child("gameData").child("users").child(playerID.toString())
+    val currPlayerRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users").child(playerID.toString())
 
     addValue(currPlayerRef.child("health"), -damage)
 
@@ -123,17 +124,20 @@ fun defuse() {
 }
 
 fun heal(roomID: Int, userID: Int) {
+
+    val healthToAdd = if (health + 30 >= healthThreshold) max(healthThreshold - health, 0) else 30
+
     health = if (health + 30 >= healthThreshold) healthThreshold else health + 30
 
     val healthRef = databaseRef.child("rooms").child(roomID.toString()).child("gameData").child("users")
         .child(userID.toString()).child("health")
 
-    addValue(healthRef.child("health"), health)
+    addValue(healthRef.child("health"), healthToAdd)
 }
 
 fun listenForHealthChanges(roomID: Int, userID: Int, onHealthChanged: (newHealth: Int) -> Unit) {
     val valueRef =
-        databaseRef.child("rooms").child(roomID.toString()).child("gameData").child("users")
+        databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
             .child(userID.toString()).child("health")
 
     valueRef.addValueEventListener(object : ValueEventListener {
