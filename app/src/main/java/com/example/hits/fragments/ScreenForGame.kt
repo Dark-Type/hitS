@@ -43,9 +43,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
+
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.hits.SharedPrefHelper
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
@@ -350,69 +350,8 @@ class ScreenForGame {
                 .fillMaxSize()
                 .padding(bottom = 45.dp), Arrangement.Bottom, Alignment.CenterHorizontally
         ) {
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-                val sensorManager =
-                    context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-                val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-
-                val sensorListener = object : SensorEventListener {
-                    override fun onSensorChanged(event: SensorEvent) {
-                        val x = event.values[0]
-                        val y = event.values[1]
-                        val z = event.values[2]
-
-                        val acceleration =
-                            sqrt((x * x + y * y + z * z).toDouble()) - SensorManager.GRAVITY_EARTH
-                        if (acceleration > shakeThreshold) {
-                            shakeCount++
-                            if (acceleration > moderateSpeedThreshold) {
-                                shakeTime += 2
-                            } else {
-                                shakeTime++
-                            }
-                        }
-                    }
-
-                    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
-                }
-
-                IconButton(
-                    onClick = {
-                        shakeCount = 0
-                        sensorManager.registerListener(
-                            sensorListener,
-                            accelerometer,
-                            SensorManager.SENSOR_DELAY_NORMAL
-                        )
-                        job = CoroutineScope(Dispatchers.Main).launch {
-                            while (isActive) {
-                                delay(1000)
-                                shakeTime++
-                                if (shakeTime >= 10) {
-                                    player.heal(lobbyId, thisPlayerID)
-                                    Toast.makeText(
-                                        context,
-                                        "Shake time: $shakeTime",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    shakeTime = 0
-                                    break
-                                }
-                            }
-                            sensorManager.unregisterListener(sensorListener)
-                        }
-                    },
-                    modifier = Modifier.size(100.dp)
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.heal),
-                        contentDescription = "heal",
-                        modifier = Modifier.size(100.dp)
-                    )
-                }
-
-
-                IconButton(onClick = {
+            IconButton(
+                onClick = {
                     cameraX.capturePhoto() { bitmap ->
 
                         //player.doDamage(lobbyId, thisPlayerID )
@@ -442,33 +381,108 @@ class ScreenForGame {
 
                     }
 
-                }, enabled = isAlive.value) {
-
-
-                    Image(
-                        painter = painterResource(id = R.drawable.prop),
-                        contentDescription = "Shoot",
-                        modifier = Modifier
-                            .size(120.dp)
-                    )
-                }
-
-
-                IconButton(
-                    onClick = { //cameraX.startRealTimeTextRecognition()
-                         },
-                    modifier = Modifier.size(100.dp)
+                }, enabled = isAlive.value, modifier = Modifier
+                    .size(400.dp)
+                    .zIndex(1f)
+                    .align(Alignment.CenterHorizontally)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.main_gun),
+                    contentDescription = "Shoot",
+                    modifier = Modifier
+                        .size(400.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .zIndex(2f)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.interact),
-                        contentDescription = "Interact",
+                    val sensorManager =
+                        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+                    val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+                    val sensorListener = object : SensorEventListener {
+                        override fun onSensorChanged(event: SensorEvent) {
+                            val x = event.values[0]
+                            val y = event.values[1]
+                            val z = event.values[2]
+
+                            val acceleration =
+                                sqrt((x * x + y * y + z * z).toDouble()) - SensorManager.GRAVITY_EARTH
+                            if (acceleration > shakeThreshold) {
+                                shakeCount++
+                                if (acceleration > moderateSpeedThreshold) {
+                                    shakeTime += 2
+                                } else {
+                                    shakeTime++
+                                }
+                            }
+                        }
+
+                        override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
+                    }
+
+                    IconButton(
+                        onClick = {
+                            shakeCount = 0
+                            sensorManager.registerListener(
+                                sensorListener,
+                                accelerometer,
+                                SensorManager.SENSOR_DELAY_NORMAL
+                            )
+                            job = CoroutineScope(Dispatchers.Main).launch {
+                                while (isActive) {
+                                    delay(1000)
+                                    shakeTime++
+                                    if (shakeTime >= 10) {
+                                        player.heal(lobbyId, thisPlayerID)
+                                        Toast.makeText(
+                                            context,
+                                            "Shake time: $shakeTime",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        shakeTime = 0
+                                        break
+                                    }
+                                }
+                                sensorManager.unregisterListener(sensorListener)
+                            }
+                        },
                         modifier = Modifier.size(100.dp)
-                    )
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.heal),
+                            contentDescription = "heal",
+                            modifier = Modifier
+                                .zIndex(2f)
+                                .size(100.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.fillMaxWidth(0.65f))
+
+                    IconButton(
+                        onClick = { //cameraX.startRealTimeTextRecognition()
+                        },
+                        modifier = Modifier
+                            .size(100.dp)
+                            .zIndex(2f)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.interact),
+                            contentDescription = "Interact",
+                            modifier = Modifier
+                                .size(100.dp)
+                        )
+                    }
                 }
             }
+
         }
-
-
 
 
     }
