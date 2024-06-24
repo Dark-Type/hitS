@@ -81,7 +81,6 @@ class CameraX(
     }
 
 
-
     fun startCameraPreviewView(): PreviewView {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         previewView = PreviewView(context)
@@ -110,18 +109,11 @@ class CameraX(
     }
 
     fun capturePhoto(onCaptureFinished: (Bitmap) -> Unit) {
-        owner.lifecycleScope.launch(Dispatchers.Default) {
-            var bitmap: Bitmap?
-            withContext(Dispatchers.Main) {
-                bitmap = previewView?.bitmap
-            }
-            if (bitmap != null) {
-                withContext(Dispatchers.Main) {
-                    onCaptureFinished(bitmap!!)
-                }
-            }
+        val bitmap: Bitmap? = previewView?.bitmap
+        if (bitmap != null) {
+            onCaptureFinished(bitmap)
         }
     }
-
-
 }
+
+
