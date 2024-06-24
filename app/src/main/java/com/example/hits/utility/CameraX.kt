@@ -13,24 +13,18 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class CameraX(
     private var context: Context,
     private var owner: LifecycleOwner,
 ) {
-    var photoPath = mutableStateOf("")
     val timerLiveData = MutableLiveData<Long>()
 
     private var imageCapture: ImageCapture? = null
@@ -107,7 +101,6 @@ class CameraX(
 
         return previewView!!
     }
-
     fun capturePhoto(onCaptureFinished: (Bitmap) -> Unit) {
         val bitmap: Bitmap? = previewView?.bitmap
         if (bitmap != null) {

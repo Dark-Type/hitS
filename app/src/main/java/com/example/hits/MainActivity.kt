@@ -2,7 +2,6 @@ package com.example.hits
 
 import android.Manifest
 import android.content.res.Configuration
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -67,12 +66,6 @@ class MainActivity : ComponentActivity() {
         sharedPrefHelper = SharedPrefHelper(this)
 
         val neuralNetwork = NeuralNetwork.getInstance(this)
-        neuralNetwork.detect(
-            BitmapFactory.decodeStream(neuralNetwork.readInputImage())
-        )
-        neuralNetwork.encode(
-            BitmapFactory.decodeStream(neuralNetwork.readInputImage())
-        )
 
         if (sharedPrefHelper.getDamage() == null) sharedPrefHelper.saveDamage("0")
         if (sharedPrefHelper.getKills() == null) sharedPrefHelper.saveKills("0")
@@ -101,7 +94,7 @@ class MainActivity : ComponentActivity() {
                         ScreenForResults().ResultsScreen(lobbyId.toInt(), userID.toInt(), gamemodePlayed, navController)
                     }
                 }
-                composable("arScreen") { ScreenForAR().arScreen(navController) }
+                composable("arScreen") { ScreenForAR().ArScreen(navController) }
                 composable("lobbyScreen/{lobbyId}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     if (lobbyId != null) {

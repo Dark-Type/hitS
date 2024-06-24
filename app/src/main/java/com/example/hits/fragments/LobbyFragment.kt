@@ -59,7 +59,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
@@ -82,7 +81,9 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.Collections.max
 
 
@@ -98,7 +99,7 @@ class LobbyFragment {
 
     //I need a listener on event of all users being ready
     @Composable
-    fun chooseTeams(
+    fun ChooseTeams(
         chosenGameMode: String,
         playersInLobby: Int,
         lobbyId: Int,
@@ -343,7 +344,7 @@ class LobbyFragment {
                         }
 
                         if (shouldChooseTeams.value) {
-                            chooseTeams(
+                            ChooseTeams(
                                 modes[votes.value.indexOf(max(votes.value))],
                                 users.size,
                                 lobbyId,
@@ -705,7 +706,7 @@ class LobbyFragment {
                             onClick = {
                                 println("Button clicked for user: ${user.id}")
                                 triggerCapture.value = true
-                                val bitmap = bitmapState.value
+                                bitmapState.value
 
                             },
                             shape = RoundedCornerShape(6.dp),
@@ -748,7 +749,10 @@ class LobbyFragment {
         val takePictureLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicturePreview()) { bitmap: Bitmap? ->
             if (bitmap != null) {
                 bitmapState.value = bitmap
-                neuralNetwork.rememberPerson(roomID, userToScanID, bitmap)
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    neuralNetwork.rememberPerson(roomID, userToScanID, bitmap)
+                }
                 println("Photo taken and remembered for user: $userToScanID")
             }
         }

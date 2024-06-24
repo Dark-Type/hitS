@@ -51,6 +51,7 @@ import com.example.hits.utility.User
 import com.example.hits.utility.UserForLeaderboard
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.endGame
+import com.example.hits.utility.getEmbeddings
 import com.example.hits.utility.getUsersForCurrGameLeaderboard
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -135,9 +136,7 @@ class ScreenForGame {
 
                     users.sortWith(compareByDescending<User> { it.kills }.thenBy { it.deaths })
 
-                    var i = 0
-
-                    for (user in users) {
+                    for ((i, user) in users.withIndex()) {
 
                         leaderboardData.add(
                             UserForLeaderboard(
@@ -150,7 +149,6 @@ class ScreenForGame {
                             )
                         )
 
-                        i++
                     }
                 }
 
@@ -187,6 +185,13 @@ class ScreenForGame {
     ) {
         val player = PlayerLogic(if (currGameMode == "One Hit Elimination") 50 else 100)
         val neuralNetwork = NeuralNetwork.getInstance(context)
+        LaunchedEffect (lobbyId){
+            CoroutineScope(Dispatchers.Default).launch {
+                val embeddings: Array<Pair<FloatArray, Int>> by lazy { getEmbeddings(lobbyId) }
+                neuralNetwork.embeddingsSetter(embeddings)
+            }
+        }
+
         val isAlive = remember { mutableStateOf(player.isAlive()) }
         HealthToast(playerLogic = player, lobbyID = lobbyId, userID = userID)
         player.listenForAliveChanges(lobbyId, userID) { newIsAlive ->
@@ -349,7 +354,7 @@ class ScreenForGame {
 
                         //player.doDamage(lobbyId, thisPlayerID )
                         CoroutineScope(Dispatchers.Main).launch {
-                            val playerId = neuralNetwork.predictIfHit(lobbyId, bitmap)
+                            val playerId = neuralNetwork.predictIfHit(bitmap)
                             if (playerId != null) {
                                 player.doDamage(lobbyId, playerId)
                                 // to check on yourself
@@ -372,7 +377,6 @@ class ScreenForGame {
                                 .show()
                             showDialog = true
                         }
-
 
 
                     }

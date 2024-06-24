@@ -53,7 +53,7 @@ import io.github.sceneview.rememberView
 
 class ScreenForAR {
     @Composable
-    fun arScreen(navController: NavController) {
+    fun ArScreen(navController: NavController) {
 
         Box(
             modifier = Modifier.fillMaxSize(),
