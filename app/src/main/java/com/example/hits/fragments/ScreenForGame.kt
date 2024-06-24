@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
@@ -45,6 +44,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+import com.example.hits.SharedPrefHelper
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.User
@@ -71,11 +71,27 @@ class ScreenForGame {
     private var job: Job? = null
     private lateinit var leaderboardData: SnapshotStateList<UserForLeaderboard>
 
+
+    @Composable
+    fun HealthToast(playerLogic: PlayerLogic, lobbyID: Int, userID: Int) {
+        val context = LocalContext.current
+        val health = remember { mutableIntStateOf(playerLogic.getHealth()) }
+
+        playerLogic.listenForHealthChanges(lobbyID, userID) { newHealth ->
+            health.intValue = newHealth
+        }
+
+        LaunchedEffect(health.intValue) {
+            Toast.makeText(context, "Current health: ${health.intValue}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     @Composable
     fun GameScreen(lobbyId: Int, userID: Int, currGameMode: String, navController: NavController) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
+
 
         leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }
 
@@ -175,11 +191,18 @@ class ScreenForGame {
         navController: NavController, lobbyId: Int, userID: Int, currGameMode: String
     ) {
         val player = PlayerLogic(if (currGameMode == "One Hit Elimination") 50 else 100)
-        player.listenForChanges(lobbyId, userID)
         val neuralNetwork = NeuralNetwork.getInstance(context)
-
+        val isAlive = remember { mutableStateOf(player.isAlive()) }
+        HealthToast(playerLogic = player, lobbyID = lobbyId, userID = userID)
+        player.listenForAliveChanges(lobbyId, userID) { newIsAlive ->
+            isAlive.value = newIsAlive
+            if (!newIsAlive) {
+                Toast.makeText(context, "You are knocked down", Toast.LENGTH_SHORT).show()
+            }
+        }
         var showDialog by remember { mutableStateOf(false) }
-        var bitmapToShow by remember { mutableStateOf<Bitmap?>(null) }
+        val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
+        val thisPlayerID = sharedPrefHelper.getID()!!.toInt()
         val requiredPermissions =
             mutableListOf(
                 Manifest.permission.CAMERA,
@@ -364,7 +387,7 @@ class ScreenForGame {
                                 delay(1000)
                                 shakeTime++
                                 if (shakeTime >= 10) {
-                                    player.heal()
+                                    player.heal(lobbyId, thisPlayerID)
                                     Toast.makeText(
                                         context,
                                         "Shake time: $shakeTime",
@@ -386,38 +409,37 @@ class ScreenForGame {
                     )
                 }
                 IconButton(onClick = {
-                    cameraX.capturePhoto { pathToPhoto ->
-                        Toast
-                            .makeText(
-                                context,
-                                "Image Saved to $pathToPhoto",
-                                Toast.LENGTH_SHORT
-                            )
-                            .show()
+                    cameraX.capturePhoto() { pathToPhoto ->
+
                         val bitmap = getPhotoFromPath(pathToPhoto)
                         if (bitmap != null) {
                             val playerId = neuralNetwork.predictIfHit(bitmap)
                             if (playerId != null) {
                                 player.doDamage(lobbyId, playerId)
-                                Toast.makeText(context, "Hit", Toast.LENGTH_SHORT).show()
+                                // to check on yourself
+                                //player.doDamage(lobbyId, thisPlayerID )
+                                Toast.makeText(
+                                    context,
+                                    "You hit player with id $playerId",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 // display damage, id and animation
                             } else {
-                                // display miss animation
+                                //display miss animation
                             }
                             Toast
                                 .makeText(
                                     context,
-                                    "BITMAP IS NOT NULL",
+                                    "DONE",
                                     Toast.LENGTH_SHORT
                                 )
                                 .show()
-                            bitmapToShow = bitmap
-                            showDialog = true
+
                         }
 
                     }
 
-                }) {
+                }, enabled = isAlive.value) {
 
 
                     Image(
@@ -429,7 +451,8 @@ class ScreenForGame {
                 }
 
                 IconButton(
-                    onClick = { cameraX.startRealTimeTextRecognition() },
+                    onClick = { //cameraX.startRealTimeTextRecognition()
+                         },
                     modifier = Modifier.size(100.dp)
                 ) {
                     Image(
@@ -442,15 +465,7 @@ class ScreenForGame {
         }
 
 
-        if (showDialog) {
-            Dialog(onDismissRequest = { showDialog = false }) {
-                Box(modifier = Modifier.size(200.dp)) {
-                    bitmapToShow?.let { bitmap ->
-                        Image(bitmap = bitmap.asImageBitmap(), contentDescription = null)
-                    }
-                }
-            }
-        }
+
         LaunchedEffect(key1 = showDialog) {
             if (showDialog) {
                 delay(2000)

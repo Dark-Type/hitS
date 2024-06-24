@@ -6,13 +6,11 @@ import android.graphics.BitmapFactory
 import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
-import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -41,6 +39,7 @@ class CameraX(
     val timerLiveData = MutableLiveData<Long>()
 
     private var imageCapture: ImageCapture? = null
+    private var previewView: PreviewView? = null
 
     @OptIn(ExperimentalGetImage::class)
     fun startRealTimeTextRecognition() {
@@ -87,11 +86,12 @@ class CameraX(
     }
 
 
+
     fun startCameraPreviewView(): PreviewView {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-        val previewView = PreviewView(context)
+        previewView = PreviewView(context)
         val preview = Preview.Builder().build().also {
-            it.setSurfaceProvider(previewView.surfaceProvider)
+            it.setSurfaceProvider(previewView!!.surfaceProvider)
         }
 
         imageCapture = ImageCapture.Builder()
@@ -111,41 +111,26 @@ class CameraX(
             }
         }, ContextCompat.getMainExecutor(context))
 
-        return previewView
+        return previewView!!
     }
 
-    fun capturePhoto(onCaptureFinished: (String) -> Unit) = owner.lifecycleScope.launch {
-        val imageCapture = imageCapture ?: return@launch
-
-        imageCapture.takePicture(ContextCompat.getMainExecutor(context), object :
-            ImageCapture.OnImageCapturedCallback(), ImageCapture.OnImageSavedCallback {
-            override fun onCaptureSuccess(image: ImageProxy) {
-                super.onCaptureSuccess(image)
-                owner.lifecycleScope.launch(Dispatchers.Default) {
-                    val fileName = StringBuilder().apply {
-                        append("IMG_")
-                        append(System.currentTimeMillis())
-                    }.toString()
-                    photoPath.value = saveMediaToCache(
-                        imageProxyToBitmap(image),
-                        fileName
-                    )
-                    withContext(Dispatchers.Main) {
-                        onCaptureFinished(photoPath.value)
-                    }
+    fun capturePhoto(onCaptureFinished: (String) -> Unit) {
+        owner.lifecycleScope.launch(Dispatchers.Default) {
+            var bitmap: Bitmap?
+            withContext(Dispatchers.Main) {
+                bitmap = previewView?.bitmap
+            }
+            if (bitmap != null) {
+                val fileName = StringBuilder().apply {
+                    append("IMG_")
+                    append(System.currentTimeMillis())
+                }.toString()
+                photoPath.value = saveMediaToCache(bitmap!!, fileName)
+                withContext(Dispatchers.Main) {
+                    onCaptureFinished(photoPath.value)
                 }
             }
-
-            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                Toast.makeText(context, "Image Saved to ${photoPath.value}", Toast.LENGTH_SHORT)
-                    .show()
-            }
-
-            override fun onError(exception: ImageCaptureException) {
-                Log.e("CameraX", "Image capture error", exception)
-                Toast.makeText(context, "Image Error", Toast.LENGTH_SHORT).show()
-            }
-        })
+        }
     }
 
     private var byteArray: ByteArray? = null
@@ -173,15 +158,11 @@ class CameraX(
                 val success = bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it)
                 if (success) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            context,
-                            "Saved Successfully to ${imageFile.absolutePath}",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
                     return@withContext imageFile.absolutePath
                 }
             }
             return@withContext ""
         }
+
 }
