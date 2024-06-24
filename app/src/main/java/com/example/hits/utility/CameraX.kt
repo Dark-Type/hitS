@@ -2,7 +2,6 @@ package com.example.hits.utility
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
@@ -11,10 +10,10 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -24,12 +23,8 @@ import kotlinx.coroutines.Dispatchers
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
-import java.nio.ByteBuffer
 
 class CameraX(
     private var context: Context,
@@ -114,55 +109,19 @@ class CameraX(
         return previewView!!
     }
 
-    fun capturePhoto(onCaptureFinished: (String) -> Unit) {
+    fun capturePhoto(onCaptureFinished: (Bitmap) -> Unit) {
         owner.lifecycleScope.launch(Dispatchers.Default) {
             var bitmap: Bitmap?
             withContext(Dispatchers.Main) {
                 bitmap = previewView?.bitmap
             }
             if (bitmap != null) {
-                val fileName = StringBuilder().apply {
-                    append("IMG_")
-                    append(System.currentTimeMillis())
-                }.toString()
-                photoPath.value = saveMediaToCache(bitmap!!, fileName)
                 withContext(Dispatchers.Main) {
-                    onCaptureFinished(photoPath.value)
+                    onCaptureFinished(bitmap!!)
                 }
             }
         }
     }
 
-    private var byteArray: ByteArray? = null
-    private suspend fun imageProxyToBitmap(image: ImageProxy): Bitmap =
-        withContext(owner.lifecycleScope.coroutineContext) {
-            val planeProxy = image.planes[0]
-            val buffer: ByteBuffer = planeProxy.buffer
-            val remaining = buffer.remaining()
-
-            if (byteArray == null || byteArray!!.size != remaining) {
-                byteArray = ByteArray(remaining)
-            }
-
-            buffer.get(byteArray!!)
-            BitmapFactory.decodeByteArray(byteArray, 0, remaining)
-        }
-
-    private suspend fun saveMediaToCache(bitmap: Bitmap, name: String): String =
-        withContext(IO) {
-            val filename = "$name.jpg"
-            val imageFile = File(context.cacheDir, filename)
-            val fos = FileOutputStream(imageFile)
-
-            fos.use {
-                val success = bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it)
-                if (success) {
-                    withContext(Dispatchers.Main) {
-                    }
-                    return@withContext imageFile.absolutePath
-                }
-            }
-            return@withContext ""
-        }
 
 }

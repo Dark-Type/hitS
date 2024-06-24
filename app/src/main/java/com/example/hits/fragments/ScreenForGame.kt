@@ -43,6 +43,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.sp
 import com.example.hits.SharedPrefHelper
 import com.example.hits.utility.NeuralNetwork
@@ -408,34 +410,33 @@ class ScreenForGame {
                         modifier = Modifier.size(100.dp)
                     )
                 }
+
+
                 IconButton(onClick = {
-                    cameraX.capturePhoto() { pathToPhoto ->
+                    cameraX.capturePhoto() { bitmap ->
 
-                        val bitmap = getPhotoFromPath(pathToPhoto)
-                        if (bitmap != null) {
-                            val playerId = neuralNetwork.predictIfHit(bitmap)
-                            if (playerId != null) {
-                                player.doDamage(lobbyId, playerId)
-                                // to check on yourself
-                                //player.doDamage(lobbyId, thisPlayerID )
-                                Toast.makeText(
-                                    context,
-                                    "You hit player with id $playerId",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                // display damage, id and animation
-                            } else {
-                                //display miss animation
-                            }
-                            Toast
-                                .makeText(
-                                    context,
-                                    "DONE",
-                                    Toast.LENGTH_SHORT
-                                )
-                                .show()
-
+                        val playerId = neuralNetwork.predictIfHit(bitmap)
+                        if (playerId != null) {
+                            player.doDamage(lobbyId, playerId)
+                            // to check on yourself
+                            //player.doDamage(lobbyId, thisPlayerID )
+                            Toast.makeText(
+                                context,
+                                "You hit player with id $playerId",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            // display damage, id and animation
+                        } else {
+                            //display miss animation
                         }
+                        Toast
+                            .makeText(
+                                context,
+                                "DONE",
+                                Toast.LENGTH_SHORT
+                            )
+                            .show()
+                        showDialog = true
 
                     }
 
@@ -449,6 +450,7 @@ class ScreenForGame {
                             .size(120.dp)
                     )
                 }
+
 
                 IconButton(
                     onClick = { //cameraX.startRealTimeTextRecognition()
@@ -466,11 +468,6 @@ class ScreenForGame {
 
 
 
-        LaunchedEffect(key1 = showDialog) {
-            if (showDialog) {
-                delay(2000)
-                showDialog = false
-            }
-        }
+
     }
 }
