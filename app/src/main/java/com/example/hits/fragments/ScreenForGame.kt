@@ -4,8 +4,6 @@ package com.example.hits.fragments
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -100,7 +98,6 @@ class ScreenForGame {
         CameraCompose(
             context = context,
             cameraX = cameraX,
-            navController,
             lobbyId,
             userID,
             currGameMode
@@ -182,15 +179,11 @@ class ScreenForGame {
     }
 
 
-    private fun getPhotoFromPath(path: String): Bitmap? {
-        return BitmapFactory.decodeFile(path)
-    }
-
     @Composable
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        navController: NavController, lobbyId: Int, userID: Int, currGameMode: String
+        lobbyId: Int, userID: Int, currGameMode: String
     ) {
         val player = PlayerLogic(if (currGameMode == "One Hit Elimination") 50 else 100)
         val neuralNetwork = NeuralNetwork.getInstance(context)
@@ -355,29 +348,32 @@ class ScreenForGame {
                     cameraX.capturePhoto() { bitmap ->
 
                         //player.doDamage(lobbyId, thisPlayerID )
-
-                        val playerId = neuralNetwork.predictIfHit(lobbyId, bitmap)
-                        if (playerId != null) {
-                            player.doDamage(lobbyId, playerId)
-                            // to check on yourself
-                            //player.doDamage(lobbyId, thisPlayerID )
-                            Toast.makeText(
-                                context,
-                                "You hit player with id $playerId",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            // display damage, id and animation
-                        } else {
-                            //display miss animation
+                        CoroutineScope(Dispatchers.Main).launch {
+                            val playerId = neuralNetwork.predictIfHit(lobbyId, bitmap)
+                            if (playerId != null) {
+                                player.doDamage(lobbyId, playerId)
+                                // to check on yourself
+                                //player.doDamage(lobbyId, thisPlayerID )
+                                Toast.makeText(
+                                    context,
+                                    "You hit player with id $playerId",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                // display damage, id and animation
+                            } else {
+                                //display miss animation
+                            }
+                            Toast
+                                .makeText(
+                                    context,
+                                    "DONE",
+                                    Toast.LENGTH_SHORT
+                                )
+                                .show()
+                            showDialog = true
                         }
-                        Toast
-                            .makeText(
-                                context,
-                                "DONE",
-                                Toast.LENGTH_SHORT
-                            )
-                            .show()
-                        showDialog = true
+
+
 
                     }
 

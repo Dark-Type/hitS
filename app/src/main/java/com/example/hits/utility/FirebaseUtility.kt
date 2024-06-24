@@ -9,10 +9,10 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.getValue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import kotlin.math.max
@@ -553,9 +553,7 @@ fun getUsersForCurrGameLeaderboard(roomID: Int) : SnapshotStateList<UserForLeade
                 users.add(userSnapshot.getValue(User::class.java)!!)
             }
 
-            var i = 0
-
-            for (user in users) {
+            for ((i, user) in users.withIndex()) {
 
                 usersForCurrGameLeaderboard.add(
                     UserForLeaderboard(
@@ -568,7 +566,6 @@ fun getUsersForCurrGameLeaderboard(roomID: Int) : SnapshotStateList<UserForLeade
                     )
                 )
 
-                i++
             }
         }
 
@@ -618,8 +615,9 @@ fun getEmbeddings(roomID: Int) : Array<Pair<FloatArray, Int>>{
 
                 for (embeddingSnapshot in userSnapshot.children) {
 
-                    val embedding = embeddingSnapshot.getValue(FloatArray::class.java)!!
-                    embeddings.add(Pair(embedding, id))
+                    val typeIndicator = object : GenericTypeIndicator<List<Float>>() {}
+                    val embeddingList = embeddingSnapshot.getValue(typeIndicator) ?: listOf()
+                    embeddings.add(Pair(embeddingList.toFloatArray(), id))
                 }
             }
             latch.countDown()

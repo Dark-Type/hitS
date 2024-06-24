@@ -10,6 +10,8 @@ import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtSession.Result
 import android.graphics.Canvas
 import android.graphics.Rect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.nio.FloatBuffer
 import java.util.Collections
 
@@ -133,10 +135,10 @@ class NeuralNetwork private constructor(context: Context) {
         val boxIt = result.iterator()
 
         // bounding boxes in (xmin, ymin, xmax, ymax) format
-        var boundingBoxes = ArrayList<Array<Int>>()
+        val boundingBoxes = ArrayList<Array<Int>>()
 
-        while(boxIt.hasNext()) {
-            var box = boxIt.next()
+        while (boxIt.hasNext()) {
+            val box = boxIt.next()
 
             val scaledBoundingBoxes = scaleBoundingBox(
                 bitmap.width,
@@ -175,8 +177,8 @@ class NeuralNetwork private constructor(context: Context) {
             bitmap.height
         )
 
-        for (i in 0..< width) {
-            for (j in 0..< height) {
+        for (i in 0..<width) {
+            for (j in 0..<height) {
                 val idx = height * i + j
                 val pixelValue = bmpData[idx]
                 imgData.put(
@@ -187,7 +189,8 @@ class NeuralNetwork private constructor(context: Context) {
                     idx + stride,
                     (((pixelValue shr 8 and 0xFF) / 255f - 0.456f) / 0.224f)
                 )
-                imgData.put(idx + stride * 2,
+                imgData.put(
+                    idx + stride * 2,
                     (((pixelValue and 0xFF) / 255f - 0.406f) / 0.225f)
                 )
             }
@@ -199,7 +202,7 @@ class NeuralNetwork private constructor(context: Context) {
 
     // "Выравнивание" тензора до размерности 1
     private fun flatten(array: Array<FloatArray>): FloatArray {
-        val size = array.sumBy { it.size }
+        val size = array.sumOf { it.size }
         val result = FloatArray(size)
         var index = 0
 
@@ -271,7 +274,7 @@ class NeuralNetwork private constructor(context: Context) {
         xMax: Int,
         yMax: Int
     ): Boolean {
-        return pointX in xMin..xMax && pointY in yMin .. yMax
+        return pointX in xMin..xMax && pointY in yMin..yMax
     }
 
     // Обрезка bitmap по координатам bb
@@ -303,7 +306,7 @@ class NeuralNetwork private constructor(context: Context) {
     Возвращает id игрока, в которого попал игрок, или null,
     если попадания не было
      */
-    fun predictIfHit(roomID: Int, image: Bitmap): Int? {
+    suspend fun predictIfHit(roomID: Int, image: Bitmap): Int? = withContext(Dispatchers.Default) {
         val aimCoordinates = arrayOf(
             image.width / 2,
             image.height / 2
@@ -332,11 +335,11 @@ class NeuralNetwork private constructor(context: Context) {
                     person[3]
                 )
 
-                return recognizePerson(roomID, croppedPersonImage)
+                return@withContext recognizePerson(roomID, croppedPersonImage)
             }
         }
 
-        return null
+        return@withContext null
     }
 
     init {
