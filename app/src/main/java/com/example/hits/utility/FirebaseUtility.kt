@@ -565,7 +565,6 @@ fun getUsersForCurrGameLeaderboard(roomID: Int) : SnapshotStateList<UserForLeade
                         0
                     )
                 )
-
             }
         }
 
