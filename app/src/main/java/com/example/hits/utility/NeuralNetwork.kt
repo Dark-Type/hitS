@@ -1,5 +1,6 @@
 package com.example.hits.utility
 
+import ai.onnxruntime.OnnxJavaType
 import ai.onnxruntime.OnnxTensor
 import android.content.Context
 import android.graphics.Bitmap
@@ -7,6 +8,7 @@ import com.example.hits.R
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtSession.Result
+import ai.onnxruntime.extensions.OrtxPackage
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.util.Log
@@ -14,6 +16,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.Collections
 
@@ -106,47 +111,65 @@ class NeuralNetwork private constructor(context: Context) {
         )
     }
 
+    private fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        return stream.toByteArray()
+    }
+
+    private fun readInputImage(): InputStream {
+        return applicationContext.assets.open("test_image.jpg")
+    }
+
     // Найти людей на фото
     private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> {
         Log.d("detect", "detect launched")
-        val input = preprocessImage(bitmap, 500, 500)
-        Log.d("detect", "preprocessed image")
-        val shape = longArrayOf(1, 3, 500, 500)
+
+        var imagestream = readInputImage()
+        imagestream.reset()
+        val input = imagestream.readBytes()
+
+        val shape = longArrayOf(input.size.toLong())
 
         val inputTensor = OnnxTensor.createTensor(
             ortEnvironment,
-            input,
-            shape
+            ByteBuffer.wrap(input),
+            shape,
+            OnnxJavaType.UINT8
         )
         Log.d("detect", "created tensor")
 
         val output = detectorOrtSession.run(
-            Collections.singletonMap("input", inputTensor),
-            setOf("boxes", "scores", "labels")
+            Collections.singletonMap("image", inputTensor),
+            setOf("image_out", "scaled_box_out_next")
         ) as Result
         Log.d("detect", "ran session")
 
-        val result = (output.get(0)?.value) as Array<FloatArray>
+        val result = (output.get(1)?.value) as Array<FloatArray>
         Log.d("detect", "converted results")
 
         val boxIt = result.iterator()
 
         // bounding boxes in (xmin, ymin, xmax, ymax) format
         val boundingBoxes = ArrayList<Array<Int>>()
+
         Log.d("detect", "start bounding boxes process")
         while (boxIt.hasNext()) {
             val box = boxIt.next()
+            // Проверка, что детектирован человек
+            if (box[5].toInt() == 0) {
+                Log.d("detect", "person finded")
+                val scaledBoundingBoxes = scaleBoundingBox(
+                    bitmap.width,
+                    bitmap.height,
+                    box[0].toInt(),
+                    box[1].toInt(),
+                    box[2].toInt(),
+                    box[3].toInt()
+                )
 
-            val scaledBoundingBoxes = scaleBoundingBox(
-                bitmap.width,
-                bitmap.height,
-                box[0].toInt(),
-                box[1].toInt(),
-                box[2].toInt(),
-                box[3].toInt()
-            )
-
-            boundingBoxes.add(scaledBoundingBoxes)
+                boundingBoxes.add(scaledBoundingBoxes)
+            }
         }
         Log.d("detect", "end bounding boxes process")
 
@@ -259,8 +282,8 @@ class NeuralNetwork private constructor(context: Context) {
         return flatten(latentCode)
     }
 
-    private fun readSsd(): ByteArray {
-        val modelID = R.raw.ssd_onnx
+    private fun readYolo(): ByteArray {
+        val modelID = R.raw.yolov8n_with_pre_post_processing
         return applicationContext.resources.openRawResource(modelID).readBytes()
     }
 
@@ -350,9 +373,11 @@ class NeuralNetwork private constructor(context: Context) {
 
     init {
         // Загрузка моделей в ort сессии
+        val sessionOptions: OrtSession.SessionOptions = OrtSession.SessionOptions()
+        sessionOptions.registerCustomOpLibrary(OrtxPackage.getLibraryPath())
         detectorOrtSession = ortEnvironment.createSession(
-            readSsd(),
-            OrtSession.SessionOptions()
+            readYolo(),
+            sessionOptions
         )
         autoencoderOrtSession = ortEnvironment.createSession(
             readAutoencoder(),
