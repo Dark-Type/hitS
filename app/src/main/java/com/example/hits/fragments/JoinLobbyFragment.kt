@@ -288,7 +288,7 @@ class JoinLobbyFragment {
                         contentDescription = "to lobby",
                     )
                 }
-                IconButton(onClick = { navController.navigate("settingsScreen") }, modifier = Modifier.fillMaxSize(0.4f).align(Alignment.BottomStart)
+                IconButton(onClick = { navController.navigate("settingsScreen/-1") }, modifier = Modifier.fillMaxSize(0.4f).align(Alignment.BottomStart)
                     .padding(16.dp)) {
                     Image(
                         painter = painterResource(id = R.drawable.lobby_go_to_settings),

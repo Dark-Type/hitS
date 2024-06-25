@@ -229,7 +229,7 @@ class LobbyFragment {
                 contentAlignment = Alignment.TopEnd
             ) {
                 IconButton(
-                    onClick = { navController.navigate("settingsScreen") },
+                    onClick = { navController.navigate("settingsScreen/$lobbyId") },
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Image(
@@ -646,6 +646,7 @@ class LobbyFragment {
                     databaseRef.child("rooms").child(lobbyId.toString()).child("users")
                         .addChildEventListener(teamChangeListener)
 
+
                     onDispose {
                         // Detach your listeners when the composable is disposed
                         databaseRef.child("rooms").child(lobbyId.toString()).child("users")
@@ -658,6 +659,7 @@ class LobbyFragment {
 
                         databaseRef.child("rooms").child(lobbyId.toString()).child("users")
                             .removeEventListener(teamChangeListener)
+
                     }
                 }
 

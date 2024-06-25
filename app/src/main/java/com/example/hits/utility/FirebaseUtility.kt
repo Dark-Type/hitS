@@ -400,7 +400,7 @@ fun addValue(valueRef: DatabaseReference, value: Int) {
             dataSnapshot: DataSnapshot?
         ) {
             // Transaction completed
-            Log.d("Firebase", "Transaction:onComplete:$databaseError")
+            Log.d("Firebase", "Added value: $value to $valueRef")
         }
     })
 }

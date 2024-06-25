@@ -85,7 +85,12 @@ class MainActivity : ComponentActivity() {
             ) {
                 composable("initUI") { InitUI(navController) }
                 composable("joinLobbyScreen") { JoinLobbyFragment().JoinLobbyScreen(navController) }
-                composable("settingsScreen") { SettingsFragment().SettingsScreen(navController) }
+                composable("settingsScreen/{lobbyId}") {backStackEntry ->
+                    val lobbyId = backStackEntry.arguments?.getString("lobbyId")
+
+                    if (lobbyId != null)
+                        SettingsFragment().SettingsScreen(navController, lobbyId.toInt())
+                }
                 composable("resultsScreen/{lobbyId}/{userID}/{gamemodePlayed}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     val userID = backStackEntry.arguments?.getString("userID")

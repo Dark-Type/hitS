@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
 import com.example.hits.SharedPrefHelper
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
@@ -71,16 +72,13 @@ class ScreenForGame {
     private var shakeTime = 0
     private var job: Job? = null
     private lateinit var leaderboardData: SnapshotStateList<UserForLeaderboard>
+    private lateinit var player: PlayerLogic
 
 
     @Composable
-    fun HealthToast(playerLogic: PlayerLogic, lobbyID: Int, userID: Int) {
+    fun HealthToast() {
         val context = LocalContext.current
-        val health = remember { mutableIntStateOf(playerLogic.getHealth()) }
-
-        playerLogic.listenForHealthChanges(lobbyID, userID) { newHealth ->
-            health.intValue = newHealth
-        }
+        val health = remember { mutableIntStateOf(player.getHealth()) }
 
         LaunchedEffect(health.intValue) {
             Toast.makeText(context, "Current health: ${health.intValue}", Toast.LENGTH_SHORT).show()
@@ -93,6 +91,8 @@ class ScreenForGame {
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
 
+        player = PlayerLogic(if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 50 else 100)
+        Log.d("CREATED PLAYER", "AAAAAAAAAAAAAAAAA")
 
         leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }
 
@@ -100,8 +100,7 @@ class ScreenForGame {
             context = context,
             cameraX = cameraX,
             lobbyId,
-            userID,
-            currGameMode
+            userID
         )
 
         DisposableEffect(Unit) {
@@ -155,11 +154,32 @@ class ScreenForGame {
                 override fun onCancelled(error: DatabaseError) {}
             }
 
+            val healthListener = object : ValueEventListener {
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    val newHealth = dataSnapshot.getValue(Int::class.java)
+
+                    if (newHealth != null) {
+                        player.changeHP(lobbyId, userID, newHealth)
+
+                        Log.d("TAKED DMG", newHealth.toString() + " curr hp: ${player.getHealth()}")
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    // Log the error
+                }
+            }
+
             databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
                 .addValueEventListener(leaderboardListener)
 
             databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
                 .addValueEventListener(endGameListener)
+
+            databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
+                .child(userID.toString()).child("health").addValueEventListener(healthListener)
 
             onDispose {
                 databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
@@ -168,6 +188,9 @@ class ScreenForGame {
                 databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
                     .child("users")
                     .removeEventListener(leaderboardListener)
+
+                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
+                    .child("health").removeEventListener(healthListener)
             }
         }
 
@@ -181,9 +204,8 @@ class ScreenForGame {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        lobbyId: Int, userID: Int, currGameMode: String
+        lobbyId: Int, userID: Int
     ) {
-        val player = PlayerLogic(if (currGameMode == "One Hit Elimination") 50 else 100)
         val neuralNetwork = NeuralNetwork.getInstance(context)
         LaunchedEffect (lobbyId){
             CoroutineScope(Dispatchers.Default).launch {
@@ -193,7 +215,7 @@ class ScreenForGame {
         }
 
         val isAlive = remember { mutableStateOf(player.isAlive()) }
-        HealthToast(playerLogic = player, lobbyID = lobbyId, userID = userID)
+        HealthToast()
         player.listenForAliveChanges(lobbyId, userID) { newIsAlive ->
             isAlive.value = newIsAlive
             if (!newIsAlive) {
@@ -363,6 +385,7 @@ class ScreenForGame {
 
                                 player.doDamage(lobbyId, playerId)
                                 Log.d("CameraX", "got damage")
+                                //player.doDamage(lobbyId, playerId)
                                 // to check on yourself
                                 //player.doDamage(lobbyId, thisPlayerID )
                                 Toast.makeText(
@@ -447,6 +470,7 @@ class ScreenForGame {
                                     shakeTime++
                                     if (shakeTime >= 10) {
                                         player.heal(lobbyId, thisPlayerID)
+
                                         Toast.makeText(
                                             context,
                                             "Shake time: $shakeTime",

@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,11 +49,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.hits.ui.theme.Blue
 import com.example.hits.ui.theme.StrokeBlue
+import com.example.hits.utility.databaseRef
 import com.example.hits.utility.updateNicknameInDatabase
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 
 class SettingsFragment {
     @Composable
-    fun SettingsScreen(navController: NavController) {
+    fun SettingsScreen(navController: NavController, lobbyId: Int) {
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
         var showDialog by remember { mutableStateOf(false) }
         var showToDoDialog by remember { mutableStateOf(false) }
@@ -281,6 +286,36 @@ class SettingsFragment {
                         }
                     }
                 )
+            }
+        }
+
+        DisposableEffect(Unit) {
+
+            val nicknameChangeListener = object : ValueEventListener {
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    val newNick = dataSnapshot.getValue(String::class.java)
+
+                    if (newNick != null) {
+                        databaseRef.child("rooms").child(lobbyId.toString()).child("users")
+                            .child(sharedPrefHelper.getID().toString()).child("name").setValue(newNick)
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    // Log the error
+                }
+            }
+
+            databaseRef.child("users").child(sharedPrefHelper.getID().toString()).child("name")
+                .addValueEventListener(nicknameChangeListener)
+
+            onDispose {
+
+                databaseRef.child("users").child(sharedPrefHelper.getID().toString()).child("name")
+                    .removeEventListener(nicknameChangeListener)
+
             }
         }
     }
