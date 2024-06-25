@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.hits.R
+import com.example.hits.ui.theme.Typography
 import com.google.android.filament.Engine
 import com.google.ar.core.Anchor
 import com.google.ar.core.Config
@@ -147,15 +148,18 @@ class ScreenForAR {
                 textAlign = TextAlign.Center,
                 fontSize = 28.sp,
                 color = Color.White,
+                style = Typography.bodySmall,
                 text = trackingFailureReason?.getDescription(LocalContext.current)
                     ?: if (childNodes.isEmpty()) {
-                        "point your phone down"
+                        "Point your phone down"
                     } else {
-                        "tap anywhere to place the trophy"
+                        "Tap anywhere to place the trophy"
                     }
             )
             IconButton(
-                onClick = { navController.popBackStack() }, modifier = Modifier.padding(top = 16.dp)
+                onClick = {
+                    navController.popBackStack()
+                }, modifier = Modifier.padding(top = 16.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.go_back),

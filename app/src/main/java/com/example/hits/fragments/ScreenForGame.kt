@@ -37,6 +37,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -189,7 +190,8 @@ class ScreenForGame {
                     .child("users")
                     .removeEventListener(leaderboardListener)
 
-                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
+                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                    .child("users")
                     .child("health").removeEventListener(healthListener)
             }
         }
@@ -207,7 +209,7 @@ class ScreenForGame {
         lobbyId: Int, userID: Int
     ) {
         val neuralNetwork = NeuralNetwork.getInstance(context)
-        LaunchedEffect (lobbyId){
+        LaunchedEffect(lobbyId) {
             CoroutineScope(Dispatchers.Default).launch {
                 val embeddings: Array<Pair<FloatArray, Int>> by lazy { getEmbeddings(lobbyId) }
                 neuralNetwork.embeddingsSetter(embeddings)
@@ -287,12 +289,13 @@ class ScreenForGame {
                     .size(50.dp)
                     .padding(top = 15.dp)
             ) {
-                Image(
+                Icon(
                     painter = painterResource(id = R.drawable.stats),
                     contentDescription = "Stats",
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .size(50.dp)
+                        .size(50.dp),
+                    tint = Color.White
 
                 )
             }
@@ -352,17 +355,24 @@ class ScreenForGame {
                     }
                 }
             }
-
-            Button(
+            IconButton(
                 onClick = {
                     endGame(lobbyId)
                 },
                 modifier = Modifier
+                    .size(100.dp)
                     .align(Alignment.TopEnd)
                     .padding(top = 15.dp)
             ) {
-                Text(text = "Exit")
+                Icon(
+                    painter = painterResource(id = R.drawable.settings),
+                    contentDescription = "Interact",
+                    modifier = Modifier
+                        .size(100.dp),
+                    tint = Color.White
+                )
             }
+
         }
 
         Column(
@@ -485,12 +495,13 @@ class ScreenForGame {
                         },
                         modifier = Modifier.size(100.dp)
                     ) {
-                        Image(
+                        Icon(
                             painter = painterResource(id = R.drawable.heal),
                             contentDescription = "heal",
                             modifier = Modifier
                                 .zIndex(2f)
-                                .size(100.dp)
+                                .size(100.dp),
+                            tint = Color.White
                         )
                     }
                     Spacer(modifier = Modifier.fillMaxWidth(0.65f))

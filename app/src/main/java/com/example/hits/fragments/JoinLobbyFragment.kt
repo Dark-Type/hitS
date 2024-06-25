@@ -41,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -96,8 +97,13 @@ class JoinLobbyFragment {
             modifier = Modifier
                 .fillMaxSize()
                 .height(80.dp)
-                .padding(4.dp),
+                .padding(4.dp)
+                .clickable {
+                    selectedNews.value = news
+                    showDialog.value = true
+                },
             shape = RoundedCornerShape(8.dp)
+
         ) {
             Row(
                 modifier = Modifier
@@ -113,20 +119,8 @@ class JoinLobbyFragment {
                         .align(Alignment.CenterVertically),
                     style = MaterialTheme.typography.bodySmall
                 )
-                IconButton(
-                    onClick = {
-                        selectedNews.value = news
-                        showDialog.value = true
-                    },
-                    modifier = Modifier.padding(4.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.settings_icon),
-                        contentDescription = "info",
-                        modifier = Modifier
-                            .size(16.dp)
-                    )
-                }
+
+
             }
         }
     }
@@ -183,7 +177,7 @@ class JoinLobbyFragment {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "${user.rank}. ${user.name}",
+                    text = "${user.rank + 1}. ${user.name}",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
@@ -202,7 +196,7 @@ class JoinLobbyFragment {
                         selectedPlayer.value = user
                         showDialog.value = true
                     },
-                    modifier = Modifier.padding(4.dp)
+                    modifier = Modifier.padding(4.dp),
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.settings_icon),
@@ -265,7 +259,11 @@ class JoinLobbyFragment {
                     contentDescription = "Background",
                     modifier = Modifier
                         .fillMaxSize()
-                        .let { if (isSurfaceVisible.value) it.clickable(onClick = { isSurfaceVisible.value = false }) else it },
+                        .let {
+                            if (isSurfaceVisible.value) it.clickable(onClick = {
+                                isSurfaceVisible.value = false
+                            }) else it
+                        },
                     contentScale = ContentScale.FillBounds
                 )
                 Button(
@@ -288,13 +286,18 @@ class JoinLobbyFragment {
                         contentDescription = "to lobby",
                     )
                 }
-                IconButton(onClick = { navController.navigate("settingsScreen/-1") }, modifier = Modifier.fillMaxSize(0.4f).align(Alignment.BottomStart)
-                    .padding(16.dp)) {
+                IconButton(
+                    onClick = { navController.navigate("settingsScreen/-1") },
+                    modifier = Modifier
+                        .fillMaxSize(0.4f)
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp),
+                    enabled = !isSurfaceVisible.value
+                ) {
                     Image(
                         painter = painterResource(id = R.drawable.lobby_go_to_settings),
                         contentDescription = "Settings",
                         modifier = Modifier
-
 
 
                     )
@@ -328,10 +331,10 @@ class JoinLobbyFragment {
                                 Button(
                                     onClick = { showNews.value = !showNews.value },
                                     colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                    modifier = Modifier.padding(bottom = 16.dp),
-                                    border = BorderStroke(width = 1.dp, color = Turquoise)
+                                    modifier = Modifier.padding(bottom = 16.dp).shadow(3.dp, shape = RoundedCornerShape(50)).fillMaxWidth(0.9f),
+
                                 ) {
-                                    Text(if (showNews.value) "To Leaderboards" else "To News")
+                                    Text(if (showNews.value) "To Leaderboards" else "To News", modifier = Modifier.padding(4.dp))
                                 }
                                 if (showLeaderBoardsDialog.value) {
                                     selectedPlayer.value?.let {
@@ -385,9 +388,9 @@ class JoinLobbyFragment {
                                             navController.navigate("lobbyScreen/${generatedId.value}")
                                         },
                                         colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                        border = BorderStroke(width = 1.dp, color = Turquoise)
+                                        modifier = Modifier.fillMaxWidth(0.9f).shadow(3.dp, shape = RoundedCornerShape(50))
                                     ) {
-                                        Text("Create Lobby")
+                                        Text("Create Lobby", modifier = Modifier.padding(4.dp))
                                     }
 
                                     Spacer(modifier = Modifier.height(32.dp))
