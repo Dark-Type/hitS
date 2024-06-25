@@ -13,8 +13,14 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.view.drawToBitmap
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MutableLiveData
 import com.google.mlkit.vision.common.InputImage
@@ -101,11 +107,16 @@ class CameraX(
 
         return previewView!!
     }
+
     fun capturePhoto(onCaptureFinished: (Bitmap) -> Unit) {
+        Log.d("CameraX", "Capturing photo")
+
         val bitmap: Bitmap? = previewView?.bitmap
         if (bitmap != null) {
+            Log.d("CameraX", "Photo captured")
             onCaptureFinished(bitmap)
         }
+
     }
 }
 

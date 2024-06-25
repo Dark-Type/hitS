@@ -350,13 +350,19 @@ class ScreenForGame {
         ) {
             IconButton(
                 onClick = {
+                    Log.d("CameraX", "button clicked")
                     cameraX.capturePhoto() { bitmap ->
+                        Log.d("CameraX", "bitmap captured")
 
                         //player.doDamage(lobbyId, thisPlayerID )
                         CoroutineScope(Dispatchers.Main).launch {
+                            Log.d("CameraX", "coroutine launched")
                             val playerId = neuralNetwork.predictIfHit(bitmap)
+                            Log.d("CameraX", "playerId received: $playerId")
                             if (playerId != null) {
+
                                 player.doDamage(lobbyId, playerId)
+                                Log.d("CameraX", "got damage")
                                 // to check on yourself
                                 //player.doDamage(lobbyId, thisPlayerID )
                                 Toast.makeText(

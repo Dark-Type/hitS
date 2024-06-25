@@ -9,6 +9,7 @@ import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtSession.Result
 import android.graphics.Canvas
 import android.graphics.Rect
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -48,35 +49,35 @@ class NeuralNetwork private constructor(context: Context) {
 
     // Распознать человека по фото
     private suspend fun recognizePerson(image: Bitmap): Int {
+        Log.d("recognizePerson", "recognizePerson launched")
         val embedding = encode(image)
-
+        Log.d("recognizePerson", "encoded image")
         var result = embeddings[0].second
         var maxSimilarity = 0.0f
-        for (i in embeddings.indices) {
-            val similarity = getSimilarity(embedding, embeddings[i].first)
+
+        for (embeddingPair in embeddings) {
+            val similarity = getSimilarity(embedding, embeddingPair.first)
             if (similarity > maxSimilarity) {
                 maxSimilarity = similarity
-                result = embeddings[i].second
+                result = embeddingPair.second
             }
         }
+
+        Log.d("recognizePerson", "recognized person")
 
         return result
     }
 
     // Сравнить два эмбеддинга с помощью cosine similarity
     private fun getSimilarity(vector1: FloatArray, vector2: FloatArray): Float {
-        /*
-        Выдает число в диапазоне [0;1], выражающее
-        сходство между эмбеддингами двух картинок
-        */
         var dotProduct = 0f
         var magnitude1 = 0f
         var magnitude2 = 0f
 
-        for (i in vector1.indices) {
-            dotProduct += vector1[i] * vector2[i]
-            magnitude1 += vector1[i] * vector1[i]
-            magnitude2 += vector2[i] * vector2[i]
+        for ((v1, v2) in vector1.zip(vector2)) {
+            dotProduct += v1 * v2
+            magnitude1 += v1 * v1
+            magnitude2 += v2 * v2
         }
 
         magnitude1 = kotlin.math.sqrt(magnitude1)
@@ -107,7 +108,9 @@ class NeuralNetwork private constructor(context: Context) {
 
     // Найти людей на фото
     private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> {
+        Log.d("detect", "detect launched")
         val input = preprocessImage(bitmap, 500, 500)
+        Log.d("detect", "preprocessed image")
         val shape = longArrayOf(1, 3, 500, 500)
 
         val inputTensor = OnnxTensor.createTensor(
@@ -115,19 +118,22 @@ class NeuralNetwork private constructor(context: Context) {
             input,
             shape
         )
+        Log.d("detect", "created tensor")
 
         val output = detectorOrtSession.run(
             Collections.singletonMap("input", inputTensor),
             setOf("boxes", "scores", "labels")
         ) as Result
+        Log.d("detect", "ran session")
 
         val result = (output.get(0)?.value) as Array<FloatArray>
+        Log.d("detect", "converted results")
 
         val boxIt = result.iterator()
 
         // bounding boxes in (xmin, ymin, xmax, ymax) format
         val boundingBoxes = ArrayList<Array<Int>>()
-
+        Log.d("detect", "start bounding boxes process")
         while (boxIt.hasNext()) {
             val box = boxIt.next()
 
@@ -142,6 +148,7 @@ class NeuralNetwork private constructor(context: Context) {
 
             boundingBoxes.add(scaledBoundingBoxes)
         }
+        Log.d("detect", "end bounding boxes process")
 
         return boundingBoxes
     }
@@ -304,13 +311,15 @@ class NeuralNetwork private constructor(context: Context) {
     если попадания не было
      */
     suspend fun predictIfHit(image: Bitmap): Int? = withContext(Dispatchers.Default) {
+        Log.d("NeuralNetwork", "launched")
         val aimCoordinates = arrayOf(
             image.width / 2,
             image.height / 2
         )
+        Log.d("NeuralNetwork", "detection started")
 
         val persons = detect(image)
-
+        Log.d("NeuralNetwork", "detection finished")
         for (person in persons) {
             // Если прицел внутри bb
             if (
@@ -331,7 +340,7 @@ class NeuralNetwork private constructor(context: Context) {
                     person[2],
                     person[3]
                 )
-
+                Log.d("NeuralNetwork", "person recognized")
                 return@withContext recognizePerson(croppedPersonImage)
             }
         }
