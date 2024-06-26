@@ -3,6 +3,7 @@ package com.example.hits.fragments
 
 import android.graphics.Bitmap
 import android.util.Log
+import android.widget.Toast
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -76,6 +77,8 @@ import com.example.hits.utility.TEAM_UNKNOWN
 import com.example.hits.utility.User
 import com.example.hits.utility.addValue
 import com.example.hits.utility.databaseRef
+import com.example.hits.utility.deleteEmbeddingsFromDatabase
+import com.example.hits.utility.getEmbeddingsCount
 import com.example.hits.utility.getLobbyUsers
 import com.example.hits.utility.removeUserFromRoom
 import com.example.hits.utility.runGame
@@ -309,10 +312,9 @@ class LobbyFragment {
                                     .fillMaxWidth(0.8f)
 
                                     .clickable {
-                                        /*
-                                        @deadnya
-                                        logic of deleting embeddings from db
-                                        */
+
+                                        deleteEmbeddingsFromDatabase(lobbyId, sharedPrefHelper.getID()!!.toInt())
+
                                         showScanningDialog.value = false
                                     },
                                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -449,50 +451,54 @@ class LobbyFragment {
                             val toastContext = LocalContext.current
                             Button(
                                 onClick = {
-                                    /*
-                                    @deadnya need to add count of embeddings for each user so we can check if user has enough embeddings to start game
-                                    if (!countOfScansForThisUser>3) {
-                                    Toast.makeText(
-                                        toastContext,
-                                        "You need to scan yourself more, to be ready to play!\nCurrently you have ${countOfScansForThisUser}/4 scans.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    } else {
-                                    uncomment in the bottom as well
 
-                                     */
+                                    println("A")
+                                    getEmbeddingsCount(sharedPrefHelper.getID()!!.toInt()).thenAccept { countOfScansForThisUser ->
+                                        println("AAADASOd")
 
-                                    isReady.value = !isReady.value
-                                    shouldChooseTeams.value = isReady.value
+                                        if (!(countOfScansForThisUser > 3)) {
 
-                                    if (isReady.value) {
-                                        val mostPopularMode =
-                                            modes[votes.value.indexOf(max(votes.value))]
-                                        if (mostPopularMode == "Free For All") {
+                                            Toast.makeText(
+                                                toastContext,
+                                                "You need to scan yourself more, to be ready to play!\nCurrently you have ${countOfScansForThisUser}/4 scans.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
 
-                                            addValue(
-                                                databaseRef.child("rooms").child(lobbyId.toString())
-                                                    .child("playersReady"), 1
-                                            )
-                                            setUserTeam(
-                                                lobbyId,
-                                                sharedPrefHelper.getID()!!.toInt(),
-                                                TEAM_RED
-                                            )
-                                            shouldChooseTeams.value = false
+                                            isReady.value = !isReady.value
+                                            shouldChooseTeams.value = isReady.value
+
+                                            if (isReady.value) {
+                                                val mostPopularMode =
+                                                    modes[votes.value.indexOf(max(votes.value))]
+                                                if (mostPopularMode == "Free For All") {
+
+                                                    addValue(
+                                                        databaseRef.child("rooms")
+                                                            .child(lobbyId.toString())
+                                                            .child("playersReady"), 1
+                                                    )
+                                                    setUserTeam(
+                                                        lobbyId,
+                                                        sharedPrefHelper.getID()!!.toInt(),
+                                                        TEAM_RED
+                                                    )
+                                                    shouldChooseTeams.value = false
+                                                }
+                                            } else {
+                                                addValue(
+                                                    databaseRef.child("rooms")
+                                                        .child(lobbyId.toString())
+                                                        .child("playersReady"), -1
+                                                )
+                                                setUserTeam(
+                                                    lobbyId,
+                                                    sharedPrefHelper.getID()!!.toInt(),
+                                                    TEAM_UNKNOWN
+                                                )
+                                            }
                                         }
-                                    } else {
-                                        addValue(
-                                            databaseRef.child("rooms").child(lobbyId.toString())
-                                                .child("playersReady"), -1
-                                        )
-                                        setUserTeam(
-                                            lobbyId,
-                                            sharedPrefHelper.getID()!!.toInt(),
-                                            TEAM_UNKNOWN
-                                        )
                                     }
-                                        //}
                                 },
                                 colors = ButtonDefaults.buttonColors(if (isReady.value) Turquoise else LightTurquoise),
                                 modifier = Modifier

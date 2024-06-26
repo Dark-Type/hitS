@@ -58,6 +58,8 @@ import com.example.hits.utility.databaseRef
 import com.example.hits.utility.endGame
 import com.example.hits.utility.getEmbeddings
 import com.example.hits.utility.getUsersForCurrGameLeaderboard
+import com.example.hits.utility.leaveFromOngoingGame
+import com.example.hits.utility.voteForEnd
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -77,6 +79,7 @@ class ScreenForGame {
     private var job: Job? = null
     private lateinit var leaderboardData: SnapshotStateList<UserForLeaderboard>
     private lateinit var player: PlayerLogic
+    private var isVoted = false
 
 
     @Composable
@@ -103,7 +106,9 @@ class ScreenForGame {
             context = context,
             cameraX = cameraX,
             lobbyId,
-            userID
+            userID,
+            currGameMode,
+            navController
         )
 
         DisposableEffect(Unit) {
@@ -166,6 +171,8 @@ class ScreenForGame {
                     if (newHealth != null) {
                         player.changeHP(lobbyId, userID, newHealth, context)
 
+                        Toast.makeText(context, "Health changed: $newHealth", Toast.LENGTH_SHORT).show()
+
                         Log.d("TAKED DMG", newHealth.toString() + " curr hp: ${player.getHealth()}")
                     }
                 }
@@ -208,7 +215,7 @@ class ScreenForGame {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        lobbyId: Int, userID: Int
+        lobbyId: Int, userID: Int, currGameMode: String, navController: NavController
     ) {
         val neuralNetwork = NeuralNetwork.getInstance(context)
         LaunchedEffect(lobbyId) {
@@ -400,7 +407,10 @@ class ScreenForGame {
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                                     .clickable {
-                                        //@deadnya here add voting for ending game, if the whole team surrenders — game ends
+                                        if (!isVoted) {
+                                            voteForEnd(lobbyId)
+                                            isVoted = true
+                                        }
                                     },
                                 elevation = CardDefaults.cardElevation(
                                     defaultElevation = 12.dp
@@ -429,8 +439,10 @@ class ScreenForGame {
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                                     .clickable {
-                                        //@deadnya here just leave the game for user
-                                        endGame(lobbyId)
+                                        leaveFromOngoingGame(lobbyId, userID)
+                                        navController.navigate("resultsScreen/$lobbyId/$userID/$currGameMode")
+
+                                        //endGame(lobbyId)
                                     },
                                 elevation = CardDefaults.cardElevation(
                                     defaultElevation = 12.dp
@@ -453,6 +465,7 @@ class ScreenForGame {
                     }
                 }
             }
+
             if (showStatsDialog) {
                 Dialog(onDismissRequest = { showStatsDialog = false }) {
                     Surface(

@@ -113,6 +113,32 @@ fun addUserToRoom(roomID: Int, firstUser: User) {
     val newUserRef = databaseRef.child("rooms").child(roomID.toString()).child("users")
         .child(firstUser.id.toString())
 
+    val embeddingsRef = databaseRef.child("users").child(firstUser.id.toString()).child("embeddings")
+
+    embeddingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+            var i = 1
+
+            for (embeddingSnapshot in dataSnapshot.children) {
+
+                val typeIndicator = object : GenericTypeIndicator<List<Float>>() {}
+                val embeddingList = embeddingSnapshot.getValue(typeIndicator) ?: listOf()
+
+                databaseRef.child("rooms").child(roomID.toString()).child("embeddings")
+                    .child(firstUser.id.toString()).child(i.toString()).setValue(embeddingList)
+
+                databaseRef.child("rooms").child(roomID.toString()).child("embeddings")
+                    .child(firstUser.id.toString()).onDisconnect().removeValue()
+
+                i++
+            }
+        }
+
+        override fun onCancelled(error: DatabaseError) {}
+    })
+
     newUserRef.setValue(firstUser)
     newUserRef.child("team").setValue(TEAM_UNKNOWN)
 
@@ -492,10 +518,10 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
                         .child("isAlive").setValue(true)
                     currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
                         .child("health").setValue(100)
+                    currRoomRef.child("gameInfo").child("voteForEnd").setValue(0)
                 }
 
                 currRoomRef.child("isPlaying").setValue(true)
-                currRoomRef.child("playersReady").setValue(0)
 
                 for (gamemode in getGamemodes()) {
                     currRoomRef.child("gamemodeVotes").child(gamemode).setValue(0)
@@ -579,6 +605,7 @@ fun getUsersForCurrGameLeaderboard(roomID: Int) : SnapshotStateList<UserForLeade
 fun addEmbeddingToDatabase(roomID: Int, userID: Int, embedding: FloatArray) {
 
     val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings").child(userID.toString())
+    val mainUserRef = databaseRef.child("users").child(userID.toString()).child("embeddings")
 
     var maxEmbedding = 0
 
@@ -592,10 +619,20 @@ fun addEmbeddingToDatabase(roomID: Int, userID: Int, embedding: FloatArray) {
             }
 
             embeddingsRef.child((maxEmbedding + 1).toString()).setValue(embedding.toList())
+            mainUserRef.child((maxEmbedding + 1).toString()).setValue(embedding.toList())
         }
 
         override fun onCancelled(error: DatabaseError) {}
     })
+}
+
+fun deleteEmbeddingsFromDatabase(roomID: Int, userID: Int) {
+
+    val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings").child(userID.toString())
+    val mainUserRef = databaseRef.child("users").child(userID.toString()).child("embeddings")
+
+    embeddingsRef.removeValue()
+    mainUserRef.removeValue()
 }
 
 fun getEmbeddings(roomID: Int) : Array<Pair<FloatArray, Int>>{
@@ -632,4 +669,79 @@ fun getEmbeddings(roomID: Int) : Array<Pair<FloatArray, Int>>{
     latch.await()
 
     return embeddings.toTypedArray()
+}
+
+fun getEmbeddingsCount(userID: Int): CompletableFuture<Int> {
+
+    val embeddingsRef = databaseRef.child("users").child(userID.toString()).child("embeddings")
+
+    val future = CompletableFuture<Int>()
+
+    embeddingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        var count = 0
+
+        override fun onDataChange(snapshot: DataSnapshot) {
+
+            for (embeddingSnapshot in snapshot.children) {
+                count++
+            }
+
+            future.complete(count)
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            future.completeExceptionally(error.toException())
+        }
+    })
+
+    return future
+}
+
+fun leaveFromOngoingGame(roomID: Int, userID: Int) {
+
+    val userRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
+        .child(userID.toString())
+
+    userRef.child("health").setValue(0)
+    userRef.child("isAlive").setValue(false)
+}
+
+fun voteForEnd(roomID: Int) {
+
+    val votesRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("voteForEnd")
+
+    addValue(votesRef, 1)
+
+    databaseRef.child("rooms").child(roomID.toString()).child("gameInfo")
+        .child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+
+            var userCount = 0
+
+            override fun onDataChange(snapshot: DataSnapshot) {
+
+                for (userSnapshot in snapshot.children) {
+                    userCount++
+                }
+
+                votesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+                    override fun onDataChange(snapshot: DataSnapshot) {
+
+                        val votesCount = snapshot.getValue(Int::class.java)
+
+                        if (votesCount != null) {
+                            if (votesCount >= userCount / 2.0) {
+                                databaseRef.child("rooms").child(roomID.toString()).child("isPlaying")
+                                    .setValue(false)
+                            }
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
 }
