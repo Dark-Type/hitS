@@ -529,6 +529,8 @@ fun endGame(roomID: Int) {
                     currRoomRef.child("users").child(user.id.toString()).child("team")
                         .setValue(TEAM_UNKNOWN)
                 }
+
+                currRoomRef.child("gameInfo").setValue("")
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
