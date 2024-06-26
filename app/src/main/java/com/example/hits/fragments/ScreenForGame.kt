@@ -96,7 +96,6 @@ class ScreenForGame {
         val cameraX = remember { CameraX(context, lifecycleOwner) }
 
         player = PlayerLogic(if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 50 else 100)
-        Log.d("CREATED PLAYER", "AAAAAAAAAAAAAAAAA")
 
         leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }
 
@@ -165,7 +164,7 @@ class ScreenForGame {
                     val newHealth = dataSnapshot.getValue(Int::class.java)
 
                     if (newHealth != null) {
-                        player.changeHP(lobbyId, userID, newHealth)
+                        player.changeHP(lobbyId, userID, newHealth, context)
 
                         Log.d("TAKED DMG", newHealth.toString() + " curr hp: ${player.getHealth()}")
                     }
@@ -219,14 +218,7 @@ class ScreenForGame {
             }
         }
 
-        val isAlive = remember { mutableStateOf(player.isAlive()) }
         HealthToast()
-        player.listenForAliveChanges(lobbyId, userID) { newIsAlive ->
-            isAlive.value = newIsAlive
-            if (!newIsAlive) {
-                Toast.makeText(context, "You are knocked down", Toast.LENGTH_SHORT).show()
-            }
-        }
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
         val thisPlayerID = sharedPrefHelper.getID()!!.toInt()
         val requiredPermissions =
@@ -291,44 +283,42 @@ class ScreenForGame {
                 IconButton(
                     onClick = {
                         Log.d("CameraX", "button clicked")
-                        cameraX.capturePhoto() { bitmap ->
-                            Log.d("CameraX", "bitmap captured")
 
-                            //player.doDamage(lobbyId, thisPlayerID )
-                            CoroutineScope(Dispatchers.Main).launch {
-                                Log.d("CameraX", "coroutine launched")
-                                val playerId = neuralNetwork.predictIfHit(bitmap)
-                                Log.d("CameraX", "playerId received: $playerId")
-                                if (playerId != null) {
+                        if (player.isAlive())
+                            cameraX.capturePhoto() { bitmap ->
+                                Log.d("CameraX", "bitmap captured")
 
-                                    player.doDamage(lobbyId, playerId)
-                                    Log.d("CameraX", "got damage")
-                                    //player.doDamage(lobbyId, playerId)
-                                    // to check on yourself
-                                    //player.doDamage(lobbyId, thisPlayerID )
-                                    Toast.makeText(
-                                        context,
-                                        "You hit player with id $playerId",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    // display damage, id and animation
-                                } else {
-                                    //display miss animation
+                                //player.doDamage(lobbyId, 3, userID)
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    Log.d("CameraX", "coroutine launched")
+                                    val playerTakenDamageId = neuralNetwork.predictIfHit(bitmap)
+                                    Log.d("CameraX", "playerId received: $playerTakenDamageId")
+                                    if (playerTakenDamageId != null) {
+
+                                        player.doDamage(lobbyId, playerTakenDamageId, userID)
+                                        Log.d("CameraX", "got damage")
+
+                                        Toast.makeText(
+                                            context,
+                                            "You hit player with id $playerTakenDamageId",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        // display damage, id and animation
+                                    } else {
+                                        //display miss animation
+                                    }
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "DONE",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        .show()
+                                    showDialog = true
                                 }
-                                Toast
-                                    .makeText(
-                                        context,
-                                        "DONE",
-                                        Toast.LENGTH_SHORT
-                                    )
-                                    .show()
-                                showDialog = true
                             }
 
-
-                        }
-
-                    }, enabled = isAlive.value, modifier = Modifier
+                    }, enabled = true, modifier = Modifier
                         .padding(bottom = 32.dp)
                         .size(400.dp)
                         .zIndex(1f)
@@ -664,29 +654,33 @@ class ScreenForGame {
 
                     IconButton(
                         onClick = {
-                            shakeCount = 0
-                            sensorManager.registerListener(
-                                sensorListener,
-                                accelerometer,
-                                SensorManager.SENSOR_DELAY_NORMAL
-                            )
-                            job = CoroutineScope(Dispatchers.Main).launch {
-                                while (isActive) {
-                                    delay(1000)
-                                    shakeTime++
-                                    if (shakeTime >= 10) {
-                                        player.heal(lobbyId, thisPlayerID)
 
-                                        Toast.makeText(
-                                            context,
-                                            "Shake time: $shakeTime",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        shakeTime = 0
-                                        break
+                            if (player.isAlive()) {
+
+                                shakeCount = 0
+                                sensorManager.registerListener(
+                                    sensorListener,
+                                    accelerometer,
+                                    SensorManager.SENSOR_DELAY_NORMAL
+                                )
+                                job = CoroutineScope(Dispatchers.Main).launch {
+                                    while (isActive) {
+                                        delay(1000)
+                                        shakeTime++
+                                        if (shakeTime >= 10) {
+                                            player.heal(lobbyId, thisPlayerID)
+
+                                            Toast.makeText(
+                                                context,
+                                                "Shake time: $shakeTime",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            shakeTime = 0
+                                            break
+                                        }
                                     }
+                                    sensorManager.unregisterListener(sensorListener)
                                 }
-                                sensorManager.unregisterListener(sensorListener)
                             }
                         },
                         modifier = Modifier
