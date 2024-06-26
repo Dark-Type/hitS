@@ -24,6 +24,15 @@ class SharedPrefHelper(context: Context) {
     fun getID() : String? {
         return prefs.getString(idKey, null)
     }
+    fun setFirstTimeJoiningLobby(isFirstTime: Boolean) {
+        val editor = prefs.edit()
+        editor.putBoolean("isFirstTimeJoiningLobby", isFirstTime)
+        editor.apply()
+    }
+    fun isFirstTimeJoiningLobby(): Boolean {
+        return prefs.getBoolean("isFirstTimeJoiningLobby", true)
+    }
+
 
     fun saveNickname(nickname: String) {
         val editor = prefs.edit()

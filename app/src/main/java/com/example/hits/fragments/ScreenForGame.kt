@@ -10,7 +10,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,12 +31,13 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -47,6 +47,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
 import com.example.hits.SharedPrefHelper
+import com.example.hits.ui.theme.LightTurquoise
+import com.example.hits.ui.theme.Turquoise
+import com.example.hits.ui.theme.Typography
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.User
@@ -224,7 +227,6 @@ class ScreenForGame {
                 Toast.makeText(context, "You are knocked down", Toast.LENGTH_SHORT).show()
             }
         }
-        var showDialog by remember { mutableStateOf(false) }
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
         val thisPlayerID = sharedPrefHelper.getID()!!.toInt()
         val requiredPermissions =
@@ -262,6 +264,7 @@ class ScreenForGame {
                 )
             )
         }
+        var showDialog by remember { mutableStateOf(false) }
         Box(modifier = Modifier.fillMaxSize()) {
             if (hasCamPermission) {
                 AndroidView(
@@ -280,97 +283,340 @@ class ScreenForGame {
                 player.revive(lobbyId, playerID)
                 Log.d("revive", "revive $playerID")
             }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            ) {
+                IconButton(
+                    onClick = {
+                        Log.d("CameraX", "button clicked")
+                        cameraX.capturePhoto() { bitmap ->
+                            Log.d("CameraX", "bitmap captured")
+
+                            //player.doDamage(lobbyId, thisPlayerID )
+                            CoroutineScope(Dispatchers.Main).launch {
+                                Log.d("CameraX", "coroutine launched")
+                                val playerId = neuralNetwork.predictIfHit(bitmap)
+                                Log.d("CameraX", "playerId received: $playerId")
+                                if (playerId != null) {
+
+                                    player.doDamage(lobbyId, playerId)
+                                    Log.d("CameraX", "got damage")
+                                    //player.doDamage(lobbyId, playerId)
+                                    // to check on yourself
+                                    //player.doDamage(lobbyId, thisPlayerID )
+                                    Toast.makeText(
+                                        context,
+                                        "You hit player with id $playerId",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    // display damage, id and animation
+                                } else {
+                                    //display miss animation
+                                }
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "DONE",
+                                        Toast.LENGTH_SHORT
+                                    )
+                                    .show()
+                                showDialog = true
+                            }
+
+
+                        }
+
+                    }, enabled = isAlive.value, modifier = Modifier
+                        .padding(bottom = 32.dp)
+                        .size(400.dp)
+                        .zIndex(1f)
+                        .align(Alignment.BottomCenter)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.main_gun),
+                        contentDescription = "Shoot",
+                        modifier = Modifier
+                            .size(400.dp)
+                    )
+                }
+            }
+            Image(
+                painter = painterResource(id = R.drawable.aim),
+                contentDescription = "aim",
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(20.dp)
+            )
             var showStatsDialog by remember { mutableStateOf(false) }
+            var showSettingsDialog by remember { mutableStateOf(false) }
+
 
             IconButton(
-                onClick = { showStatsDialog = true },
+                onClick = {
+                    showStatsDialog = true
+                    showSettingsDialog = false
+                },
                 modifier = Modifier
                     .align(Alignment.TopStart)
+                    .padding(top = 32.dp, start = 32.dp)
                     .size(50.dp)
-                    .padding(top = 15.dp)
+
             ) {
-                Icon(
+                Image(
                     painter = painterResource(id = R.drawable.stats),
                     contentDescription = "Stats",
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .size(50.dp),
-                    tint = Color.White
-
                 )
+            }
+            IconButton(
+                onClick = {
+                    showStatsDialog = false
+                    showSettingsDialog = true
+                },
+                modifier = Modifier
+                    .padding(top = 32.dp, end = 32.dp)
+                    .size(50.dp)
+                    .align(Alignment.TopEnd)
+
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.settings),
+                    contentDescription = "Settings",
+                    modifier = Modifier
+                        .size(50.dp)
+                )
+            }
+            if (showSettingsDialog) {
+                Dialog(onDismissRequest = { showSettingsDialog = false }) {
+                    Surface(
+                        color = Color.White,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .padding(
+                                        top = 16.dp,
+                                        start = 16.dp,
+                                        end = 16.dp,
+
+                                        )
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .clickable {
+                                        //@deadnya here add voting for ending game, if the whole team surrenders — game ends
+                                    },
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 12.dp
+                                ),
+                                colors = CardColors(
+                                    LightTurquoise,
+                                    Color.White,
+                                    Color.Gray,
+                                    Color.White
+                                ),
+                            ) {
+                                Text(
+                                    text = "Vote for Ending Game",
+                                    modifier = Modifier.padding(16.dp),
+                                    style = Typography.bodySmall
+                                )
+                            }
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .padding(
+                                        top = 16.dp,
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        bottom = 16.dp
+                                    )
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .clickable {
+                                        //@deadnya here just leave the game for user
+                                        endGame(lobbyId)
+                                    },
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 12.dp
+                                ),
+                                colors = CardColors(
+                                    Turquoise,
+                                    Color.White,
+                                    Color.Gray,
+                                    Color.White
+                                ),
+                            ) {
+                                Text(
+                                    text = "Forfeit and leave",
+                                    modifier = Modifier.padding(16.dp),
+                                    style = Typography.bodySmall
+                                )
+                            }
+
+                        }
+                    }
+                }
             }
             if (showStatsDialog) {
                 Dialog(onDismissRequest = { showStatsDialog = false }) {
-                    Surface(color = Color.White) {
+                    Surface(
+                        color = Color.White,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxHeight(0.6f)
+                    ) {
+                        Column(modifier = Modifier.fillMaxHeight()) {
 
-                        LazyColumn(modifier = Modifier.padding(16.dp)) {
-                            itemsIndexed(leaderboardData) { index, player ->
-                                val cardColor = when (index) {
-                                    0 -> Color(0xFFD4AF37)
-                                    1 -> Color(0xFFC0C0C0)
-                                    2 -> Color(0xFFCD7F32)
-                                    else -> Color.Gray
-                                }
 
-                                ElevatedCard(
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = 12.dp
+                                ),
+                                colors = CardColors(
+                                    Color.White,
+                                    Color.Black,
+                                    Color.Gray,
+                                    Color.White
+                                ),
+                            ) {
+                                Row(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp),
-                                    elevation = CardDefaults.cardElevation(
-                                        defaultElevation = 12.dp
-                                    ),
-                                    colors = CardColors(
-                                        cardColor,
-                                        Color.White,
-                                        Color.Gray,
-                                        Color.White
-                                    ),
+                                        .fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        text = player.name,
-                                        modifier = Modifier.padding(16.dp),
+                                        text = "Place",
+                                        modifier = Modifier.padding(
+                                            bottom = 8.dp,
+                                            top = 8.dp,
+                                            start = 16.dp
+                                        ),
+                                        fontSize = 20.sp
+                                    )
+                                    Text(
+                                        text = "Name",
+                                        modifier = Modifier.padding(bottom = 8.dp, top = 8.dp),
                                         fontSize = 20.sp
                                     )
 
                                     Text(
-                                        text = player.kills.toString(),
-                                        modifier = Modifier.padding(16.dp),
+                                        text = "K",
+                                        modifier = Modifier.padding(bottom = 8.dp, top = 8.dp),
                                         fontSize = 20.sp
                                     )
 
                                     Text(
-                                        text = player.deaths.toString(),
-                                        modifier = Modifier.padding(16.dp),
+                                        text = "D",
+                                        modifier = Modifier.padding(bottom = 8.dp, top = 8.dp),
                                         fontSize = 20.sp
                                     )
 
                                     Text(
-                                        text = player.assists.toString(),
-                                        modifier = Modifier.padding(16.dp),
+                                        text = "A",
+                                        modifier = Modifier.padding(
+                                            bottom = 8.dp,
+                                            top = 8.dp,
+                                            end = 16.dp
+                                        ),
                                         fontSize = 20.sp
                                     )
+                                }
+                            }
+
+                            LazyColumn(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxHeight()
+                            ) {
+                                itemsIndexed(leaderboardData) { index, player ->
+                                    val cardColor = when (index) {
+                                        0 -> Color(0xFFD4AF37)
+                                        1 -> Color(0xFFC0C0C0)
+                                        2 -> Color(0xFFCD7F32)
+                                        else -> Color.Gray
+                                    }
+
+                                    ElevatedCard(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp),
+                                        elevation = CardDefaults.cardElevation(
+                                            defaultElevation = 12.dp
+                                        ),
+                                        colors = CardColors(
+                                            cardColor,
+                                            Color.White,
+                                            Color.Gray,
+                                            Color.White
+                                        ),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = player.rank.toString(),
+                                                modifier = Modifier.padding(
+                                                    bottom = 8.dp,
+                                                    top = 8.dp,
+                                                    start = 16.dp
+                                                ),
+                                                fontSize = 20.sp
+                                            )
+                                            Text(
+                                                text = player.name,
+                                                modifier = Modifier.padding(
+                                                    bottom = 8.dp,
+                                                    top = 8.dp
+                                                ),
+                                                fontSize = 20.sp
+                                            )
+
+                                            Text(
+                                                text = player.kills.toString(),
+                                                modifier = Modifier.padding(
+                                                    bottom = 8.dp,
+                                                    top = 8.dp
+                                                ),
+                                                fontSize = 20.sp
+                                            )
+
+                                            Text(
+                                                text = player.deaths.toString(),
+                                                modifier = Modifier.padding(
+                                                    bottom = 8.dp,
+                                                    top = 8.dp
+                                                ),
+                                                fontSize = 20.sp
+                                            )
+
+                                            Text(
+                                                text = player.assists.toString(),
+                                                modifier = Modifier.padding(
+                                                    bottom = 8.dp,
+                                                    top = 8.dp,
+                                                    end = 16.dp
+                                                ),
+                                                fontSize = 20.sp
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            IconButton(
-                onClick = {
-                    endGame(lobbyId)
-                },
-                modifier = Modifier
-                    .size(100.dp)
-                    .align(Alignment.TopEnd)
-                    .padding(top = 15.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.settings),
-                    contentDescription = "Interact",
-                    modifier = Modifier
-                        .size(100.dp),
-                    tint = Color.White
-                )
             }
 
         }
@@ -380,58 +626,7 @@ class ScreenForGame {
                 .fillMaxSize()
                 .padding(bottom = 45.dp), Arrangement.Bottom, Alignment.CenterHorizontally
         ) {
-            IconButton(
-                onClick = {
-                    Log.d("CameraX", "button clicked")
-                    cameraX.capturePhoto() { bitmap ->
-                        Log.d("CameraX", "bitmap captured")
 
-                        //player.doDamage(lobbyId, thisPlayerID )
-                        CoroutineScope(Dispatchers.Main).launch {
-                            Log.d("CameraX", "coroutine launched")
-                            val playerId = neuralNetwork.predictIfHit(bitmap)
-                            Log.d("CameraX", "playerId received: $playerId")
-                            if (playerId != null) {
-
-                                player.doDamage(lobbyId, playerId)
-                                Log.d("CameraX", "got damage")
-                                //player.doDamage(lobbyId, playerId)
-                                // to check on yourself
-                                //player.doDamage(lobbyId, thisPlayerID )
-                                Toast.makeText(
-                                    context,
-                                    "You hit player with id $playerId",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                // display damage, id and animation
-                            } else {
-                                //display miss animation
-                            }
-                            Toast
-                                .makeText(
-                                    context,
-                                    "DONE",
-                                    Toast.LENGTH_SHORT
-                                )
-                                .show()
-                            showDialog = true
-                        }
-
-
-                    }
-
-                }, enabled = isAlive.value, modifier = Modifier
-                    .size(400.dp)
-                    .zIndex(1f)
-                    .align(Alignment.CenterHorizontally)
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.main_gun),
-                    contentDescription = "Shoot",
-                    modifier = Modifier
-                        .size(400.dp)
-                )
-            }
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
@@ -443,7 +638,8 @@ class ScreenForGame {
                 ) {
                     val sensorManager =
                         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-                    val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+                    val accelerometer =
+                        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
                     val sensorListener = object : SensorEventListener {
                         override fun onSensorChanged(event: SensorEvent) {
@@ -493,15 +689,16 @@ class ScreenForGame {
                                 sensorManager.unregisterListener(sensorListener)
                             }
                         },
-                        modifier = Modifier.size(100.dp)
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(100.dp)
                     ) {
-                        Icon(
+                        Image(
                             painter = painterResource(id = R.drawable.heal),
                             contentDescription = "heal",
                             modifier = Modifier
                                 .zIndex(2f)
                                 .size(100.dp),
-                            tint = Color.White
                         )
                     }
                     Spacer(modifier = Modifier.fillMaxWidth(0.65f))

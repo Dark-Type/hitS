@@ -3,10 +3,10 @@ package com.example.hits.fragments
 
 import android.graphics.Bitmap
 import android.util.Log
+
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 
@@ -65,7 +65,6 @@ import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
 import com.example.hits.getGamemodes
-import com.example.hits.ui.theme.DarkTurquoise
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
 import com.example.hits.ui.theme.Turquoise
@@ -138,7 +137,13 @@ class LobbyFragment {
                             .fillMaxWidth()
                             .height(200.dp)
                     ) {
-                        Text("Join Red", style = Typography.labelLarge, textAlign = TextAlign.Center, color = Color.White, fontSize = 32.sp)
+                        Text(
+                            "Join Red",
+                            style = Typography.labelLarge,
+                            textAlign = TextAlign.Center,
+                            color = Color.White,
+                            fontSize = 32.sp
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -158,7 +163,13 @@ class LobbyFragment {
                             .height(200.dp)
 
                     ) {
-                        Text("Join Blue", style = Typography.labelLarge, textAlign = TextAlign.Center, color = Color.White, fontSize = 32.sp)
+                        Text(
+                            "Join Blue",
+                            style = Typography.labelLarge,
+                            textAlign = TextAlign.Center,
+                            color = Color.White,
+                            fontSize = 32.sp
+                        )
                     }
                 }
 
@@ -185,6 +196,145 @@ class LobbyFragment {
         val selectedMode = remember { mutableIntStateOf(-1) }
         val modes = getGamemodes()
         val votes = remember { mutableStateOf(List(modes.size) { 0 }) }
+        val showScanningDialog = remember { mutableStateOf(true) }
+        val showFirstTimeScanningDialog = remember { mutableStateOf(false) }
+        val isFirstTimeJoiningLobby = sharedPrefHelper.isFirstTimeJoiningLobby()
+        if (isFirstTimeJoiningLobby) {
+            showFirstTimeScanningDialog.value = true
+            showScanningDialog.value = false
+        }
+        if (showFirstTimeScanningDialog.value) {
+            Dialog(onDismissRequest = { }) {
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Welcome to the lobby!\n",
+                            style = Typography.labelLarge,
+                        )
+                        Text(
+                            text = "For getting desired experience all persons in the lobby should be scanned, so they will get recognized in the game\n" +
+                                    "\nTo achieve this each person is required to have 4 photos from different sides: front, right, back and left\n" +
+                                    "\nBut it is recommended to make more photos for better recognition accuracy and game experience\n" +
+                                    "\nAlso try avoiding same background in photos",
+                            style = Typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth(0.8f)
+                                .clickable {
+                                    sharedPrefHelper.setFirstTimeJoiningLobby(false)
+                                    showFirstTimeScanningDialog.value = false
+                                },
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                            colors = CardColors(
+                                LightTurquoise,
+                                Color.White,
+                                StrokeBlue,
+                                Color.Gray
+                            ),
+                        ) {
+                            Text(
+                                text = "Got it!",
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+
+                    }
+                }
+            }
+        }
+
+        if (showScanningDialog.value) {
+            Dialog(onDismissRequest = { }) {
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Welcome to the lobby!\n",
+                            style = Typography.labelLarge,
+                        )
+                        Text(
+                            text = "If you previously played, but changed your wardrobe, please scan yourself again to improve recognition accuracy.",
+                            style = Typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+
+
+                            ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8f)
+                                    .padding(bottom = 16.dp)
+                                    .clickable {
+                                        showScanningDialog.value = false
+                                    },
+                                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                                colors = CardColors(
+                                    LightTurquoise,
+                                    Color.White,
+                                    StrokeBlue,
+                                    Color.Gray
+                                ),
+                            ) {
+                                Text(
+                                    text = "I'm wearing the same clothes",
+                                    modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center
+                                )
+                            }
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.8f)
+
+                                    .clickable {
+                                        /*
+                                        @deadnya
+                                        logic of deleting embeddings from db
+                                        */
+                                        showScanningDialog.value = false
+                                    },
+                                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                                colors = CardColors(
+                                    Turquoise,
+                                    Color.White,
+                                    StrokeBlue,
+                                    Color.Gray
+                                ),
+                            ) {
+                                Text(
+                                    text = "I changed my appearance",
+                                    modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center
+                                )
+                            }
+
+
+                        }
+                    }
+                }
+            }
+        }
 
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -232,7 +382,8 @@ class LobbyFragment {
                 Spacer(modifier = Modifier.fillMaxHeight(0.1f))
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxWidth(0.9f)
+                        .align(Alignment.CenterHorizontally)
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -295,8 +446,22 @@ class LobbyFragment {
 
                             val isReady = remember { mutableStateOf(false) }
                             val shouldChooseTeams = remember { mutableStateOf(false) }
+                            val toastContext = LocalContext.current
                             Button(
                                 onClick = {
+                                    /*
+                                    @deadnya need to add count of embeddings for each user so we can check if user has enough embeddings to start game
+                                    if (!countOfScansForThisUser>3) {
+                                    Toast.makeText(
+                                        toastContext,
+                                        "You need to scan yourself more, to be ready to play!\nCurrently you have ${countOfScansForThisUser}/4 scans.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    } else {
+                                    uncomment in the bottom as well
+
+                                     */
+
                                     isReady.value = !isReady.value
                                     shouldChooseTeams.value = isReady.value
 
@@ -327,6 +492,7 @@ class LobbyFragment {
                                             TEAM_UNKNOWN
                                         )
                                     }
+                                        //}
                                 },
                                 colors = ButtonDefaults.buttonColors(if (isReady.value) Turquoise else LightTurquoise),
                                 modifier = Modifier
@@ -585,9 +751,11 @@ class LobbyFragment {
                         shape = RoundedCornerShape(16.dp),
 
                         ) {
-                        Column(modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
                             Text(
                                 text = "Choose a mode", style = Typography.labelLarge,
                                 fontSize = 20.sp,

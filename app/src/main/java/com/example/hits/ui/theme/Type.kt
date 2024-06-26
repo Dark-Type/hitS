@@ -11,7 +11,7 @@ import com.example.hits.R
 val CustomFont = FontFamily(
     Font(resId = R.font.regular, weight = FontWeight.Normal),
     Font(resId = R.font.medium, weight = FontWeight.Medium),
-    Font(resId = R.font.demi_bold, weight = FontWeight.SemiBold),
+    Font(resId = R.font.demi_bold, weight = FontWeight.Bold),
     Font(resId = R.font.condensed_demi_bold, weight = FontWeight.SemiBold)
     // Add more Font objects here if you have more font files for different font weights
 )

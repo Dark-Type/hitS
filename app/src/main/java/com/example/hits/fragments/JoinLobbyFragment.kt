@@ -59,6 +59,7 @@ import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
 import com.example.hits.ui.theme.Turquoise
+import com.example.hits.ui.theme.Typography
 import com.example.hits.utility.User
 import com.example.hits.utility.UserForLeaderboard
 import com.example.hits.utility.addUserToRoom
@@ -158,6 +159,7 @@ class JoinLobbyFragment {
             else -> Color(0xFFDADDE2)
         }
         val fontColor = if (index > 2) Color.Black else Color.White
+        val fontType = if (index > 2) Typography.bodyMedium else Typography.bodySmall
         val cardElevation = if (index < 3) 12.dp else 6.dp
         ElevatedCard(
             elevation = CardDefaults.cardElevation(
@@ -181,14 +183,16 @@ class JoinLobbyFragment {
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
-                    style = MaterialTheme.typography.bodySmall
+                    style = fontType,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2
                 )
                 Text(
                     text = "Score: ${user.points}",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
-                    style = MaterialTheme.typography.bodySmall
+                    style = fontType
                 )
 
                 IconButton(
@@ -198,11 +202,12 @@ class JoinLobbyFragment {
                     },
                     modifier = Modifier.padding(4.dp),
                 ) {
-                    Image(
+                    Icon(
                         painter = painterResource(id = R.drawable.settings_icon),
                         contentDescription = "info",
                         modifier = Modifier
-                            .size(16.dp)
+                            .size(16.dp),
+                        tint = fontColor
                     )
                 }
             }
@@ -227,7 +232,7 @@ class JoinLobbyFragment {
                     ) {
                     Text(text = "Name: ${user.name}", modifier = Modifier.padding(16.dp))
                     Text(text = "Score: ${user.points}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Rank: ${user.rank}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Rank: ${user.rank+1}", modifier = Modifier.padding(16.dp))
                     Text(text = "Kills: ${user.kills}", modifier = Modifier.padding(16.dp))
                     Text(text = "Deaths: ${user.deaths}", modifier = Modifier.padding(16.dp))
                     Text(text = "Assists: ${user.assists}", modifier = Modifier.padding(16.dp))
@@ -287,12 +292,12 @@ class JoinLobbyFragment {
                     )
                 }
                 IconButton(
-                    onClick = { navController.navigate("settingsScreen/-1") },
+                    onClick = {  if(!isSurfaceVisible.value)navController.navigate("settingsScreen/-1") else isSurfaceVisible.value = false },
                     modifier = Modifier
                         .fillMaxSize(0.4f)
                         .align(Alignment.BottomStart)
                         .padding(16.dp),
-                    enabled = !isSurfaceVisible.value
+
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.lobby_go_to_settings),
