@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,11 +50,11 @@ class ScreenForResults {
     fun ResultsScreen(
         lobbyId: Int,
         userID: Int,
-        gamemodePlayed: String,
+        gameModePlayed: String,
         navController: NavController
     ) {
 
-        val scores = remember { getUsersForResultsScreen(lobbyId, gamemodePlayed) }
+        val scores = remember { getUsersForResultsScreen(lobbyId, gameModePlayed) }
         val showDialog = remember { mutableStateOf(false) }
         Box(modifier = Modifier.fillMaxSize()) {
 
@@ -93,7 +94,7 @@ class ScreenForResults {
                                         elevation = CardDefaults.cardElevation(
                                             defaultElevation = 12.dp,
                                         ),
-                                        shape = RoundedCornerShape(4.dp),
+                                        shape = RoundedCornerShape(15.dp),
                                         colors = CardColors(
                                             when (index) {
                                                 0 -> Gold
@@ -124,10 +125,10 @@ class ScreenForResults {
                                 modifier = Modifier
                                     .padding(16.dp)
                                     .fillMaxWidth(0.9f)
-                                    .shadow(4.dp, RoundedCornerShape(8.dp))
+                                    .shadow(4.dp, RoundedCornerShape(50.dp))
                                     .align(Alignment.CenterHorizontally)
                                     .clickable { showDialog.value = true },
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(50.dp),
                                 colors = CardColors(
                                     containerColor = LightTurquoise,
                                     contentColor = Color.White,
@@ -141,7 +142,8 @@ class ScreenForResults {
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
                                         .padding(16.dp)
-                                        .align(Alignment.CenterHorizontally)
+                                        .align(Alignment.CenterHorizontally),
+                                    style = MaterialTheme.typography.labelMedium
                                 )
                             }
 
@@ -149,13 +151,13 @@ class ScreenForResults {
                                 modifier = Modifier
                                     .padding(16.dp)
                                     .fillMaxWidth(0.9f)
-                                    .shadow(4.dp, RoundedCornerShape(8.dp))
+                                    .shadow(4.dp, RoundedCornerShape(50.dp))
                                     .align(Alignment.CenterHorizontally)
                                     .clickable {
                                         removeUserFromRoom(lobbyId, userID)
                                         navController.navigate("joinLobbyScreen")
                                     },
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(50.dp),
                                 colors = CardColors(
                                     containerColor = LightTurquoise,
                                     contentColor = Color.White,
@@ -169,21 +171,22 @@ class ScreenForResults {
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
                                         .padding(16.dp)
-                                        .align(Alignment.CenterHorizontally)
+                                        .align(Alignment.CenterHorizontally),
+                                    style = MaterialTheme.typography.labelMedium
                                 )
                             }
 
                             Card(
                                 modifier = Modifier
-                                    .padding(bottom = 32.dp, top = 16.dp, start = 16.dp, end =16.dp)
-                                    .shadow(4.dp, RoundedCornerShape(8.dp))
+                                    .padding(16.dp)
+                                    .shadow(4.dp, RoundedCornerShape(50.dp))
                                     .fillMaxWidth(0.9f)
                                     .align(Alignment.CenterHorizontally)
                                     .clickable {
                                         println(scores.size)
                                         navController.navigate("lobbyScreen/$lobbyId")
                                     },
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(50.dp),
                                 colors = CardColors(
                                     containerColor = LightTurquoise,
                                     contentColor = Color.White,
@@ -197,7 +200,8 @@ class ScreenForResults {
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier
                                         .padding(16.dp)
-                                        .align(Alignment.CenterHorizontally)
+                                        .align(Alignment.CenterHorizontally),
+                                    style = MaterialTheme.typography.labelMedium
                                 )
                             }
 

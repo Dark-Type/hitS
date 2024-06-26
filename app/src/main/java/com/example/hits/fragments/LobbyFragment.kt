@@ -38,6 +38,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.Text
@@ -58,8 +59,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
@@ -284,8 +288,6 @@ class LobbyFragment {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
-
-
                             ) {
                             Card(
                                 modifier = Modifier
@@ -304,7 +306,9 @@ class LobbyFragment {
                             ) {
                                 Text(
                                     text = "I'm wearing the same clothes",
-                                    modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(16.dp),
+                                    textAlign = TextAlign.Center
                                 )
                             }
                             Card(
@@ -327,7 +331,9 @@ class LobbyFragment {
                             ) {
                                 Text(
                                     text = "I changed my appearance",
-                                    modifier = Modifier.padding(16.dp), textAlign = TextAlign.Center
+                                    style = MaterialTheme.typography.labelMedium,
+                                    modifier = Modifier.padding(16.dp),
+                                    textAlign = TextAlign.Center
                                 )
                             }
 
@@ -354,7 +360,7 @@ class LobbyFragment {
             ) {
                 IconButton(
                     onClick = { navController.navigate("settingsScreen/$lobbyId") },
-                    modifier = Modifier.padding(top = 25.dp, end = 16.dp)
+                    modifier = Modifier.padding(top = 32.dp, end = 16.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.settings_button),
@@ -370,7 +376,7 @@ class LobbyFragment {
                         navController.navigate("joinLobbyScreen")
                     },
                     modifier = Modifier
-                        .padding(top = 25.dp, start = 16.dp)
+                        .padding(top = 32.dp, start = 16.dp)
                         .align(Alignment.TopStart)
                 ) {
                     Icon(
@@ -415,7 +421,7 @@ class LobbyFragment {
                         Box(
                             modifier = Modifier
                                 .weight(0.5f)
-                                .padding(top = 32.dp)
+                                .padding(top = 16.dp)
                         ) {
 
                             UserList(users, lobbyId, teamRed, teamBlue)
@@ -433,8 +439,8 @@ class LobbyFragment {
                                 onClick = { showModsDialog = true },
                                 colors = ButtonDefaults.buttonColors(LightTurquoise),
                                 modifier = Modifier
-                                    .padding(bottom = 16.dp)
-                                    .fillMaxWidth(0.8f)
+                                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                                    .fillMaxWidth(1f)
                                     .shadow(3.dp, shape = RoundedCornerShape(50))
                             ) {
                                 Text(
@@ -443,8 +449,6 @@ class LobbyFragment {
                                     style = Typography.bodySmall
                                 )
                             }
-
-                            Spacer(modifier = Modifier.height(16.dp))
 
                             val isReady = remember { mutableStateOf(false) }
                             val shouldChooseTeams = remember { mutableStateOf(false) }
@@ -456,7 +460,7 @@ class LobbyFragment {
                                     getEmbeddingsCount(sharedPrefHelper.getID()!!.toInt()).thenAccept { countOfScansForThisUser ->
                                         println("AAADASOd")
 
-                                        if (!(countOfScansForThisUser > 3)) {
+                                        if (countOfScansForThisUser <= 3) {
 
                                             Toast.makeText(
                                                 toastContext,
@@ -502,8 +506,8 @@ class LobbyFragment {
                                 },
                                 colors = ButtonDefaults.buttonColors(if (isReady.value) Turquoise else LightTurquoise),
                                 modifier = Modifier
-                                    .padding(bottom = 16.dp)
-                                    .fillMaxWidth(0.8f)
+                                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                                    .fillMaxWidth(1f)
                                     .shadow(3.dp, shape = RoundedCornerShape(50))
 
                             ) {
@@ -754,7 +758,7 @@ class LobbyFragment {
 
                             .fillMaxWidth(),
                         color = Color(0xFFD9D9D9),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(15.dp),
 
                         ) {
                         Column(
@@ -763,7 +767,8 @@ class LobbyFragment {
                                 .padding(16.dp)
                         ) {
                             Text(
-                                text = "Choose a mode", style = Typography.labelLarge,
+                                text = "Choose a mode",
+                                style = Typography.labelLarge,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Black,
@@ -782,7 +787,7 @@ class LobbyFragment {
                                         elevation = CardDefaults.cardElevation(
                                             defaultElevation = 6.dp
                                         ),
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(15.dp),
                                         colors = CardColors(
                                             Color.White,
                                             Color.Black,
@@ -791,7 +796,14 @@ class LobbyFragment {
                                         )
                                     ) {
                                         Text(
-                                            text = "$mode: ${votes.value[index]} votes",
+                                            text =  buildAnnotatedString {
+                                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                    append("$mode: ")
+                                                }
+                                                withStyle(style = SpanStyle(fontWeight = FontWeight.Medium)) {
+                                                    append("${votes.value[index]} votes")
+                                                }
+                                            },
                                             style = Typography.bodySmall,
                                             modifier = Modifier
                                                 .clickable {
@@ -865,8 +877,8 @@ class LobbyFragment {
                     colors = CardColors(Color.White, Color.Black, StrokeBlue, Color.Gray),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(6.dp)
+                        .padding(horizontal = 22.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(15.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -894,7 +906,7 @@ class LobbyFragment {
                                 bitmapState.value
 
                             },
-                            shape = RoundedCornerShape(6.dp),
+                            shape = RoundedCornerShape(15.dp),
                             colors = ButtonDefaults.buttonColors(
                                 LightTurquoise
                             ),

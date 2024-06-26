@@ -41,16 +41,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.hits.R
@@ -73,11 +79,22 @@ class JoinLobbyFragment {
     @Composable
     fun Greeting(modifier: Modifier = Modifier, preferences: SharedPrefHelper) {
         Box(
-            modifier = modifier.padding(top = 16.dp, bottom = 16.dp),
+            modifier = modifier.padding(top = 4.dp, bottom = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
             Text(
-                text = "Hello, ${preferences.getNickname()}!",
+                text = buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Medium)) {
+                        append("Hello, ")
+                    }
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("${preferences.getNickname()}")
+                    }
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Medium)) {
+                        append("!")
+                    }
+                },
+                fontSize = 28.sp
             )
         }
     }
@@ -103,7 +120,7 @@ class JoinLobbyFragment {
                     selectedNews.value = news
                     showDialog.value = true
                 },
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(15.dp)
 
         ) {
             Row(
@@ -118,7 +135,7 @@ class JoinLobbyFragment {
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.labelMedium
                 )
 
 
@@ -192,7 +209,7 @@ class JoinLobbyFragment {
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
-                    style = fontType
+                    style = Typography.bodyMedium
                 )
 
                 IconButton(
@@ -324,7 +341,7 @@ class JoinLobbyFragment {
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(32.dp),
+                                    .padding(24.dp),
                                 verticalArrangement = Arrangement.SpaceBetween,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
@@ -336,7 +353,7 @@ class JoinLobbyFragment {
                                 Button(
                                     onClick = { showNews.value = !showNews.value },
                                     colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                    modifier = Modifier.padding(bottom = 16.dp).shadow(3.dp, shape = RoundedCornerShape(50)).fillMaxWidth(0.9f),
+                                    modifier = Modifier.shadow(3.dp, shape = RoundedCornerShape(50)).fillMaxWidth(1f),
 
                                 ) {
                                     Text(if (showNews.value) "To Leaderboards" else "To News", modifier = Modifier.padding(4.dp))
@@ -376,7 +393,7 @@ class JoinLobbyFragment {
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Spacer(modifier = Modifier.height(32.dp))
+                                    Spacer(modifier = Modifier.height(64.dp))
 
                                     Button(
                                         onClick = {
@@ -393,12 +410,12 @@ class JoinLobbyFragment {
                                             navController.navigate("lobbyScreen/${generatedId.value}")
                                         },
                                         colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                        modifier = Modifier.fillMaxWidth(0.9f).shadow(3.dp, shape = RoundedCornerShape(50))
+                                        modifier = Modifier.fillMaxWidth(1f).shadow(3.dp, shape = RoundedCornerShape(50))
                                     ) {
                                         Text("Create Lobby", modifier = Modifier.padding(4.dp))
                                     }
 
-                                    Spacer(modifier = Modifier.height(32.dp))
+                                    Spacer(modifier = Modifier.height(16.dp))
 
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -420,10 +437,9 @@ class JoinLobbyFragment {
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.height(32.dp))
+                                    Spacer(modifier = Modifier.height(12.dp))
 
                                     OutlinedTextField(
-
                                         value = lobbyCode.value,
                                         onValueChange = { lobbyCode.value = it },
                                         label = { Text("Input lobby code to join") },
