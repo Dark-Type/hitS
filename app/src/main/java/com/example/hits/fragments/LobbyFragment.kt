@@ -9,8 +9,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
@@ -103,8 +101,8 @@ import java.util.Collections.max
 class LobbyFragment {
 
     var users: SnapshotStateList<User> = mutableStateListOf()
-    var lobbyIdToCheck = 0
-    var databaseVotesRef = databaseRef
+    private var lobbyIdToCheck = 0
+    private var databaseVotesRef = databaseRef
     var didLocalDeviceInitiateChange = false
     var calledTransition = false
     var readyUsers = 0
@@ -223,7 +221,7 @@ class LobbyFragment {
                             text = if (chosenGameMode == GAMEMODE_CS_GO) {
                                 "Join Counter-Terrs"
                             } else {
-                                "Join Red"
+                                "Join Blue"
                             },
                             style = Typography.labelLarge,
                             textAlign = TextAlign.Center,
@@ -994,19 +992,30 @@ class LobbyFragment {
                                 Text(text = "Scan", fontSize = 10.sp, style = Typography.bodyMedium)
                             }
                         )
-                        Spacer(modifier = Modifier.width(60.dp))
+                        Spacer(modifier = Modifier.fillMaxWidth(0.5f))
                         Box(
                             modifier = Modifier
                                 .size(20.dp)
                                 .align(Alignment.CenterVertically)
-                                .background(
-                                    when {
-                                        teamRed.contains(user.name) -> Color.Red
-                                        teamBlue.contains(user.name) -> Color.Blue
-                                        else -> Color.Gray
-                                    }
-                                )
                         )
+
+                        when {
+                            teamRed.contains(user.name) -> Icon(
+                                painter = painterResource(id = R.drawable.team_red),
+                                contentDescription = "User in team red",
+                                modifier = Modifier.align(Alignment.CenterVertically),
+                                tint = Color(0xFFDC5959)
+                            )
+
+                            teamBlue.contains(user.name) -> Icon(
+                                painter = painterResource(id = R.drawable.team_blue),
+                                contentDescription = "User in team blue",
+                                modifier = Modifier.align(Alignment.CenterVertically),
+                                tint = Color(0xFF5966DC)
+                            )
+                        }
+
+
                     }
 
                 }

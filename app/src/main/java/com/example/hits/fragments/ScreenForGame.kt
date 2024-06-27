@@ -224,6 +224,7 @@ class ScreenForGame {
         }
         val lastObservedValue = remember { mutableStateOf<String?>(null) }
         fun triggerEvent(modeType: String) {
+
             Toast.makeText(context, "You interacted with $modeType", Toast.LENGTH_SHORT).show()
         }
         cameraX.eventType.observe(LocalLifecycleOwner.current) { modeType ->
