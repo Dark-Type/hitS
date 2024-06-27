@@ -101,8 +101,8 @@ import java.util.Collections.max
 class LobbyFragment {
 
     var users: SnapshotStateList<User> = mutableStateListOf()
-    private var lobbyIdToCheck = 0
-    private var databaseVotesRef = databaseRef
+    var lobbyIdToCheck = 0
+    var databaseVotesRef = databaseRef
     var didLocalDeviceInitiateChange = false
     var calledTransition = false
     var readyUsers = 0
