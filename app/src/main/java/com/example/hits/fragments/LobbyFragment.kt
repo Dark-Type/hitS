@@ -1041,7 +1041,7 @@ class LobbyFragment {
                     bitmapState.value = bitmap
 
                     CoroutineScope(Dispatchers.IO).launch {
-                        neuralNetwork.rememberPerson(roomID, userToScanID, bitmap)
+                        val status = neuralNetwork.rememberPerson(roomID, userToScanID, bitmap)
                     }
                     println("Photo taken and remembered for user: $userToScanID")
                 }

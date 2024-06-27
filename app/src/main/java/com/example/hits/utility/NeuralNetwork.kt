@@ -12,6 +12,7 @@ import ai.onnxruntime.extensions.OrtxPackage
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.util.Log
+import android.widget.Toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -23,6 +24,7 @@ import java.util.Collections
 
 class NeuralNetwork private constructor(context: Context) {
     private val applicationContext = context.applicationContext
+    private val activityContext = context
     private var ortEnvironment: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var detectorOrtSession: OrtSession
     private var autoencoderOrtSession: OrtSession
@@ -41,9 +43,22 @@ class NeuralNetwork private constructor(context: Context) {
     }
 
     // Положить эмбеддинг человека в бд
-    suspend fun rememberPerson(roomID: Int, userToScanID: Int, image: Bitmap) {
-        val embedding = encode(image)
-        addEmbeddingToDatabase(roomID, userToScanID, embedding)
+    suspend fun rememberPerson(roomID: Int, userToScanID: Int, image: Bitmap): Boolean {
+        val boxes = detect(image)
+        if (boxes.size == 1) {
+            val croppedImage = cropBitmap(
+                image,
+                boxes[0][0],
+                boxes[0][1],
+                boxes[0][2],
+                boxes[0][3]
+            )
+
+            val embedding = encode(croppedImage)
+            addEmbeddingToDatabase(roomID, userToScanID, embedding)
+        }
+
+        return boxes.size == 1
     }
 
     fun embeddingsSetter(passedEmbeddings: Array<Pair<FloatArray, Int>>) {
