@@ -2,17 +2,16 @@ package com.example.hits.utility
 
 import ai.onnxruntime.OnnxJavaType
 import ai.onnxruntime.OnnxTensor
-import android.content.Context
-import android.graphics.Bitmap
-import com.example.hits.R
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtSession.Result
 import ai.onnxruntime.extensions.OrtxPackage
+import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.util.Log
-import android.widget.Toast
+import com.example.hits.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -117,10 +116,10 @@ class NeuralNetwork private constructor(context: Context) {
         bottom: Int
     ): Array<Int> {
         return arrayOf(
-            left * width / 640,
-            top * height / 640,
-            right * width / 640,
-            bottom * height / 640
+            left * width / 500,
+            top * height / 500,
+            right * width / 500,
+            bottom * height / 500
         )
     }
 
@@ -149,8 +148,8 @@ class NeuralNetwork private constructor(context: Context) {
     private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> {
         val resizedBitmap = Bitmap.createScaledBitmap(
             bitmap,
-            640,
-            640,
+            500,
+            500,
             false
         )
         val input = bitmapToByteArray(resizedBitmap)
@@ -401,6 +400,7 @@ class NeuralNetwork private constructor(context: Context) {
         // Загрузка моделей в ort сессии
         val sessionOptions: OrtSession.SessionOptions = OrtSession.SessionOptions()
         sessionOptions.registerCustomOpLibrary(OrtxPackage.getLibraryPath())
+        sessionOptions.setIntraOpNumThreads(3)
         detectorOrtSession = ortEnvironment.createSession(
             readYolo(),
             sessionOptions
