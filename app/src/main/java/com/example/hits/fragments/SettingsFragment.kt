@@ -31,6 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -101,11 +102,11 @@ class SettingsFragment {
 
             Text(
                 text = "Settings",
-                fontSize = 30.sp,
+                fontSize = 36.sp,
                 style = Typography.labelLarge,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 32.dp),
+                    .padding(top = 36.dp),
                 color = Color.White
             )
 
@@ -121,20 +122,20 @@ class SettingsFragment {
                 ) {
                     Text(
                         text = "Stats",
-                        fontSize = 30.sp,
+                        fontSize = 28.sp,
                         style = Typography.labelLarge,
                         modifier = Modifier.align(Alignment.Start),
                         color = Color.White
                     )
                     LazyColumn(
                         modifier = Modifier
-                            .padding(top = 16.dp)
+                            .padding(top = 8.dp)
                             .align(Alignment.Start)
                     ) {
                         item {
                             Card(
                                 modifier = Modifier
-                                    .padding(bottom = 16.dp)
+                                    .padding(bottom = 8.dp)
                                     .align(Alignment.CenterHorizontally)
                                     .fillMaxWidth(),
                                 colors = CardDefaults.cardColors(Color(0xFFD9D9D9))
@@ -149,7 +150,7 @@ class SettingsFragment {
                                         color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.9f)
+                                        modifier = Modifier.fillMaxWidth(0.95f)
                                     )
                                     Text(
                                         text = kills,
@@ -163,7 +164,7 @@ class SettingsFragment {
                             Card(
                                 colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                                 modifier = Modifier
-                                    .padding(bottom = 16.dp)
+                                    .padding(bottom = 8.dp)
                                     .align(Alignment.Start)
                                     .fillMaxWidth()
                             ) {
@@ -177,7 +178,7 @@ class SettingsFragment {
                                         color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.9f)
+                                        modifier = Modifier.fillMaxWidth(0.95f)
                                     )
                                     Text(
                                         text = deaths,
@@ -191,7 +192,7 @@ class SettingsFragment {
                             Card(
                                 colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                                 modifier = Modifier
-                                    .padding(bottom = 16.dp)
+                                    .padding(bottom = 8.dp)
                                     .align(Alignment.Start)
                                     .fillMaxWidth()
                             ) {
@@ -205,7 +206,7 @@ class SettingsFragment {
                                         color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.9f)
+                                        modifier = Modifier.fillMaxWidth(0.95f)
                                     )
                                     Text(
                                         text = assists,
@@ -216,12 +217,12 @@ class SettingsFragment {
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+                    Spacer(modifier = Modifier.fillMaxHeight(0.05f))
 
                     Card(
                         colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                         modifier = Modifier
-                            .padding(bottom = 16.dp)
+                            .padding(bottom = 8.dp)
                             .align(Alignment.CenterHorizontally)
                             .fillMaxWidth()
                             .clickable { showToDoDialog = true },
@@ -232,7 +233,7 @@ class SettingsFragment {
                     Card(
                         colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                         modifier = Modifier
-                            .padding(bottom = 16.dp)
+                            .padding(bottom = 8.dp)
                             .align(Alignment.CenterHorizontally)
                             .fillMaxWidth()
                             .clickable{ showDialog = true },
@@ -268,7 +269,7 @@ class SettingsFragment {
                     Card(
                         colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                         modifier = Modifier
-                            .padding(bottom = 16.dp)
+                            .padding(bottom = 8.dp)
                             .align(Alignment.CenterHorizontally)
                             .fillMaxWidth()
                             .clickable {
@@ -306,7 +307,7 @@ class SettingsFragment {
                     Button(
                         onClick = { navController.popBackStack() },
                         modifier = Modifier
-                            .padding(top = 64.dp)
+                            .padding(top = 72.dp)
                             .shadow(
                                 elevation = 3.dp,
                                 shape = MaterialTheme.shapes.extraLarge,

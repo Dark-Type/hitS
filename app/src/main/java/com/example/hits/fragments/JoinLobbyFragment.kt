@@ -465,6 +465,7 @@ class JoinLobbyFragment {
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(bottom = 16.dp),
+                                        shape = RoundedCornerShape(30),
 
 
                                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),

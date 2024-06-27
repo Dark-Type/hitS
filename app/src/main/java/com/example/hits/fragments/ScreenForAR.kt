@@ -11,7 +11,10 @@ import io.github.sceneview.ar.rememberARCameraNode
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 
 import androidx.compose.runtime.getValue
@@ -19,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.hits.R
+import com.example.hits.ui.theme.Turquoise
 import com.example.hits.ui.theme.Typography
 import com.google.android.filament.Engine
 import com.google.ar.core.Anchor
@@ -144,9 +149,9 @@ class ScreenForAR {
                     .systemBarsPadding()
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(top = 16.dp, start = 32.dp, end = 32.dp),
+                    .padding(top = 16.dp, start = 52.dp, end = 52.dp),
                 textAlign = TextAlign.Center,
-                fontSize = 28.sp,
+                fontSize = 24.sp,
                 color = Color.White,
                 style = Typography.bodySmall,
                 text = trackingFailureReason?.getDescription(LocalContext.current)
@@ -159,7 +164,7 @@ class ScreenForAR {
             IconButton(
                 onClick = {
                     navController.popBackStack()
-                }, modifier = Modifier.padding(top = 16.dp)
+                }, modifier = Modifier.padding(top = 40.dp, start = 12.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.go_back),
