@@ -103,7 +103,7 @@ class MainActivity : ComponentActivity() {
 
             NavHost(
                 navController,
-                startDestination = if (nickname.isNullOrEmpty() || id == "-1") "initUI" else "joinLobbyScreen"
+                startDestination = if (nickname.isNullOrEmpty() || id == "-1") "initUI" else "joinLobbyScreen",
             ) {
                 composable("initUI") { InitUI(navController) }
                 composable("joinLobbyScreen") { JoinLobbyFragment().JoinLobbyScreen(navController) }
@@ -187,6 +187,7 @@ class MainActivity : ComponentActivity() {
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     // You can use the camera
                 }
+
                 else -> {
                     // You need to ask for permission
                     requestPermissionLauncher.launch(permission)
