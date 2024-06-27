@@ -36,6 +36,7 @@ sceneview = "2.2.1"
 startupRuntime = "1.1.1"
 textRecognition = "17.0.0"
 runtimeLivedata = "1.6.8"
+textRecognitionVersion = "16.0.0"
 visionCommon = "17.3.0"
 playServicesMlkitTextRecognitionCommon = "19.0.0"
 
@@ -86,6 +87,7 @@ sceneform-ux = { module = "com.google.ar.sceneform.ux:sceneform-ux", version.ref
 sceneview = { module = "io.github.sceneview:sceneview", version.ref = "sceneview" }
 text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "textRecognition" }
 androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
+text-recognition-v1600 = { module = "com.google.mlkit:text-recognition", version.ref = "textRecognitionVersion" }
 vision-common = { group = "com.google.mlkit", name = "vision-common", version.ref = "visionCommon" }
 play-services-mlkit-text-recognition-common = { group = "com.google.android.gms", name = "play-services-mlkit-text-recognition-common", version.ref = "playServicesMlkitTextRecognitionCommon" }
 

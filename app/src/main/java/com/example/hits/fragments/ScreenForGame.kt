@@ -42,6 +42,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -55,7 +56,6 @@ import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.User
 import com.example.hits.utility.UserForLeaderboard
 import com.example.hits.utility.databaseRef
-import com.example.hits.utility.endGame
 import com.example.hits.utility.getEmbeddings
 import com.example.hits.utility.getUsersForCurrGameLeaderboard
 import com.example.hits.utility.leaveFromOngoingGame
@@ -171,7 +171,8 @@ class ScreenForGame {
                     if (newHealth != null) {
                         player.changeHP(lobbyId, userID, newHealth, context)
 
-                        Toast.makeText(context, "Health changed: $newHealth", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Health changed: $newHealth", Toast.LENGTH_SHORT)
+                            .show()
 
                         Log.d("TAKED DMG", newHealth.toString() + " curr hp: ${player.getHealth()}")
                     }
@@ -217,6 +218,23 @@ class ScreenForGame {
         cameraX: CameraX,
         lobbyId: Int, userID: Int, currGameMode: String, navController: NavController
     ) {
+        val textAndTimeState = remember { mutableStateOf<Pair<String, Long>?>(null) }
+        cameraX.textAndTime.observe(LocalLifecycleOwner.current) { pair ->
+            textAndTimeState.value = pair
+        }
+        val lastObservedValue = remember { mutableStateOf<String?>(null) }
+        fun triggerEvent(modeType: String) {
+            Toast.makeText(context, "You interacted with $modeType", Toast.LENGTH_SHORT).show()
+        }
+        cameraX.eventType.observe(LocalLifecycleOwner.current) { modeType ->
+
+            if (modeType != lastObservedValue.value) {
+                triggerEvent(modeType)
+
+                lastObservedValue.value = modeType
+            }
+
+        }
         val neuralNetwork = NeuralNetwork.getInstance(context)
         LaunchedEffect(lobbyId) {
             CoroutineScope(Dispatchers.Default).launch {
@@ -281,6 +299,18 @@ class ScreenForGame {
                 val playerID = userID //эт нейронкой мб?
                 player.revive(lobbyId, playerID)
                 Log.d("revive", "revive $playerID")
+            }
+            textAndTimeState.value?.let { pair ->
+                if (pair.first != "0" && pair.first != "-1" && pair.first != " " && pair.second != 0L) {
+                    Text(
+                        text = "Interacting with ${pair.first},\nTime remaining: ${pair.second} seconds",
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 32.dp),
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
             Box(
                 modifier = Modifier
@@ -402,7 +432,7 @@ class ScreenForGame {
                                         top = 16.dp,
                                         start = 16.dp,
                                         end = 8.dp,
-                                        )
+                                    )
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                                     .clickable {
@@ -464,7 +494,6 @@ class ScreenForGame {
                     }
                 }
             }
-
             if (showStatsDialog) {
                 Dialog(onDismissRequest = { showStatsDialog = false }) {
                     Surface(
@@ -709,8 +738,22 @@ class ScreenForGame {
                     }
                     Spacer(modifier = Modifier.fillMaxWidth(0.65f))
 
+                    var isAnalysisRunning = false
+
                     IconButton(
-                        onClick = { //cameraX.startRealTimeTextRecognition()
+                        onClick = {
+                            if (!isAnalysisRunning) {
+                                Log.d("TextRecognition", "Interact button clicked")
+                                cameraX.startAnalysis()
+                                isAnalysisRunning = true
+                            } else {
+                                Log.d(
+                                    "TextRecognition",
+                                    "Interact button clicked again, stopping analysis"
+                                )
+                                cameraX.manuallyStopAnalysis()
+                                isAnalysisRunning = false
+                            }
                         },
                         modifier = Modifier
                             .size(100.dp)

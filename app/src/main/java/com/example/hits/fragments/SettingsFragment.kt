@@ -59,8 +59,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.hits.ui.theme.Blue
-import com.example.hits.ui.theme.StrokeBlue
 import com.example.hits.ui.theme.Turquoise
 import com.example.hits.ui.theme.Typography
 import com.example.hits.utility.databaseRef
@@ -137,7 +135,7 @@ class SettingsFragment {
                             Card(
                                 modifier = Modifier
                                     .padding(bottom = 16.dp)
-                                    .align(Alignment.Start)
+                                    .align(Alignment.CenterHorizontally)
                                     .fillMaxWidth(),
                                 colors = CardDefaults.cardColors(Color(0xFFD9D9D9))
                             ) {
@@ -151,7 +149,7 @@ class SettingsFragment {
                                         color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.8f)
+                                        modifier = Modifier.fillMaxWidth(0.9f)
                                     )
                                     Text(
                                         text = kills,
@@ -179,7 +177,7 @@ class SettingsFragment {
                                         color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.8f)
+                                        modifier = Modifier.fillMaxWidth(0.9f)
                                     )
                                     Text(
                                         text = deaths,
@@ -207,7 +205,7 @@ class SettingsFragment {
                                         color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.8f)
+                                        modifier = Modifier.fillMaxWidth(0.9f)
                                     )
                                     Text(
                                         text = assists,

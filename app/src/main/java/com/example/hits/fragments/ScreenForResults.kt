@@ -85,7 +85,7 @@ class ScreenForResults {
                         Column(modifier = Modifier.fillMaxWidth()) {
 
 
-                            LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
+                            LazyColumn(modifier = Modifier.fillMaxHeight(0.6f).padding(16.dp)) {
                                 itemsIndexed(scores) { index, scoreData ->
                                     Card(
                                         modifier = Modifier
@@ -123,7 +123,7 @@ class ScreenForResults {
                             }
                             Card(
                                 modifier = Modifier
-                                    .padding(16.dp)
+                                    .padding(start = 16.dp, end = 16.dp, top = 16.dp)
                                     .fillMaxWidth(0.9f)
                                     .shadow(4.dp, RoundedCornerShape(50.dp))
                                     .align(Alignment.CenterHorizontally)
@@ -149,7 +149,7 @@ class ScreenForResults {
 
                             Card(
                                 modifier = Modifier
-                                    .padding(16.dp)
+                                    .padding(start = 16.dp, end = 16.dp, top = 16.dp)
                                     .fillMaxWidth(0.9f)
                                     .shadow(4.dp, RoundedCornerShape(50.dp))
                                     .align(Alignment.CenterHorizontally)
@@ -228,7 +228,7 @@ class ScreenForResults {
                 ) {
                     Card (Modifier.fillMaxWidth(), colors = CardColors(Color.White, Color.Black, Color.Black, Color.White)) {
                         //@deadnya fill this with real kda data for player
-                        Text("Prop data", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
+                        Text("prop data", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
                     }
                 }
 

@@ -69,6 +69,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
+import com.example.hits.getGamemodeDescription
 import com.example.hits.getGamemodes
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
@@ -288,7 +289,7 @@ class LobbyFragment {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
+                        ) {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth(0.8f)
@@ -317,7 +318,12 @@ class LobbyFragment {
 
                                     .clickable {
 
-                                        deleteEmbeddingsFromDatabase(lobbyId, sharedPrefHelper.getID()!!.toInt())
+                                        deleteEmbeddingsFromDatabase(
+                                            lobbyId,
+                                            sharedPrefHelper
+                                                .getID()!!
+                                                .toInt()
+                                        )
 
                                         showScanningDialog.value = false
                                     },
@@ -457,7 +463,9 @@ class LobbyFragment {
                                 onClick = {
 
                                     println("A")
-                                    getEmbeddingsCount(sharedPrefHelper.getID()!!.toInt()).thenAccept { countOfScansForThisUser ->
+                                    getEmbeddingsCount(
+                                        sharedPrefHelper.getID()!!.toInt()
+                                    ).thenAccept { countOfScansForThisUser ->
                                         println("AAADASOd")
 
                                         if (countOfScansForThisUser <= 3) {
@@ -774,6 +782,7 @@ class LobbyFragment {
                                 color = Color.Black,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
+
                             LazyColumn {
                                 itemsIndexed(modes) { index, mode ->
                                     ElevatedCard(
@@ -783,7 +792,53 @@ class LobbyFragment {
                                                 bottom = 8.dp,
                                                 end = 8.dp
                                             )
-                                            .fillMaxWidth(),
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                if (selectedMode.intValue != index) {
+
+                                                    if (selectedMode.intValue != -1) {
+                                                        votes.value =
+                                                            votes.value
+                                                                .toMutableList()
+                                                                .also {
+                                                                    it[selectedMode.intValue]--
+                                                                    addValue(
+                                                                        databaseVotesRef.child(
+                                                                            modes[selectedMode.intValue]
+                                                                        ),
+                                                                        -1
+                                                                    )
+                                                                }
+                                                    }
+                                                    votes.value =
+                                                        votes.value
+                                                            .toMutableList()
+                                                            .also {
+                                                                it[index]++
+                                                                addValue(
+                                                                    databaseVotesRef.child(
+                                                                        modes[index]
+                                                                    ), 1
+                                                                )
+                                                            }
+                                                    selectedMode.intValue = index
+                                                } else {
+                                                    votes.value =
+                                                        votes.value
+                                                            .toMutableList()
+                                                            .also {
+                                                                it[index]--
+                                                                addValue(
+                                                                    databaseVotesRef.child(
+                                                                        modes[selectedMode.intValue]
+                                                                    ), -1
+                                                                )
+                                                            }
+
+                                                    selectedMode.intValue = -1
+                                                }
+                                                showModsDialog = false
+                                            },
                                         elevation = CardDefaults.cardElevation(
                                             defaultElevation = 6.dp
                                         ),
@@ -796,7 +851,7 @@ class LobbyFragment {
                                         )
                                     ) {
                                         Text(
-                                            text =  buildAnnotatedString {
+                                            text = buildAnnotatedString {
                                                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                                     append("$mode: ")
                                                 }
@@ -806,54 +861,24 @@ class LobbyFragment {
                                             },
                                             style = Typography.bodySmall,
                                             modifier = Modifier
-                                                .clickable {
-                                                    if (selectedMode.intValue != index) {
 
-                                                        if (selectedMode.intValue != -1) {
-                                                            votes.value =
-                                                                votes.value
-                                                                    .toMutableList()
-                                                                    .also {
-                                                                        it[selectedMode.intValue]--
-                                                                        addValue(
-                                                                            databaseVotesRef.child(
-                                                                                modes[selectedMode.intValue]
-                                                                            ),
-                                                                            -1
-                                                                        )
-                                                                    }
-                                                        }
-                                                        votes.value =
-                                                            votes.value
-                                                                .toMutableList()
-                                                                .also {
-                                                                    it[index]++
-                                                                    addValue(
-                                                                        databaseVotesRef.child(
-                                                                            modes[index]
-                                                                        ), 1
-                                                                    )
-                                                                }
-                                                        selectedMode.intValue = index
-                                                    } else {
-                                                        votes.value =
-                                                            votes.value
-                                                                .toMutableList()
-                                                                .also {
-                                                                    it[index]--
-                                                                    addValue(
-                                                                        databaseVotesRef.child(
-                                                                            modes[selectedMode.intValue]
-                                                                        ), -1
-                                                                    )
-                                                                }
-
-                                                        selectedMode.intValue = -1
-                                                    }
-                                                    showModsDialog = false
-                                                }
-                                                .padding(16.dp),
+                                                .padding(
+                                                    bottom = 8.dp,
+                                                    start = 16.dp,
+                                                    end = 16.dp,
+                                                    top = 16.dp
+                                                ),
                                             fontSize = 16.sp
+                                        )
+                                        Text(
+                                            text = getGamemodeDescription(mode),
+                                            style = Typography.bodyMedium,
+                                            fontSize = 10.sp,
+                                            modifier = Modifier.padding(
+                                                bottom = 16.dp,
+                                                start = 16.dp,
+                                                end = 16.dp
+                                            )
                                         )
                                     }
                                 }

@@ -1,7 +1,7 @@
 package com.example.hits.fragments
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +27,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +40,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -58,13 +56,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
-import com.example.hits.ui.theme.Turquoise
 import com.example.hits.ui.theme.Typography
 import com.example.hits.utility.User
 import com.example.hits.utility.UserForLeaderboard
@@ -249,7 +247,7 @@ class JoinLobbyFragment {
                     ) {
                     Text(text = "Name: ${user.name}", modifier = Modifier.padding(16.dp))
                     Text(text = "Score: ${user.points}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Rank: ${user.rank+1}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Rank: ${user.rank + 1}", modifier = Modifier.padding(16.dp))
                     Text(text = "Kills: ${user.kills}", modifier = Modifier.padding(16.dp))
                     Text(text = "Deaths: ${user.deaths}", modifier = Modifier.padding(16.dp))
                     Text(text = "Assists: ${user.assists}", modifier = Modifier.padding(16.dp))
@@ -288,13 +286,7 @@ class JoinLobbyFragment {
                         },
                     contentScale = ContentScale.FillBounds
                 )
-                Button(
-                    onClick = { navController.navigate("arScreen") },
-                    colors = ButtonDefaults.buttonColors(LightTurquoise),
-                    border = BorderStroke(width = 1.dp, color = Turquoise)
-                ) {
-                    Text("Open AR Screen")
-                }
+
 
                 IconButton(
                     onClick = { isSurfaceVisible.value = true },
@@ -308,14 +300,34 @@ class JoinLobbyFragment {
                         contentDescription = "to lobby",
                     )
                 }
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
+                    IconButton(
+                        onClick = {
+                            if (!isSurfaceVisible.value) navController.navigate("arScreen") else isSurfaceVisible.value =
+                                false
+                        },
+                        modifier = Modifier
+                            .padding(top = 128.dp)
+                            .size(200.dp)
+                            .zIndex(2f)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.awards),
+                            contentDescription = "Open AR Screen"
+                        )
+                    }
+                }
                 IconButton(
-                    onClick = {  if(!isSurfaceVisible.value)navController.navigate("settingsScreen/-1") else isSurfaceVisible.value = false },
+                    onClick = {
+                        if (!isSurfaceVisible.value) navController.navigate("settingsScreen/-1") else isSurfaceVisible.value =
+                            false
+                    },
                     modifier = Modifier
                         .fillMaxSize(0.4f)
                         .align(Alignment.BottomStart)
                         .padding(16.dp),
 
-                ) {
+                    ) {
                     Image(
                         painter = painterResource(id = R.drawable.lobby_go_to_settings),
                         contentDescription = "Settings",
@@ -353,10 +365,15 @@ class JoinLobbyFragment {
                                 Button(
                                     onClick = { showNews.value = !showNews.value },
                                     colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                    modifier = Modifier.shadow(3.dp, shape = RoundedCornerShape(50)).fillMaxWidth(1f),
+                                    modifier = Modifier
+                                        .shadow(3.dp, shape = RoundedCornerShape(50))
+                                        .fillMaxWidth(1f),
 
-                                ) {
-                                    Text(if (showNews.value) "To Leaderboards" else "To News", modifier = Modifier.padding(4.dp))
+                                    ) {
+                                    Text(
+                                        if (showNews.value) "To Leaderboards" else "To News",
+                                        modifier = Modifier.padding(4.dp)
+                                    )
                                 }
                                 if (showLeaderBoardsDialog.value) {
                                     selectedPlayer.value?.let {
@@ -410,7 +427,9 @@ class JoinLobbyFragment {
                                             navController.navigate("lobbyScreen/${generatedId.value}")
                                         },
                                         colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                        modifier = Modifier.fillMaxWidth(1f).shadow(3.dp, shape = RoundedCornerShape(50))
+                                        modifier = Modifier
+                                            .fillMaxWidth(1f)
+                                            .shadow(3.dp, shape = RoundedCornerShape(50))
                                     ) {
                                         Text("Create Lobby", modifier = Modifier.padding(4.dp))
                                     }

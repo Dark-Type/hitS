@@ -262,6 +262,7 @@ fun getNews(): SnapshotStateList<String> {
 
         override fun onCancelled(databaseError: DatabaseError) {
 
+
             Log.w("Firebase", "loadPost:onCancelled", databaseError.toException())
         }
     })
