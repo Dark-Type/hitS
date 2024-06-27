@@ -59,8 +59,9 @@ android {
 val camerax_version = "1.2.0-alpha02"
 
 dependencies {
-    implementation(libs.onnxruntime.android)
-    implementation(libs.onnxruntime.extensions.android)
+    // https://mvnrepository.com/artifact/com.microsoft.onnxruntime/onnxruntime-android
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.15.0")
+    implementation("com.microsoft.onnxruntime:onnxruntime-extensions-android:latest.release")
     implementation(libs.sceneview)
     implementation (libs.arsceneview)
     implementation( libs.androidx.camera.core)
