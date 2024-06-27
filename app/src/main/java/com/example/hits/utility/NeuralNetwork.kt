@@ -17,7 +17,6 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.Collections
@@ -40,7 +39,6 @@ class NeuralNetwork private constructor(context: Context) {
                 }
             }
     }
-
 
     // Положить эмбеддинг человека в бд
     suspend fun rememberPerson(roomID: Int, userToScanID: Int, image: Bitmap) {
@@ -73,7 +71,7 @@ class NeuralNetwork private constructor(context: Context) {
         return result
     }
 
-    // Сравнить два эмбеддинга с помощью cosine similarity
+    // Compare two embeddings with cosine similarity
     private fun getSimilarity(vector1: FloatArray, vector2: FloatArray): Float {
         var dotProduct = 0f
         var magnitude1 = 0f
@@ -104,30 +102,43 @@ class NeuralNetwork private constructor(context: Context) {
         bottom: Int
     ): Array<Int> {
         return arrayOf(
-            left * width / 500,
-            top * height / 500,
-            right * width / 500,
-            bottom * height / 500
+            left * width / 640,
+            top * height / 640,
+            right * width / 640,
+            bottom * height / 640
+        )
+    }
+
+    // To (xmin, ymin, xmax, ymax) format
+    private fun getBoxCoordinates(
+        xCenter: Int,
+        yCenter: Int,
+        height: Int,
+        width: Int
+    ): Array<Int> {
+        return arrayOf(
+            xCenter - width / 2,
+            yCenter - height / 2,
+            xCenter + width / 2,
+            yCenter + height / 2
         )
     }
 
     private fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
         val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
         return stream.toByteArray()
-    }
-
-    private fun readInputImage(): InputStream {
-        return applicationContext.assets.open("test_image.jpg")
     }
 
     // Найти людей на фото
     private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> {
-        Log.d("detect", "detect launched")
-
-        var imagestream = readInputImage()
-        imagestream.reset()
-        val input = imagestream.readBytes()
+        val resizedBitmap = Bitmap.createScaledBitmap(
+            bitmap,
+            640,
+            640,
+            false
+        )
+        val input = bitmapToByteArray(resizedBitmap)
 
         val shape = longArrayOf(input.size.toLong())
 
@@ -145,33 +156,36 @@ class NeuralNetwork private constructor(context: Context) {
         ) as Result
         Log.d("detect", "ran session")
 
+        // bounding boxes in (xcenter, ycenter, height, width) format
         val result = (output.get(1)?.value) as Array<FloatArray>
-        Log.d("detect", "converted results")
 
         val boxIt = result.iterator()
-
-        // bounding boxes in (xmin, ymin, xmax, ymax) format
         val boundingBoxes = ArrayList<Array<Int>>()
 
-        Log.d("detect", "start bounding boxes process")
         while (boxIt.hasNext()) {
             val box = boxIt.next()
-            // Проверка, что детектирован человек
+            // Is person detected
             if (box[5].toInt() == 0) {
-                Log.d("detect", "person finded")
-                val scaledBoundingBoxes = scaleBoundingBox(
-                    bitmap.width,
-                    bitmap.height,
+
+                val (xMin, yMin, xMax, yMax) = getBoxCoordinates(
                     box[0].toInt(),
                     box[1].toInt(),
                     box[2].toInt(),
                     box[3].toInt()
                 )
 
+                val scaledBoundingBoxes = scaleBoundingBox(
+                    bitmap.width,
+                    bitmap.height,
+                    xMin,
+                    yMin,
+                    xMax,
+                    yMax
+                )
+
                 boundingBoxes.add(scaledBoundingBoxes)
             }
         }
-        Log.d("detect", "end bounding boxes process")
 
         return boundingBoxes
     }
@@ -334,15 +348,12 @@ class NeuralNetwork private constructor(context: Context) {
     если попадания не было
      */
     suspend fun predictIfHit(image: Bitmap): Int? = withContext(Dispatchers.Default) {
-        Log.d("NeuralNetwork", "launched")
         val aimCoordinates = arrayOf(
             image.width / 2,
             image.height / 2
         )
-        Log.d("NeuralNetwork", "detection started")
 
         val persons = detect(image)
-        Log.d("NeuralNetwork", "detection finished")
         for (person in persons) {
             // Если прицел внутри bb
             if (
@@ -355,6 +366,7 @@ class NeuralNetwork private constructor(context: Context) {
                     person[3]
                 )
             ) {
+                println("hit")
                 // Обрезка bitmap по координатам bb
                 val croppedPersonImage = cropBitmap(
                     image,
@@ -363,7 +375,6 @@ class NeuralNetwork private constructor(context: Context) {
                     person[2],
                     person[3]
                 )
-                Log.d("NeuralNetwork", "person recognized")
                 return@withContext recognizePerson(croppedPersonImage)
             }
         }
