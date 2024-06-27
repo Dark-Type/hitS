@@ -1,10 +1,17 @@
 package com.example.hits.fragments
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +30,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.CardDefaults
+
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,14 +50,17 @@ import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.hits.ui.theme.Blue
-import com.example.hits.ui.theme.StrokeBlue
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.example.hits.ui.theme.Turquoise
+import com.example.hits.ui.theme.Typography
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.updateNicknameInDatabase
 import com.google.firebase.database.DataSnapshot
@@ -65,14 +77,17 @@ class SettingsFragment {
         val kills = sharedPrefHelper.getKills() ?: "N/A"
         val deaths = sharedPrefHelper.getDeaths() ?: "N/A"
         val assists = sharedPrefHelper.getAssists() ?: "N/A"
+        val context = LocalContext.current
 
         val requestPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
         ) { isGranted: Boolean ->
             if (isGranted) {
+                Toast.makeText(context, "Thank you!", Toast.LENGTH_SHORT).show()
 
             } else {
 
+                Toast.makeText(context, "Permission is not granted", Toast.LENGTH_SHORT).show()
             }
         }
         Box(modifier = Modifier.fillMaxSize()) {
@@ -83,19 +98,11 @@ class SettingsFragment {
                 contentScale = ContentScale.FillBounds
             )
 
-            IconButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.padding(top = 16.dp)
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.go_back),
-                    contentDescription = "Go back",
-                )
-            }
+
             Text(
                 text = "Settings",
                 fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
+                style = Typography.labelLarge,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 32.dp),
@@ -103,17 +110,19 @@ class SettingsFragment {
             )
 
 
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 60.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
                 Column(
                     modifier = Modifier
-                        .padding(60.dp)
+                        .fillMaxWidth(0.85f)
+                        .align(Alignment.Center)
                 ) {
                     Text(
                         text = "Stats",
                         fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = Typography.labelLarge,
                         modifier = Modifier.align(Alignment.Start),
                         color = Color.White
                     )
@@ -126,8 +135,9 @@ class SettingsFragment {
                             Card(
                                 modifier = Modifier
                                     .padding(bottom = 16.dp)
-                                    .align(Alignment.Start)
-                                    .fillMaxWidth()
+                                    .align(Alignment.CenterHorizontally)
+                                    .fillMaxWidth(),
+                                colors = CardDefaults.cardColors(Color(0xFFD9D9D9))
                             ) {
                                 Row(
                                     modifier = Modifier.padding(16.dp),
@@ -135,20 +145,23 @@ class SettingsFragment {
                                 ) {
                                     Text(
                                         text = "Kills:",
-                                        textAlign = TextAlign.Start
+                                        textAlign = TextAlign.Start,
+                                        color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.8f)
+                                        modifier = Modifier.fillMaxWidth(0.9f)
                                     )
                                     Text(
                                         text = kills,
-                                        textAlign = TextAlign.End
+                                        textAlign = TextAlign.End,
+                                        color = Color(0xFF595959)
                                     )
                                 }
                             }
                         }
                         item {
                             Card(
+                                colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                                 modifier = Modifier
                                     .padding(bottom = 16.dp)
                                     .align(Alignment.Start)
@@ -161,19 +174,22 @@ class SettingsFragment {
                                     Text(
                                         text = "Deaths:",
                                         textAlign = TextAlign.Start,
+                                        color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.8f)
+                                        modifier = Modifier.fillMaxWidth(0.9f)
                                     )
                                     Text(
                                         text = deaths,
-                                        textAlign = TextAlign.End
+                                        textAlign = TextAlign.End,
+                                        color = Color(0xFF595959)
                                     )
                                 }
                             }
                         }
                         item {
                             Card(
+                                colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                                 modifier = Modifier
                                     .padding(bottom = 16.dp)
                                     .align(Alignment.Start)
@@ -185,48 +201,138 @@ class SettingsFragment {
                                 ) {
                                     Text(
                                         text = "Assists:",
-                                        textAlign = TextAlign.Start
+                                        textAlign = TextAlign.Start,
+                                        color = Color(0xFF595959)
                                     )
                                     Spacer(
-                                        modifier = Modifier.fillMaxWidth(0.8f)
+                                        modifier = Modifier.fillMaxWidth(0.9f)
                                     )
                                     Text(
                                         text = assists,
-                                        textAlign = TextAlign.End
+                                        textAlign = TextAlign.End,
+                                        color = Color(0xFF595959)
                                     )
                                 }
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.fillMaxHeight(0.4f))
+                    Spacer(modifier = Modifier.fillMaxHeight(0.1f))
 
-                    Button(
-                        onClick = { showToDoDialog = true },
+                    Card(
+                        colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                         modifier = Modifier
-                            .padding(bottom = 32.dp)
-                            .align(Alignment.CenterHorizontally),
-                        colors = ButtonDefaults.buttonColors(Blue)
+                            .padding(bottom = 16.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .fillMaxWidth()
+                            .clickable { showToDoDialog = true },
+
+                        ) {
+                            Text("Change Skins", modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally),color = Color(0xFF595959), style = Typography.bodySmall)
+                        }
+                    Card(
+                        colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .fillMaxWidth()
+                            .clickable{ showDialog = true },
                     ) {
-                        Text("Change Skins")
+                        Text("Change Nickname", modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally),color = Color(0xFF595959), style = Typography.bodySmall)
+                    }
+                    @Composable
+                    fun ShowAlertDialog(
+                        showDialog: Boolean,
+                        onDismiss: () -> Unit,
+                        onConfirm: () -> Unit
+                    ) {
+                        if (showDialog) {
+                            AlertDialog(
+                                onDismissRequest = onDismiss,
+                                title = { Text("Camera permission required") },
+                                text = { Text("Camera permission is required for this feature. Please go to the app settings to grant the permission.") },
+                                confirmButton = {
+                                    Button(onClick = onConfirm) {
+                                        Text("Go to settings")
+                                    }
+                                },
+                                dismissButton = {
+                                    Button(onClick = onDismiss) {
+                                        Text("Cancel")
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    var showPermission by remember { mutableStateOf(false) }
+                    Card(
+                        colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .fillMaxWidth()
+                            .clickable {
+                            val permission = Manifest.permission.CAMERA
+                            when {
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    permission
+                                ) == PackageManager.PERMISSION_GRANTED -> {
+                                    Toast.makeText(
+                                        context,
+                                        "Permission is already granted\nThank you!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
+                                else -> {
+                                    if (ActivityCompat.shouldShowRequestPermissionRationale(
+                                            context as Activity,
+                                            permission
+                                        )
+                                    ) {
+                                        requestPermissionLauncher.launch(permission)
+                                    } else {
+
+                                        showPermission = true
+                                    }
+                                }
+                            }
+                        },
+
+                    ) {
+                        Text("Request Camera Permission", modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally),color = Color(0xFF595959), style = Typography.bodySmall)
                     }
                     Button(
-                        onClick = { showDialog = true },
+                        onClick = { navController.popBackStack() },
                         modifier = Modifier
-                            .padding(bottom = 32.dp)
-                            .align(Alignment.CenterHorizontally),
-                        colors = ButtonDefaults.buttonColors(Blue)
+                            .padding(top = 64.dp)
+                            .shadow(
+                                elevation = 3.dp,
+                                shape = MaterialTheme.shapes.extraLarge,
+                                clip = true
+                                    ).fillMaxWidth(0.6f).align(Alignment.CenterHorizontally)
+                            ,
+                        shape = MaterialTheme.shapes.extraLarge,
+                        colors = ButtonDefaults.buttonColors(Turquoise)
                     ) {
-                        Text("Change Nickname")
+                        Text("Exit", modifier = Modifier.padding(8.dp),color = Color.White, style = Typography.bodySmall)
                     }
-                    Button(
-                        onClick = { requestPermissionLauncher.launch(Manifest.permission.CAMERA) },
-                        modifier = Modifier
-                            .padding(bottom = 32.dp)
-                            .align(Alignment.CenterHorizontally),
-                        colors = ButtonDefaults.buttonColors(StrokeBlue)
-                    ) {
-                        Text("Request Camera Permission")
+                    if (showPermission) {
+                        ShowAlertDialog(
+                            showDialog = showPermission,
+                            onDismiss = { showPermission = false },
+                            onConfirm = {
+
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                val uri = Uri.fromParts("package", context.packageName, null)
+                                intent.data = uri
+                                context.startActivity(intent)
+                            }
+                        )
                     }
+
+
                 }
             }
 
@@ -255,7 +361,10 @@ class SettingsFragment {
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                 keyboardActions = KeyboardActions(onDone = {
                                     sharedPrefHelper.saveNickname(newNickname)
-                                    updateNicknameInDatabase(sharedPrefHelper.getID()!!.toInt(), newNickname)
+                                    updateNicknameInDatabase(
+                                        sharedPrefHelper.getID()!!.toInt(),
+                                        newNickname
+                                    )
                                     showDialog = false
                                 }),
                                 modifier = Modifier.fillMaxWidth()
@@ -264,7 +373,10 @@ class SettingsFragment {
                             Button(
                                 onClick = {
                                     sharedPrefHelper.saveNickname(newNickname)
-                                    updateNicknameInDatabase(sharedPrefHelper.getID()!!.toInt(), newNickname)
+                                    updateNicknameInDatabase(
+                                        sharedPrefHelper.getID()!!.toInt(),
+                                        newNickname
+                                    )
                                     showDialog = false
                                 },
                                 modifier = Modifier.fillMaxWidth()
@@ -279,7 +391,7 @@ class SettingsFragment {
                 AlertDialog(
                     onDismissRequest = { showToDoDialog = false },
                     title = { Text("Change Skins") },
-                    text = { Text("TODO") },
+                    text = { Text("You currently have no skins") },
                     confirmButton = {
                         Button(onClick = { showToDoDialog = false }) {
                             Text("OK")
@@ -288,6 +400,7 @@ class SettingsFragment {
                 )
             }
         }
+
 
         DisposableEffect(Unit) {
 
@@ -299,7 +412,8 @@ class SettingsFragment {
 
                     if (newNick != null) {
                         databaseRef.child("rooms").child(lobbyId.toString()).child("users")
-                            .child(sharedPrefHelper.getID().toString()).child("name").setValue(newNick)
+                            .child(sharedPrefHelper.getID().toString()).child("name")
+                            .setValue(newNick)
                     }
                 }
 

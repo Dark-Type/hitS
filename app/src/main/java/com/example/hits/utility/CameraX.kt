@@ -2,7 +2,7 @@ package com.example.hits.utility
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.os.SystemClock
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.Surface
 import androidx.annotation.OptIn
@@ -10,68 +10,136 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.core.view.drawToBitmap
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MutableLiveData
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
+
 class CameraX(
     private var context: Context,
     private var owner: LifecycleOwner,
 ) {
-    val timerLiveData = MutableLiveData<Long>()
 
-    private var imageCapture: ImageCapture? = null
-    private var previewView: PreviewView? = null
+    private var imageAnalyzer: ImageAnalysis? = null
+    val textAndTime = MutableLiveData<Pair<String, Long>>()
+    var analysisRunning = false
+    private var countdownTimer: CountDownTimer? = null
+    var manuallyStopping = false
+    var eventType = MutableLiveData<String>()
 
-    @OptIn(ExperimentalGetImage::class)
-    fun startRealTimeTextRecognition() {
+    fun startAnalysis() {
+        if (!analysisRunning) {
+            Log.d("TextRecognizer", "Setting up image analysis")
+            imageAnalyzer?.setAnalyzer(ContextCompat.getMainExecutor(context), TextAnalysis(this))
+            manuallyStopping = false
+        } else {
+            Log.d("TextRecognizer", "Analysis is already running")
+        }
+    }
 
-        val imageAnalysis = ImageAnalysis.Builder()
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .build()
+    fun startTimer(seconds: Int, textType: String) {
+        val duration = seconds * 1000L
+        countdownTimer = object : CountDownTimer(duration, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                textAndTime.postValue(Pair(textType, millisUntilFinished / 1000))
+            }
 
-        val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        var startTime: Long? = null
+            override fun onFinish() {
+                textAndTime.postValue(Pair("-1", -1))
+                    eventType.postValue(textType)
+                stopAnalysis()
+                manuallyStopping = true
+                countdownTimer = null
+            }
+        }
+        countdownTimer?.start()
+    }
 
-        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
+    fun resetTimer() {
+        countdownTimer?.cancel()
+        textAndTime.postValue(Pair("", 0))
+    }
+    fun manuallyStopAnalysis() {
+        stopAnalysis()
+        manuallyStopping = true
+    }
+
+    fun stopAnalysis() {
+        analysisRunning = false
+        Log.d("TextRecognizer", "Stopping image analysis")
+        imageAnalyzer?.clearAnalyzer()
+    }
+
+
+    private class TextAnalysis(private val cameraX: CameraX) : ImageAnalysis.Analyzer {
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
+
+        private var firstRecognizedTime: Long = System.currentTimeMillis()
+
+        @OptIn(ExperimentalGetImage::class)
+        override fun analyze(imageProxy: ImageProxy) {
+            if (cameraX.manuallyStopping) {
+                imageProxy.close()
+                return
+            }
+            Log.d("TextRecognizer", "Starting image analysis")
             val mediaImage = imageProxy.image
-            if (mediaImage != null) {
+            if (mediaImage != null && !cameraX.manuallyStopping) {
                 val image =
                     InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-
-                textRecognizer.process(image)
+                recognizer.process(image)
                     .addOnSuccessListener { visionText ->
+                        Log.d("TextRecognition", "Text recognition successful")
 
-                        val text = visionText.text
-                        if (text.contains("hitsIsBomb")) {
-                            if (startTime == null) {
 
-                                startTime = SystemClock.elapsedRealtime()
-                            } else if (SystemClock.elapsedRealtime() - startTime!! >= 10000) {
-                                timerLiveData.postValue(SystemClock.elapsedRealtime() - startTime!!)
-                                startTime = null
+                        Log.d("TextRecognition", "Text: ${visionText.text}")
+                        val patternForPlantA = "(?i)plant\\s*a".toRegex()
+                        val patternForPlantB = "(?i)plant\\s*b".toRegex()
+                        var triggeredByFlag = false
+
+                        for (j in 1..6) {
+                            val patternForFlag = "(?i)flag$j".toRegex()
+                            if (patternForFlag.containsMatchIn(visionText.text)) {
+                                Log.d("TextRecognition", "Flag $j recognized")
+                                triggeredByFlag = true
+                                if (!cameraX.analysisRunning) {
+                                    cameraX.analysisRunning = true
+                                    cameraX.startTimer(8, "Flag $j")
+                                }
+                            }
+                        }
+                        if (patternForPlantA.containsMatchIn(visionText.text)) {
+                            Log.d("TextRecognition", "Plant A recognized")
+                            if (!cameraX.analysisRunning) {
+                                cameraX.analysisRunning = true
+                                cameraX.startTimer(10, "Plant A")
+                            }
+                        } else if (patternForPlantB.containsMatchIn(visionText.text)) {
+                            if (!cameraX.analysisRunning) {
+                                cameraX.analysisRunning = true
+                                cameraX.startTimer(10, "Plant B")
                             }
                         } else {
-
-                            startTime = null
+                            if (!triggeredByFlag) {
+                                Log.d("TextRecognition", "No match found")
+                                cameraX.resetTimer()
+                                cameraX.analysisRunning = false
+                                firstRecognizedTime = System.currentTimeMillis()
+                            }
                         }
-                    }
-                    .addOnFailureListener {
-                        Log.e("CameraX", "Text Recognition Error", it)
 
+                    }
+                    .addOnFailureListener { e ->
+                        // Task failed with an exception
+                        Log.e("TextRecognition", "Failed to process image", e)
                     }
                     .addOnCompleteListener {
                         imageProxy.close()
@@ -80,6 +148,11 @@ class CameraX(
         }
     }
 
+    val timerLiveData = MutableLiveData<Long>()
+
+    private var imageCapture: ImageCapture? = null
+    private var previewView: PreviewView? = null
+
 
     fun startCameraPreviewView(): PreviewView {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -87,6 +160,10 @@ class CameraX(
         val preview = Preview.Builder().build().also {
             it.setSurfaceProvider(previewView!!.surfaceProvider)
         }
+
+        imageAnalyzer = ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build()
 
         imageCapture = ImageCapture.Builder()
             .setJpegQuality(85)
@@ -99,7 +176,13 @@ class CameraX(
         cameraProviderFuture.addListener({
             try {
                 val cameraProvider = cameraProviderFuture.get()
-                cameraProvider.bindToLifecycle(owner, camSelector, preview, imageCapture)
+                cameraProvider.bindToLifecycle(
+                    owner,
+                    camSelector,
+                    preview,
+                    imageCapture,
+                    imageAnalyzer
+                )
             } catch (e: Exception) {
                 Log.e("CameraX", "Error binding camera preview", e)
             }

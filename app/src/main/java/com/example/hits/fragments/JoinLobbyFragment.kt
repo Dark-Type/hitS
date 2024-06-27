@@ -1,7 +1,7 @@
 package com.example.hits.fragments
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +27,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,23 +40,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.StrokeBlue
-import com.example.hits.ui.theme.Turquoise
+import com.example.hits.ui.theme.Typography
 import com.example.hits.utility.User
 import com.example.hits.utility.UserForLeaderboard
 import com.example.hits.utility.addUserToRoom
@@ -71,11 +77,22 @@ class JoinLobbyFragment {
     @Composable
     fun Greeting(modifier: Modifier = Modifier, preferences: SharedPrefHelper) {
         Box(
-            modifier = modifier.padding(top = 16.dp, bottom = 16.dp),
+            modifier = modifier.padding(top = 4.dp, bottom = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
             Text(
-                text = "Hello, ${preferences.getNickname()}!",
+                text = buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Medium)) {
+                        append("Hello, ")
+                    }
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append("${preferences.getNickname()}")
+                    }
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Medium)) {
+                        append("!")
+                    }
+                },
+                fontSize = 28.sp
             )
         }
     }
@@ -96,8 +113,13 @@ class JoinLobbyFragment {
             modifier = Modifier
                 .fillMaxSize()
                 .height(80.dp)
-                .padding(4.dp),
-            shape = RoundedCornerShape(8.dp)
+                .padding(4.dp)
+                .clickable {
+                    selectedNews.value = news
+                    showDialog.value = true
+                },
+            shape = RoundedCornerShape(15.dp)
+
         ) {
             Row(
                 modifier = Modifier
@@ -111,22 +133,10 @@ class JoinLobbyFragment {
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.labelMedium
                 )
-                IconButton(
-                    onClick = {
-                        selectedNews.value = news
-                        showDialog.value = true
-                    },
-                    modifier = Modifier.padding(4.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.settings_icon),
-                        contentDescription = "info",
-                        modifier = Modifier
-                            .size(16.dp)
-                    )
-                }
+
+
             }
         }
     }
@@ -164,6 +174,7 @@ class JoinLobbyFragment {
             else -> Color(0xFFDADDE2)
         }
         val fontColor = if (index > 2) Color.Black else Color.White
+        val fontType = if (index > 2) Typography.bodyMedium else Typography.bodySmall
         val cardElevation = if (index < 3) 12.dp else 6.dp
         ElevatedCard(
             elevation = CardDefaults.cardElevation(
@@ -183,18 +194,20 @@ class JoinLobbyFragment {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "${user.rank}. ${user.name}",
+                    text = "${user.rank + 1}. ${user.name}",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
-                    style = MaterialTheme.typography.bodySmall
+                    style = fontType,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2
                 )
                 Text(
                     text = "Score: ${user.points}",
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
-                    style = MaterialTheme.typography.bodySmall
+                    style = Typography.bodyMedium
                 )
 
                 IconButton(
@@ -202,13 +215,14 @@ class JoinLobbyFragment {
                         selectedPlayer.value = user
                         showDialog.value = true
                     },
-                    modifier = Modifier.padding(4.dp)
+                    modifier = Modifier.padding(4.dp),
                 ) {
-                    Image(
+                    Icon(
                         painter = painterResource(id = R.drawable.settings_icon),
                         contentDescription = "info",
                         modifier = Modifier
-                            .size(16.dp)
+                            .size(16.dp),
+                        tint = fontColor
                     )
                 }
             }
@@ -233,7 +247,7 @@ class JoinLobbyFragment {
                     ) {
                     Text(text = "Name: ${user.name}", modifier = Modifier.padding(16.dp))
                     Text(text = "Score: ${user.points}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Rank: ${user.rank}", modifier = Modifier.padding(16.dp))
+                    Text(text = "Rank: ${user.rank + 1}", modifier = Modifier.padding(16.dp))
                     Text(text = "Kills: ${user.kills}", modifier = Modifier.padding(16.dp))
                     Text(text = "Deaths: ${user.deaths}", modifier = Modifier.padding(16.dp))
                     Text(text = "Assists: ${user.assists}", modifier = Modifier.padding(16.dp))
@@ -265,16 +279,14 @@ class JoinLobbyFragment {
                     contentDescription = "Background",
                     modifier = Modifier
                         .fillMaxSize()
-                        .let { if (isSurfaceVisible.value) it.clickable(onClick = { isSurfaceVisible.value = false }) else it },
+                        .let {
+                            if (isSurfaceVisible.value) it.clickable(onClick = {
+                                isSurfaceVisible.value = false
+                            }) else it
+                        },
                     contentScale = ContentScale.FillBounds
                 )
-                Button(
-                    onClick = { navController.navigate("arScreen") },
-                    colors = ButtonDefaults.buttonColors(LightTurquoise),
-                    border = BorderStroke(width = 1.dp, color = Turquoise)
-                ) {
-                    Text("Open AR Screen")
-                }
+
 
                 IconButton(
                     onClick = { isSurfaceVisible.value = true },
@@ -288,13 +300,38 @@ class JoinLobbyFragment {
                         contentDescription = "to lobby",
                     )
                 }
-                IconButton(onClick = { navController.navigate("settingsScreen/-1") }, modifier = Modifier.fillMaxSize(0.4f).align(Alignment.BottomStart)
-                    .padding(16.dp)) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
+                    IconButton(
+                        onClick = {
+                            if (!isSurfaceVisible.value) navController.navigate("arScreen") else isSurfaceVisible.value =
+                                false
+                        },
+                        modifier = Modifier
+                            .padding(top = 128.dp)
+                            .size(200.dp)
+                            .zIndex(2f)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.awards),
+                            contentDescription = "Open AR Screen"
+                        )
+                    }
+                }
+                IconButton(
+                    onClick = {
+                        if (!isSurfaceVisible.value) navController.navigate("settingsScreen/-1") else isSurfaceVisible.value =
+                            false
+                    },
+                    modifier = Modifier
+                        .fillMaxSize(0.4f)
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp),
+
+                    ) {
                     Image(
                         painter = painterResource(id = R.drawable.lobby_go_to_settings),
                         contentDescription = "Settings",
                         modifier = Modifier
-
 
 
                     )
@@ -316,7 +353,7 @@ class JoinLobbyFragment {
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(32.dp),
+                                    .padding(24.dp),
                                 verticalArrangement = Arrangement.SpaceBetween,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
@@ -328,10 +365,15 @@ class JoinLobbyFragment {
                                 Button(
                                     onClick = { showNews.value = !showNews.value },
                                     colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                    modifier = Modifier.padding(bottom = 16.dp),
-                                    border = BorderStroke(width = 1.dp, color = Turquoise)
-                                ) {
-                                    Text(if (showNews.value) "To Leaderboards" else "To News")
+                                    modifier = Modifier
+                                        .shadow(3.dp, shape = RoundedCornerShape(50))
+                                        .fillMaxWidth(1f),
+
+                                    ) {
+                                    Text(
+                                        if (showNews.value) "To Leaderboards" else "To News",
+                                        modifier = Modifier.padding(4.dp)
+                                    )
                                 }
                                 if (showLeaderBoardsDialog.value) {
                                     selectedPlayer.value?.let {
@@ -368,7 +410,7 @@ class JoinLobbyFragment {
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Spacer(modifier = Modifier.height(32.dp))
+                                    Spacer(modifier = Modifier.height(64.dp))
 
                                     Button(
                                         onClick = {
@@ -385,12 +427,14 @@ class JoinLobbyFragment {
                                             navController.navigate("lobbyScreen/${generatedId.value}")
                                         },
                                         colors = ButtonDefaults.buttonColors(LightTurquoise),
-                                        border = BorderStroke(width = 1.dp, color = Turquoise)
+                                        modifier = Modifier
+                                            .fillMaxWidth(1f)
+                                            .shadow(3.dp, shape = RoundedCornerShape(50))
                                     ) {
-                                        Text("Create Lobby")
+                                        Text("Create Lobby", modifier = Modifier.padding(4.dp))
                                     }
 
-                                    Spacer(modifier = Modifier.height(32.dp))
+                                    Spacer(modifier = Modifier.height(16.dp))
 
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -412,10 +456,9 @@ class JoinLobbyFragment {
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.height(32.dp))
+                                    Spacer(modifier = Modifier.height(12.dp))
 
                                     OutlinedTextField(
-
                                         value = lobbyCode.value,
                                         onValueChange = { lobbyCode.value = it },
                                         label = { Text("Input lobby code to join") },

@@ -1,6 +1,7 @@
 package com.example.hits
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Toast
@@ -10,8 +11,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,24 +27,38 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -50,7 +72,7 @@ import com.example.hits.fragments.ScreenForResults
 import com.example.hits.fragments.SettingsFragment
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
-import com.example.hits.ui.theme.Turquoise
+import com.example.hits.ui.theme.Typography
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.createUser
 import com.example.hits.utility.getNewID
@@ -81,11 +103,11 @@ class MainActivity : ComponentActivity() {
 
             NavHost(
                 navController,
-                startDestination = if (nickname.isNullOrEmpty() || id == "-1") "initUI" else "joinLobbyScreen"
+                startDestination = if (nickname.isNullOrEmpty() || id == "-1") "initUI" else "joinLobbyScreen",
             ) {
                 composable("initUI") { InitUI(navController) }
                 composable("joinLobbyScreen") { JoinLobbyFragment().JoinLobbyScreen(navController) }
-                composable("settingsScreen/{lobbyId}") {backStackEntry ->
+                composable("settingsScreen/{lobbyId}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
 
                     if (lobbyId != null)
@@ -96,7 +118,12 @@ class MainActivity : ComponentActivity() {
                     val userID = backStackEntry.arguments?.getString("userID")
                     val gamemodePlayed = backStackEntry.arguments?.getString("gamemodePlayed")
                     if (lobbyId != null && userID != null && gamemodePlayed != null) {
-                        ScreenForResults().ResultsScreen(lobbyId.toInt(), userID.toInt(), gamemodePlayed, navController)
+                        ScreenForResults().ResultsScreen(
+                            lobbyId.toInt(),
+                            userID.toInt(),
+                            gamemodePlayed,
+                            navController
+                        )
                     }
                 }
                 composable("arScreen") { ScreenForAR().ArScreen(navController) }
@@ -111,7 +138,12 @@ class MainActivity : ComponentActivity() {
                     val userID = backStackEntry.arguments?.getString("userID")
                     val currGamemode = backStackEntry.arguments?.getString("currGamemode")
                     if (lobbyId != null && userID != null && currGamemode != null) {
-                        ScreenForGame().GameScreen(lobbyId.toInt(), userID.toInt(), currGamemode, navController)
+                        ScreenForGame().GameScreen(
+                            lobbyId.toInt(),
+                            userID.toInt(),
+                            currGamemode,
+                            navController
+                        )
                     }
                 }
             }
@@ -130,22 +162,46 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun InitUI(navController: NavController) {
+    fun RequestPermissionOnStart() {
+        val context = LocalContext.current
         val requestPermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission()
         ) { isGranted: Boolean ->
             if (!isGranted) {
-                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                Toast.makeText(
+                    context,
+                    "You need to allow app to use camera!\nYou can set it in settings",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                Toast.makeText(context, "Thank you!", Toast.LENGTH_SHORT).show()
             }
         }
-        LaunchedEffect(Unit) {
-            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
 
+        LaunchedEffect(Unit) {
+            val permission = Manifest.permission.CAMERA
+            when {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    permission
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    // You can use the camera
+                }
+
+                else -> {
+                    // You need to ask for permission
+                    requestPermissionLauncher.launch(permission)
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun InitUI(navController: NavController) {
+        RequestPermissionOnStart()
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
         val nickname = sharedPrefHelper.getNickname() ?: ""
-        val id = sharedPrefHelper.getID() ?: -1
         val snackbarHostState = remember { SnackbarHostState() }
         val toast =
             Toast.makeText(LocalContext.current, "Creating your account...", Toast.LENGTH_SHORT)
@@ -169,6 +225,7 @@ class MainActivity : ComponentActivity() {
                     .align(Alignment.Center)
             )
 
+
             HitSTheme {
 
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -179,14 +236,72 @@ class MainActivity : ComponentActivity() {
                     ) {
                         val textState = remember { mutableStateOf(nickname) }
 
-                        TextField(
+                        OutlinedTextField(
                             value = textState.value,
                             onValueChange = { textState.value = it },
-                            placeholder = { Text("Enter your nickname") },
-                            modifier = Modifier.padding(16.dp),
-                            shape = MaterialTheme.shapes.small
+                            placeholder = {
+                                Text(
+                                    "Enter your nickname",
+                                    style = Typography.bodyMedium,
+                                    color = Color(0xFF828282),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                            },
+                            modifier = Modifier
+                                .padding(start = 32.dp, end = 32.dp, bottom = 16.dp)
+                                .fillMaxWidth()
+                                .shadow(3.dp, RoundedCornerShape(50)),
+                            shape = RoundedCornerShape(35),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color.White,
+                                focusedContainerColor = Color.White,
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            ),
+                            singleLine = true
                         )
 
+                        @Composable
+                        fun Modifier.animatedBorder(
+                            borderColors: List<Color>,
+                            backgroundColor: Color,
+                            shape: Shape = RoundedCornerShape(50),
+                            borderWidth: Dp = 1.dp,
+                            animationDurationInMillis: Int = 1000,
+                            easing: Easing = LinearEasing
+                        ): Modifier {
+                            val brush = Brush.sweepGradient(borderColors)
+                            val infiniteTransition =
+                                rememberInfiniteTransition(label = "animatedBorder")
+                            val angle by infiniteTransition.animateFloat(
+                                initialValue = 0f,
+                                targetValue = 360f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(
+                                        durationMillis = animationDurationInMillis,
+                                        easing = easing
+                                    ),
+                                    repeatMode = RepeatMode.Restart
+                                ), label = "angleAnimation"
+                            )
+
+                            return this
+                                .clip(shape)
+                                .padding(borderWidth)
+                                .drawWithContent {
+                                    rotate(angle) {
+                                        drawCircle(
+                                            brush = brush,
+                                            radius = size.width,
+                                            blendMode = BlendMode.SrcIn,
+                                        )
+                                    }
+                                    drawContent()
+                                }
+                                .background(color = backgroundColor, shape = shape)
+                        }
+
+                        var shouldDisplayAnimation by remember { mutableStateOf(false) }
                         Button(
                             onClick = {
 
@@ -195,9 +310,11 @@ class MainActivity : ComponentActivity() {
                                         snackbarHostState.showSnackbar("Please enter a nickname")
                                     }
                                 } else {
+                                    shouldDisplayAnimation = true
                                     sharedPrefHelper.saveNickname(textState.value)
 
                                     if (sharedPrefHelper.getNickname() != null) {
+
 
                                         toast.show()
 
@@ -222,20 +339,48 @@ class MainActivity : ComponentActivity() {
                             },
                             modifier = Modifier
                                 .align(Alignment.CenterHorizontally)
-                                .padding(64.dp)
-                                .fillMaxWidth(0.6f),
+                                .padding(bottom = 100.dp, start = 32.dp, end = 32.dp)
+                                .fillMaxWidth()
+                                .shadow(
+                                    elevation = 3.dp,
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    clip = true
+                                )
+                                .let {
+                                    if (shouldDisplayAnimation) it.animatedBorder(
+                                        borderColors = listOf(
+                                            LightTurquoise,
+                                            Color.White,
+                                            Color.White,
+                                            LightTurquoise,
+                                            LightTurquoise,
+                                            LightTurquoise,
+                                            LightTurquoise
+                                        ), backgroundColor = Color.White
+                                    ) else it
+                                },
                             shape = MaterialTheme.shapes.extraLarge,
                             colors = ButtonDefaults.buttonColors(LightTurquoise),
-                            border = BorderStroke(1.dp, Turquoise)
-                        ) {
-                            Text("Save Nickname")
+
+                            ) {
+                            Text(
+                                "Register",
+                                style = Typography.bodySmall,
+                                modifier = Modifier.padding(8.dp)
+                            )
                         }
                     }
-                    SnackbarHost(hostState = snackbarHostState)
+                    SnackbarHost(
+                        hostState = snackbarHostState,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 32.dp)
+                    )
                 }
             }
         }
 
     }
+
 
 }

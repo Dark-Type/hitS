@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.vision.common)
     implementation(libs.play.services.mlkit.text.recognition.common)
+    implementation (libs.text.recognition.v1600)
     implementation (libs.play.services.mlkit.text.recognition)
     implementation (libs.androidx.camera.mlkit.vision)
     testImplementation(libs.junit)
