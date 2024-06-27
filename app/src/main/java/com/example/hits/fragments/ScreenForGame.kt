@@ -55,7 +55,10 @@ import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.User
 import com.example.hits.utility.UserForLeaderboard
+import com.example.hits.utility.copyStatsToGlobal
 import com.example.hits.utility.databaseRef
+import com.example.hits.utility.endGame
+import com.example.hits.utility.explodeBomb
 import com.example.hits.utility.getEmbeddings
 import com.example.hits.utility.getUsersForCurrGameLeaderboard
 import com.example.hits.utility.leaveFromOngoingGame
@@ -68,6 +71,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.Timer
+import kotlin.concurrent.schedule
 import kotlin.math.sqrt
 
 
@@ -80,6 +85,7 @@ class ScreenForGame {
     private lateinit var leaderboardData: SnapshotStateList<UserForLeaderboard>
     private lateinit var player: PlayerLogic
     private var isVoted = false
+    private var bombPlanted = false
 
 
     @Composable
@@ -120,6 +126,8 @@ class ScreenForGame {
                     val value = dataSnapshot.getValue(Boolean::class.java)
 
                     if (value == false) {
+                        endGame(lobbyId)
+                        copyStatsToGlobal(lobbyId, userID)
                         navController.navigate("resultsScreen/$lobbyId/$userID/$currGameMode")
                     }
                 }
@@ -183,6 +191,65 @@ class ScreenForGame {
                 }
             }
 
+            val bombListener = object : ValueEventListener {
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    val newBombValue = dataSnapshot.getValue(Boolean::class.java)
+
+                    if (newBombValue == true) {
+
+                        Toast.makeText(context, "Bomb Planted", Toast.LENGTH_SHORT)
+                            .show()
+
+                        Timer().schedule(60000) {
+                            explodeBomb(lobbyId)
+                        }
+
+                        bombPlanted = true
+                    }
+
+                    if (newBombValue == false and bombPlanted) {
+
+                        Toast.makeText(context, "Bomb Defused", Toast.LENGTH_SHORT)
+                            .show()
+
+                        Timer().schedule(2000) {
+                            databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                .setValue(false)
+                        }
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    // Log the error
+                }
+            }
+
+            val explosionListener = object : ValueEventListener {
+
+                override fun onDataChange(dataSnapshot: DataSnapshot) {
+
+                    val explosion = dataSnapshot.getValue(Boolean::class.java)
+
+                    if (explosion == true) {
+
+                        Timer().schedule(2000) {
+                            databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                .setValue(false)
+                        }
+
+                        Toast.makeText(context, "Bomb exploded", Toast.LENGTH_SHORT)
+                            .show()
+
+                    }
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    // Log the error
+                }
+            }
+
             databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
                 .addValueEventListener(leaderboardListener)
 
@@ -191,6 +258,12 @@ class ScreenForGame {
 
             databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
                 .child(userID.toString()).child("health").addValueEventListener(healthListener)
+
+            databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                .child("bombPlanted").addValueEventListener(bombListener)
+
+            databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                .child("explosion").addValueEventListener(explosionListener)
 
             onDispose {
                 databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
@@ -203,6 +276,12 @@ class ScreenForGame {
                 databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
                     .child("users")
                     .child("health").removeEventListener(healthListener)
+
+                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                    .child("bombPlanted").removeEventListener(bombListener)
+
+                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                    .child("explosion").removeEventListener(explosionListener)
             }
         }
 
@@ -210,7 +289,6 @@ class ScreenForGame {
 
         }
     }
-
 
     @Composable
     fun CameraCompose(

@@ -52,17 +52,20 @@ class PlayerLogic(private val healthThreshold: Int) {
 
     fun doDamage(roomID: Int, playerTakenDamageID: Int, playerDidDamageID: Int) {
 
-        val currPlayerRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users").child(playerTakenDamageID.toString())
-
-        addValue(currPlayerRef.child("health"), -damage)
-
         GlobalScope.launch(Dispatchers.IO) {
+
+            val currPlayerRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users").child(playerTakenDamageID.toString())
 
             val value = getHealthValueFromDatabase(roomID, playerTakenDamageID)
 
-            if (value <= 0) {
-                addKills(roomID, playerDidDamageID)
-                currPlayerRef.child("health").setValue(0)
+            if (value > 0) {
+
+                addValue(currPlayerRef.child("health"), -damage)
+
+                if (value - damage <= 0) {
+                    addKills(roomID, playerDidDamageID)
+                    currPlayerRef.child("health").setValue(0)
+                }
             }
         }
     }
@@ -135,12 +138,12 @@ class PlayerLogic(private val healthThreshold: Int) {
         health = reviveHealth
     }
 
-    fun plant() {
-        //need to add logic of planting the bomb
+    fun plant(roomID: Int) {
+        plantBomb(roomID)
     }
 
-    fun defuse() {
-        //need to add logic of defusing the bomb
+    fun defuse(roomID: Int) {
+        defuseBomb(roomID)
     }
 
     fun heal(roomID: Int, userID: Int) {

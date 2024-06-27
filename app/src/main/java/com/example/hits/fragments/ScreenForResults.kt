@@ -41,6 +41,7 @@ import com.example.hits.ui.theme.Gold
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Silver
 import com.example.hits.ui.theme.Typography
+import com.example.hits.utility.databaseRef
 import com.example.hits.utility.getUsersForResultsScreen
 import com.example.hits.utility.removeUserFromRoom
 
@@ -154,6 +155,7 @@ class ScreenForResults {
                                     .shadow(4.dp, RoundedCornerShape(50.dp))
                                     .align(Alignment.CenterHorizontally)
                                     .clickable {
+                                        databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").setValue("")
                                         removeUserFromRoom(lobbyId, userID)
                                         navController.navigate("joinLobbyScreen")
                                     },
@@ -184,6 +186,7 @@ class ScreenForResults {
                                     .align(Alignment.CenterHorizontally)
                                     .clickable {
                                         println(scores.size)
+                                        databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").setValue("")
                                         navController.navigate("lobbyScreen/$lobbyId")
                                     },
                                 shape = RoundedCornerShape(50.dp),
@@ -229,6 +232,9 @@ class ScreenForResults {
                     Card (Modifier.fillMaxWidth(), colors = CardColors(Color.White, Color.Black, Color.Black, Color.White)) {
                         //@deadnya fill this with real kda data for player
                         Text("prop data", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
+                        Text(text = "${(scores.find { it.id == userID })?.kills}")
+                        Text(text = "${(scores.find { it.id == userID })?.deaths}")
+                        Text(text = "${(scores.find { it.id == userID })?.assists}")
                     }
                 }
 

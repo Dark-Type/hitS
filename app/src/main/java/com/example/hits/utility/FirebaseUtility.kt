@@ -2,7 +2,11 @@ package com.example.hits.utility
 
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.example.hits.GAMEMODE_CS_GO
+import com.example.hits.GAMEMODE_CTF
 import com.example.hits.GAMEMODE_FFA
+import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
+import com.example.hits.GAMEMODE_ONE_VS_ALL
 import com.example.hits.GAMEMODE_TDM
 import com.example.hits.getGamemodes
 import com.google.firebase.database.DataSnapshot
@@ -13,6 +17,7 @@ import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.getValue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import kotlin.math.max
@@ -32,7 +37,7 @@ data class User(
 )
 
 data class NewsObject(val text: String = "NO TEXT")
-data class ScoreData(val id: Int, val name: String, val score: Int)
+data class ScoreData(val id: Int, val name: String, val score: Int, val kills: Int, val deaths: Int, val assists: Int)
 data class UserForLeaderboard(
     val name: String,
     val points: Int,
@@ -340,7 +345,7 @@ fun getUsersForResultsScreen(
     gamemode: String
 ): SnapshotStateList<ScoreData> {
 
-    val users = SnapshotStateList<User>()
+    val users = SnapshotStateList<UserForTDM>()
     val scores = SnapshotStateList<ScoreData>()
 
     databaseRef.child("rooms").child(roomID.toString()).child("gameInfo")
@@ -350,49 +355,165 @@ fun getUsersForResultsScreen(
 
                 users.clear()
 
+                var redKills = 0
+                var blueKills = 0
+
                 for (userSnapshot in dataSnapshot.children) {
-                    users.add(userSnapshot.getValue(User::class.java)!!)
+
+                    val user = userSnapshot.getValue(UserForTDM::class.java)!!
+
+                    if (user.team == TEAM_RED) redKills += user.kills
+                    if (user.team == TEAM_BLUE) blueKills += user.kills
+
+                    users.add(userSnapshot.getValue(UserForTDM::class.java)!!)
                 }
 
                 val sortedUsers = users.sortedWith(compareBy({ -it.kills }, { it.deaths }))
 
-                for (i in sortedUsers.indices) {
+                databaseRef.child("rooms").child(roomID.toString()).child("gameInfo")
+                    .child("explosion").addListenerForSingleValueEvent(object : ValueEventListener {
 
-                    when (gamemode) {
+                        override fun onDataChange(snapshot: DataSnapshot) {
 
-                        GAMEMODE_FFA -> scores.add(
+                            var redWonTDM = false
+                            var blueWonTDM = false
 
-                            ScoreData(
+                            var redWonBOMB = false
+                            var blueWonBOMB = false
 
-                                sortedUsers[i].id,
-                                sortedUsers[i].name,
-                                calculatePointsGainForFFA(
-                                    sortedUsers[i].kills,
-                                    sortedUsers[i].deaths,
-                                    sortedUsers[i].assists
-                                )
-                            )
-                        )
+                            if (redKills > blueKills) redWonTDM = true
+                            if (redKills < blueKills) blueWonTDM = true
 
-                        GAMEMODE_TDM -> scores.add(
+                            val bombState = snapshot.getValue(Boolean::class.java)
 
-                            ScoreData(
+                            if (bombState == true) {
 
-                                sortedUsers[i].id,
-                                sortedUsers[i].name,
-                                calculatePointsGainForTDM(
-                                    sortedUsers[i].kills,
-                                    sortedUsers[i].deaths,
-                                    sortedUsers[i].assists,
-                                    true //to changge
-                                )
-                            )
-                        )
-                    }
-                }
+                                redWonBOMB = true
+                            }
 
-                println(scores.size)
-                println(gamemode)
+                            else {
+
+                                blueWonBOMB = true
+                            }
+
+                            for (i in sortedUsers.indices) {
+
+                                when (gamemode) {
+
+                                    GAMEMODE_FFA -> {
+
+                                            scores.add(
+
+                                                    ScoreData(
+
+                                                        sortedUsers[i].id,
+                                                        sortedUsers[i].name,
+                                                        calculatePointsGainForFFA(
+                                                            sortedUsers[i].kills,
+                                                            sortedUsers[i].deaths,
+                                                            sortedUsers[i].assists
+                                                        ),
+                                                        sortedUsers[i].kills,
+                                                        sortedUsers[i].deaths,
+                                                        sortedUsers[i].assists
+                                                    )
+                                                    )}
+
+                                    GAMEMODE_TDM -> scores.add(
+
+                                        ScoreData(
+
+                                            sortedUsers[i].id,
+                                            sortedUsers[i].name,
+                                            calculatePointsGainForTDM(
+                                                sortedUsers[i].kills,
+                                                sortedUsers[i].deaths,
+                                                sortedUsers[i].assists,
+                                                if (sortedUsers[i].team == TEAM_RED) redWonTDM else blueWonTDM
+                                            ),
+                                            sortedUsers[i].kills,
+                                            sortedUsers[i].deaths,
+                                            sortedUsers[i].assists
+                                        )
+                                    )
+
+                                    GAMEMODE_CS_GO -> scores.add(
+
+                                        ScoreData(
+
+                                            sortedUsers[i].id,
+                                            sortedUsers[i].name,
+                                            calculatePointsGainForTDM(
+                                                sortedUsers[i].kills,
+                                                sortedUsers[i].deaths,
+                                                sortedUsers[i].assists,
+                                                if (sortedUsers[i].team == TEAM_RED) redWonBOMB else blueWonBOMB
+                                            ),
+                                            sortedUsers[i].kills,
+                                            sortedUsers[i].deaths,
+                                            sortedUsers[i].assists
+                                        )
+                                    )
+
+                                    GAMEMODE_ONE_HIT_ELIMINATION -> scores.add(
+
+                                        ScoreData(
+
+                                            sortedUsers[i].id,
+                                            sortedUsers[i].name,
+                                            calculatePointsGainForTDM(
+                                                sortedUsers[i].kills,
+                                                sortedUsers[i].deaths,
+                                                sortedUsers[i].assists,
+                                                if (sortedUsers[i].team == TEAM_RED) redWonTDM else blueWonTDM
+                                            ),
+                                            sortedUsers[i].kills,
+                                            sortedUsers[i].deaths,
+                                            sortedUsers[i].assists
+                                        )
+                                    )
+
+                                    GAMEMODE_ONE_VS_ALL -> scores.add(
+
+                                        ScoreData(
+
+                                            sortedUsers[i].id,
+                                            sortedUsers[i].name,
+                                            calculatePointsGainForTDM(
+                                                sortedUsers[i].kills,
+                                                sortedUsers[i].deaths,
+                                                sortedUsers[i].assists,
+                                                if (sortedUsers[i].team == TEAM_RED) redWonTDM else blueWonTDM
+                                            ),
+                                            sortedUsers[i].kills,
+                                            sortedUsers[i].deaths,
+                                            sortedUsers[i].assists
+                                        )
+                                    )
+
+                                    GAMEMODE_CTF -> scores.add(
+
+                                        ScoreData(
+
+                                            sortedUsers[i].id,
+                                            sortedUsers[i].name,
+                                            calculatePointsGainForTDM(
+                                                sortedUsers[i].kills,
+                                                sortedUsers[i].deaths,
+                                                sortedUsers[i].assists,
+                                                if (sortedUsers[i].team == TEAM_RED) redWonTDM else blueWonTDM
+                                            ),
+                                            sortedUsers[i].kills,
+                                            sortedUsers[i].deaths,
+                                            sortedUsers[i].assists
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {}
+                    })
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -519,10 +640,13 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
                         .child("isAlive").setValue(true)
                     currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
                         .child("health").setValue(100)
-                    currRoomRef.child("gameInfo").child("voteForEnd").setValue(0)
                 }
 
+                currRoomRef.child("playersReady").setValue(0)
+                currRoomRef.child("gameInfo").child("voteForEnd").setValue(0)
+                currRoomRef.child("gameInfo").child("bombPlanted").setValue(false)
                 currRoomRef.child("isPlaying").setValue(true)
+                currRoomRef.child("gameInfo").child("explosion").setValue(false)
 
                 for (gamemode in getGamemodes()) {
                     currRoomRef.child("gamemodeVotes").child(gamemode).setValue(0)
@@ -541,7 +665,6 @@ fun endGame(roomID: Int) {
 
     val currRoomRef = databaseRef.child("rooms").child(roomID.toString())
 
-    currRoomRef.child("isPlaying").setValue(false)
     currRoomRef.child("playersReady").setValue(0)
 
     currRoomRef.child("gameInfo").child("users")
@@ -556,8 +679,6 @@ fun endGame(roomID: Int) {
                     currRoomRef.child("users").child(user.id.toString()).child("team")
                         .setValue(TEAM_UNKNOWN)
                 }
-
-                currRoomRef.child("gameInfo").setValue("")
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -745,4 +866,40 @@ fun voteForEnd(roomID: Int) {
 
             override fun onCancelled(error: DatabaseError) {}
         })
+}
+
+fun plantBomb(roomID: Int) {
+
+    val currRoomRef = databaseRef.child("rooms").child(roomID.toString())
+    currRoomRef.child("gameInfo").child("bombPlanted").setValue(true)
+}
+
+fun defuseBomb(roomID: Int) {
+
+    val currRoomRef = databaseRef.child("rooms").child(roomID.toString())
+    currRoomRef.child("gameInfo").child("bombPlanted").setValue(false)
+}
+
+fun explodeBomb(roomID: Int) {
+
+    val currRoomRef = databaseRef.child("rooms").child(roomID.toString())
+    currRoomRef.child("gameInfo").child("explosion").setValue(true)
+}
+
+fun copyStatsToGlobal(roomID: Int, userID: Int) {
+
+    val currUserRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child(userID.toString())
+
+    currUserRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        override fun onDataChange(snapshot: DataSnapshot) {
+
+            val user = snapshot.getValue(User::class.java)!!
+
+            addValue(databaseRef.child("users").child(userID.toString()).child("kills"), user.kills)
+            addValue(databaseRef.child("users").child(userID.toString()).child("deaths"), user.deaths)
+            addValue(databaseRef.child("users").child(userID.toString()).child("assists"), user.assists)
+        }
+        override fun onCancelled(error: DatabaseError) {}
+    })
 }
