@@ -16,7 +16,6 @@ import kotlin.math.max
 
 class PlayerLogic(private val healthThreshold: Int) {
     private var isAlive = true
-    private var isPlanted = false
     private var health = healthThreshold
     private var killsCount = 0
     private var deathsCount = 0
@@ -24,6 +23,10 @@ class PlayerLogic(private val healthThreshold: Int) {
 
     private val damage = 50
     private val reviveHealth = 30
+
+    fun interactWithPlant(lobbyId:Int, isBombPlanted:Boolean){
+        if (!isBombPlanted) plant(lobbyId) else defuse(lobbyId)
+    }
     fun changeHP(roomID: Int, playerID: Int, newHealth: Int, toastContext: Context) {
 
         health = newHealth

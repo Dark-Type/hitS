@@ -98,10 +98,8 @@ class CameraX(
                 recognizer.process(image)
                     .addOnSuccessListener { visionText ->
                         Log.d("TextRecognition", "Text recognition successful")
-
-
                         Log.d("TextRecognition", "Text: ${visionText.text}")
-                        val patternForPlantA = "(?i)plant\\s*a".toRegex()
+                        val patternForPlantA = "(?i)plant".toRegex()
                         var triggeredByFlag = false
 
                         for (j in 1..6) {
