@@ -191,6 +191,7 @@ class CameraX(
         return previewView!!
     }
 
+
     fun capturePhoto(onCaptureFinished: (Bitmap) -> Unit) {
         Log.d("CameraX", "Capturing photo")
 

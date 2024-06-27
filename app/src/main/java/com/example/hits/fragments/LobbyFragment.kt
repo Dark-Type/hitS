@@ -67,6 +67,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import com.example.hits.GAMEMODE_CS_GO
+import com.example.hits.GAMEMODE_ONE_VS_ALL
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
 import com.example.hits.getGamemodeDescription
@@ -120,8 +122,8 @@ class LobbyFragment {
     ) {
         var showDialog by remember { mutableStateOf(false) }
 
-
         showDialog = true
+        val toastContext = LocalContext.current
 
         if (showDialog) {
             Dialog(onDismissRequest = { showDialog = false }) {
@@ -133,12 +135,29 @@ class LobbyFragment {
                 ) {
                     Button(
                         onClick = {
-                            addValue(
-                                databaseRef.child("rooms").child(lobbyId.toString())
-                                    .child("playersReady"), 1
-                            )
-                            setUserTeam(lobbyId, userID, TEAM_RED)
-                            shouldChooseTeams.value = false
+                            if (chosenGameMode != GAMEMODE_ONE_VS_ALL) {
+                                if (teamRed.size <= playersInLobby / 2) {
+                                    addValue(
+                                        databaseRef.child("rooms").child(lobbyId.toString())
+                                            .child("playersReady"), 1
+                                    )
+                                    setUserTeam(lobbyId, userID, TEAM_RED)
+                                    shouldChooseTeams.value = false
+                                } else {
+                                    Toast.makeText(
+                                        toastContext,
+                                        "The red team is full!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            } else {
+                                addValue(
+                                    databaseRef.child("rooms").child(lobbyId.toString())
+                                        .child("playersReady"), 1
+                                )
+                                setUserTeam(lobbyId, userID, TEAM_RED)
+                                shouldChooseTeams.value = false
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(Color.Red),
                         modifier = Modifier
@@ -146,7 +165,11 @@ class LobbyFragment {
                             .height(200.dp)
                     ) {
                         Text(
-                            "Join Red",
+                            text = if (chosenGameMode == GAMEMODE_CS_GO) {
+                                "Join Terrs"
+                            } else {
+                                "Join Red"
+                            },
                             style = Typography.labelLarge,
                             textAlign = TextAlign.Center,
                             color = Color.White,
@@ -158,12 +181,37 @@ class LobbyFragment {
 
                     Button(
                         onClick = {
-                            addValue(
-                                databaseRef.child("rooms").child(lobbyId.toString())
-                                    .child("playersReady"), 1
-                            )
-                            setUserTeam(lobbyId, userID, TEAM_BLUE)
-                            shouldChooseTeams.value = false
+                            if (chosenGameMode != GAMEMODE_ONE_VS_ALL) {
+                                if (teamBlue.size < 1) {
+                                    addValue(
+                                        databaseRef.child("rooms").child(lobbyId.toString())
+                                            .child("playersReady"), 1
+                                    )
+                                    setUserTeam(lobbyId, userID, TEAM_BLUE)
+                                    shouldChooseTeams.value = false
+                                } else {
+                                    Toast.makeText(
+                                        toastContext,
+                                        "The blue team is full!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            } else {
+                                if (teamBlue.size <= playersInLobby / 2) {
+                                    addValue(
+                                        databaseRef.child("rooms").child(lobbyId.toString())
+                                            .child("playersReady"), 1
+                                    )
+                                    setUserTeam(lobbyId, userID, TEAM_BLUE)
+                                    shouldChooseTeams.value = false
+                                } else {
+                                    Toast.makeText(
+                                        toastContext,
+                                        "The blue team is full!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(Color.Blue),
                         modifier = Modifier
@@ -172,7 +220,11 @@ class LobbyFragment {
 
                     ) {
                         Text(
-                            "Join Blue",
+                            text = if (chosenGameMode == GAMEMODE_CS_GO) {
+                                "Join Counter-Terrs"
+                            } else {
+                                "Join Red"
+                            },
                             style = Typography.labelLarge,
                             textAlign = TextAlign.Center,
                             color = Color.White,

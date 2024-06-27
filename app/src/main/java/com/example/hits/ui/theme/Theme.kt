@@ -51,11 +51,15 @@ fun HitSTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.let {
+                it.hide(WindowInsetsCompat.Type.navigationBars())
+                it.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
             WindowInsetsControllerCompat(
                 window,
                 view
             ).hide(WindowInsetsCompat.Type.navigationBars())
-
             WindowCompat.setDecorFitsSystemWindows(window, false)
             window.statusBarColor = Color.Transparent.toArgb()
             window.navigationBarColor = Color.Transparent.toArgb()
