@@ -55,7 +55,7 @@ data class UserForTDM(
     val kills: Int = 0,
     val deaths: Int = 0,
     val assists: Int = 0,
-    val team: Int
+    val team: Int = -1
 )
 
 const val TEAM_UNKNOWN = -1
@@ -360,12 +360,14 @@ fun getUsersForResultsScreen(
 
                 for (userSnapshot in dataSnapshot.children) {
 
-                    val user = userSnapshot.getValue(UserForTDM::class.java)!!
+                    val user = userSnapshot.getValue(UserForTDM::class.java)
 
-                    if (user.team == TEAM_RED) redKills += user.kills
-                    if (user.team == TEAM_BLUE) blueKills += user.kills
+                    if (user != null) {
+                        if (user.team == TEAM_RED) redKills += user.kills
+                        if (user.team == TEAM_BLUE) blueKills += user.kills
 
-                    users.add(userSnapshot.getValue(UserForTDM::class.java)!!)
+                        users.add(userSnapshot.getValue(UserForTDM::class.java)!!)
+                    }
                 }
 
                 val sortedUsers = users.sortedWith(compareBy({ -it.kills }, { it.deaths }))
@@ -894,11 +896,22 @@ fun copyStatsToGlobal(roomID: Int, userID: Int) {
 
         override fun onDataChange(snapshot: DataSnapshot) {
 
-            val user = snapshot.getValue(User::class.java)!!
+            val user = snapshot.getValue(User::class.java)
 
-            addValue(databaseRef.child("users").child(userID.toString()).child("kills"), user.kills)
-            addValue(databaseRef.child("users").child(userID.toString()).child("deaths"), user.deaths)
-            addValue(databaseRef.child("users").child(userID.toString()).child("assists"), user.assists)
+            if (user != null) {
+                addValue(
+                    databaseRef.child("users").child(userID.toString()).child("kills"),
+                    user.kills
+                )
+                addValue(
+                    databaseRef.child("users").child(userID.toString()).child("deaths"),
+                    user.deaths
+                )
+                addValue(
+                    databaseRef.child("users").child(userID.toString()).child("assists"),
+                    user.assists
+                )
+            }
         }
         override fun onCancelled(error: DatabaseError) {}
     })

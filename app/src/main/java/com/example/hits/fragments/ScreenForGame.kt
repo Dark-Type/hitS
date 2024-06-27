@@ -209,7 +209,7 @@ class ScreenForGame {
                         bombPlanted = true
                     }
 
-                    if (newBombValue == false and bombPlanted) {
+                    if (newBombValue == false && bombPlanted) {
 
                         Toast.makeText(context, "Bomb Defused", Toast.LENGTH_SHORT)
                             .show()
