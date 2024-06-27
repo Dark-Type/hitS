@@ -11,8 +11,8 @@ val gameModesDescription = hashMapOf(
     GAMEMODE_FFA to "Fight against each other in a free-for-all mode!",
     GAMEMODE_TDM to "Choose a team and play with your friends!",
     GAMEMODE_ONE_HIT_ELIMINATION to "One hit and you are out!",
-    GAMEMODE_CS_GO to "Write Plant A and Plant B somewhere and it will become the plant of the bomb!\n The rest is up to you!",
-    GAMEMODE_CTF to "Create 6 flags and try to capture them all!\n To create a flag just write Flag 1-6 somewhere!",
+    GAMEMODE_CS_GO to "Write Plant somewhere and it will become the plant for the bomb!\n The rest is up to you!",
+    GAMEMODE_CTF to "Create 6 flags and try to capture them all!\n To create a flag just write Flag 1-6 somewhere! (Not ready)",
     GAMEMODE_ONE_VS_ALL to "Wanna feel like a main character in some action movie?\n Try this mode! You are the only one against everyone else!"
 )
 fun getGamemodeDescription(gamemode: String) : String {

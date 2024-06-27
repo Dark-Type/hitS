@@ -102,7 +102,6 @@ class CameraX(
 
                         Log.d("TextRecognition", "Text: ${visionText.text}")
                         val patternForPlantA = "(?i)plant\\s*a".toRegex()
-                        val patternForPlantB = "(?i)plant\\s*b".toRegex()
                         var triggeredByFlag = false
 
                         for (j in 1..6) {
@@ -117,15 +116,10 @@ class CameraX(
                             }
                         }
                         if (patternForPlantA.containsMatchIn(visionText.text)) {
-                            Log.d("TextRecognition", "Plant A recognized")
+                            Log.d("TextRecognition", "Plant recognized")
                             if (!cameraX.analysisRunning) {
                                 cameraX.analysisRunning = true
-                                cameraX.startTimer(10, "Plant A")
-                            }
-                        } else if (patternForPlantB.containsMatchIn(visionText.text)) {
-                            if (!cameraX.analysisRunning) {
-                                cameraX.analysisRunning = true
-                                cameraX.startTimer(10, "Plant B")
+                                cameraX.startTimer(10, "Plant")
                             }
                         } else {
                             if (!triggeredByFlag) {
