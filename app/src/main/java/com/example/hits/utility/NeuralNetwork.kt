@@ -13,6 +13,7 @@ import android.graphics.Rect
 import android.util.Log
 import android.widget.Toast
 import com.example.hits.R
+import com.example.hits.SharedPrefHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -28,6 +29,7 @@ class NeuralNetwork private constructor(context: Context) {
     private var detectorOrtSession: OrtSession
     private var autoencoderOrtSession: OrtSession
     private var embeddings: Array<Pair<FloatArray, Int>> = emptyArray()
+    val sharedPrefHelper = SharedPrefHelper(applicationContext)
 
     companion object {
         @Volatile
@@ -88,10 +90,12 @@ class NeuralNetwork private constructor(context: Context) {
         var maxSimilarity = 0.0f
 
         for (embeddingPair in embeddings) {
-            val similarity = getSimilarity(embedding, embeddingPair.first)
-            if (similarity > maxSimilarity) {
-                maxSimilarity = similarity
-                result = embeddingPair.second
+            if (embeddingPair.second != sharedPrefHelper.getID()!!.toInt()) {
+                val similarity = getSimilarity(embedding, embeddingPair.first)
+                if (similarity > maxSimilarity) {
+                    maxSimilarity = similarity
+                    result = embeddingPair.second
+                }
             }
         }
 
@@ -160,54 +164,55 @@ class NeuralNetwork private constructor(context: Context) {
     }
 
     // Найти людей на фото
-    private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> = withContext(Dispatchers.Default) {
+    private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> =
+        withContext(Dispatchers.Default) {
 
-        val input = bitmapToByteArray(bitmap)
+            val input = bitmapToByteArray(bitmap)
 
-        val shape = longArrayOf(input.size.toLong())
+            val shape = longArrayOf(input.size.toLong())
 
-        val inputTensor = OnnxTensor.createTensor(
-            ortEnvironment,
-            ByteBuffer.wrap(input),
-            shape,
-            OnnxJavaType.UINT8
-        )
-        Log.d("detect", "created tensor")
+            val inputTensor = OnnxTensor.createTensor(
+                ortEnvironment,
+                ByteBuffer.wrap(input),
+                shape,
+                OnnxJavaType.UINT8
+            )
+            Log.d("detect", "created tensor")
 
-        val output = detectorOrtSession.run(
-            Collections.singletonMap("image", inputTensor),
-            setOf("image_out", "scaled_box_out_next")
-        ) as Result
-        Log.d("detect", "ran session")
+            val output = detectorOrtSession.run(
+                Collections.singletonMap("image", inputTensor),
+                setOf("image_out", "scaled_box_out_next")
+            ) as Result
+            Log.d("detect", "ran session")
 
-        // bounding boxes in (xcenter, ycenter, height, width) format
-        val result = (output.get(1)?.value) as Array<FloatArray>
+            // bounding boxes in (xcenter, ycenter, height, width) format
+            val result = (output.get(1)?.value) as Array<FloatArray>
 
-        val boxIt = result.iterator()
-        val boundingBoxes = ArrayList<Array<Int>>()
+            val boxIt = result.iterator()
+            val boundingBoxes = ArrayList<Array<Int>>()
 
-        while (boxIt.hasNext()) {
-            val box = boxIt.next()
-            for(element in box) {
-                Log.d("detect", element.toString())
+            while (boxIt.hasNext()) {
+                val box = boxIt.next()
+                for (element in box) {
+                    Log.d("detect", element.toString())
+                }
+                // Is person detected
+                if (box[5].toInt() == 0) {
+                    Log.d("detect", "person detected")
+
+                    val boxCoordinates = getBoxCoordinates(
+                        box[0].toInt(),
+                        box[1].toInt(),
+                        box[2].toInt(),
+                        box[3].toInt()
+                    )
+
+                    boundingBoxes.add(boxCoordinates)
+                }
             }
-            // Is person detected
-            if (box[5].toInt() == 0) {
-                Log.d("detect", "person detected")
 
-                val boxCoordinates = getBoxCoordinates(
-                    box[0].toInt(),
-                    box[1].toInt(),
-                    box[2].toInt(),
-                    box[3].toInt()
-                )
-
-                boundingBoxes.add(boxCoordinates)
-            }
+            return@withContext boundingBoxes
         }
-
-        return@withContext boundingBoxes
-    }
 
     private suspend fun preprocessImage(
         bitmap: Bitmap,
