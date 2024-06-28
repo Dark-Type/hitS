@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
+import com.example.hits.GAMEMODE_ONE_VS_ALL
 import com.example.hits.SharedPrefHelper
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Turquoise
@@ -99,12 +100,22 @@ class ScreenForGame {
     }
 
     @Composable
-    fun GameScreen(lobbyId: Int, userID: Int, currGameMode: String, navController: NavController) {
+    fun GameScreen(
+        lobbyId: Int,
+        userID: Int,
+        currGameMode: String,
+        navController: NavController,
+        teamBlue: String,
+        userName: String
+    ) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
 
-        player = PlayerLogic(if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 50 else 100)
+        player = PlayerLogic(
+            if (currGameMode == GAMEMODE_ONE_VS_ALL && teamBlue.contains(userName)) 1000 else 100,
+            if ((currGameMode == GAMEMODE_ONE_VS_ALL && teamBlue.contains(userName))) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 100 else 10
+        )
 
         leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }
 

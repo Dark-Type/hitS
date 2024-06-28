@@ -133,17 +133,26 @@ class MainActivity : ComponentActivity() {
                         LobbyFragment().LobbyScreen(lobbyId.toInt(), navController)
                     }
                 }
-                composable("gameScreen/{lobbyId}/{userID}/{currGamemode}") { backStackEntry ->
+                composable("gameScreen/{lobbyId}/{userID}/{currGamemode}/{blueTeam}/{userName}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     val userID = backStackEntry.arguments?.getString("userID")
                     val currGamemode = backStackEntry.arguments?.getString("currGamemode")
+                    var blueTeam = backStackEntry.arguments?.getString("blueTeam")
+                    if (blueTeam == null) {
+                        blueTeam = ""
+                    }
+                    val userName = backStackEntry.arguments?.getString("userName")
                     if (lobbyId != null && userID != null && currGamemode != null) {
-                        ScreenForGame().GameScreen(
-                            lobbyId.toInt(),
-                            userID.toInt(),
-                            currGamemode,
-                            navController
-                        )
+                        if (userName != null) {
+                            ScreenForGame().GameScreen(
+                                lobbyId.toInt(),
+                                userID.toInt(),
+                                currGamemode,
+                                navController,
+                                blueTeam,
+                                userName
+                            )
+                        }
                     }
                 }
             }
@@ -185,11 +194,10 @@ class MainActivity : ComponentActivity() {
                     context,
                     permission
                 ) == PackageManager.PERMISSION_GRANTED -> {
-                    // You can use the camera
+                    Toast.makeText(context, "Thank you", Toast.LENGTH_SHORT).show()
                 }
 
                 else -> {
-                    // You need to ask for permission
                     requestPermissionLauncher.launch(permission)
                 }
             }
@@ -205,8 +213,6 @@ class MainActivity : ComponentActivity() {
         val snackbarHostState = remember { SnackbarHostState() }
         val toast =
             Toast.makeText(LocalContext.current, "Creating your account...", Toast.LENGTH_SHORT)
-
-
 
         Box(modifier = Modifier.fillMaxSize()) {
             Image(

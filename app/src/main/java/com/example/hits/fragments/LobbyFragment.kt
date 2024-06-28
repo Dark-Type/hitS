@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.hits.GAMEMODE_CS_GO
+import com.example.hits.GAMEMODE_CTF
 import com.example.hits.GAMEMODE_ONE_VS_ALL
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
@@ -522,7 +523,7 @@ class LobbyFragment {
 
                                             Toast.makeText(
                                                 toastContext,
-                                                "You need to scan yourself more, to be ready to play!\nCurrently you have ${countOfScansForThisUser}/4 scans.",
+                                                "You have only ${countOfScansForThisUser}/4 scans. Scan yourself to be ready!",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         } else {
@@ -761,14 +762,21 @@ class LobbyFragment {
                                     calledTransition = true
 
                                     runGame(lobbyId, users, teamRed, teamBlue)
-
+                                    val blueTeamString = teamBlue.joinToString(separator = ",")
+                                    var userName = ""
+                                    for (user in users) {
+                                        if (user.id == sharedPrefHelper.getID()!!.toInt()) {
+                                            userName = user.name
+                                        }
+                                    }
                                     navController.navigate(
                                         "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
                                             modes[votes.value.indexOf(
                                                 max(votes.value)
                                             )]
-                                        }"
-                                    ) {
+                                        }/$blueTeamString/$userName"
+                                    )
+                                    {
                                         modes[votes.value.indexOf(
                                             max(votes.value)
                                         )]
@@ -843,7 +851,7 @@ class LobbyFragment {
                                                 end = 8.dp
                                             )
                                             .fillMaxWidth()
-                                            .clickable {
+                                            .clickable(enabled = mode != GAMEMODE_CTF) {
                                                 if (selectedMode.intValue != index) {
 
                                                     if (selectedMode.intValue != -1) {
@@ -1033,7 +1041,8 @@ class LobbyFragment {
         roomID: Int,
         userToScanID: Int
     ): MutableState<Bitmap?> {
-        val neuralNetwork = NeuralNetwork.getInstance(LocalContext.current)
+        val photoContext = LocalContext.current
+        val neuralNetwork = NeuralNetwork.getInstance(photoContext)
         val bitmapState = remember { mutableStateOf<Bitmap?>(null) }
         val takePictureLauncher =
             rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicturePreview()) { bitmap: Bitmap? ->
@@ -1041,9 +1050,8 @@ class LobbyFragment {
                     bitmapState.value = bitmap
 
                     CoroutineScope(Dispatchers.IO).launch {
-                        val status = neuralNetwork.rememberPerson(roomID, userToScanID, bitmap)
+                        neuralNetwork.rememberPerson(roomID, userToScanID, bitmap)
                     }
-                    println("Photo taken and remembered for user: $userToScanID")
                 }
             }
 

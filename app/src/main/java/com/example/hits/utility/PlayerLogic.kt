@@ -14,14 +14,13 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.math.max
 
-class PlayerLogic(private val healthThreshold: Int) {
+class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
     private var isAlive = true
     private var health = healthThreshold
     private var killsCount = 0
     private var deathsCount = 0
     private var assistsCount = 0
 
-    private val damage = 50
     private val reviveHealth = 30
 
     fun interactWithPlant(lobbyId:Int, isBombPlanted:Boolean){

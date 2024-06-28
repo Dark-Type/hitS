@@ -11,6 +11,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.util.Log
+import android.widget.Toast
 import com.example.hits.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
@@ -23,7 +24,6 @@ import java.util.Collections
 
 class NeuralNetwork private constructor(context: Context) {
     private val applicationContext = context.applicationContext
-    private val activityContext = context
     private var ortEnvironment: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var detectorOrtSession: OrtSession
     private var autoencoderOrtSession: OrtSession
@@ -45,6 +45,13 @@ class NeuralNetwork private constructor(context: Context) {
     suspend fun rememberPerson(roomID: Int, userToScanID: Int, image: Bitmap): Boolean {
         val boxes = detect(image)
         if (boxes.size == 1) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    applicationContext,
+                    "Photo is recognized successfully!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
             val croppedImage = cropBitmap(
                 image,
                 boxes[0][0],
@@ -55,6 +62,14 @@ class NeuralNetwork private constructor(context: Context) {
 
             val embedding = encode(croppedImage)
             addEmbeddingToDatabase(roomID, userToScanID, embedding)
+        } else {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    applicationContext,
+                    "Photo is not recognized, objects on photo detected ${boxes.size}!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
 
         return boxes.size == 1
@@ -145,7 +160,7 @@ class NeuralNetwork private constructor(context: Context) {
     }
 
     // Найти людей на фото
-    private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> {
+    private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> = withContext(Dispatchers.Default) {
         val resizedBitmap = Bitmap.createScaledBitmap(
             bitmap,
             500,
@@ -201,7 +216,7 @@ class NeuralNetwork private constructor(context: Context) {
             }
         }
 
-        return boundingBoxes
+        return@withContext boundingBoxes
     }
 
     private suspend fun preprocessImage(
