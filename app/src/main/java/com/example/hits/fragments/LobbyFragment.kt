@@ -8,6 +8,9 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +47,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -120,6 +125,19 @@ class LobbyFragment {
         teamBlue: SnapshotStateList<String>
     ) {
         var showDialog by remember { mutableStateOf(false) }
+        val dialogScale = remember { mutableFloatStateOf(0f) }
+
+        LaunchedEffect(Unit) {
+            dialogScale.value = 1f
+        }
+
+        val animatedScale by animateFloatAsState(
+            targetValue = dialogScale.value,
+            animationSpec = tween(
+                durationMillis = 500,
+                easing = FastOutSlowInEasing
+            )
+        )
 
         showDialog = true
         val toastContext = LocalContext.current
@@ -128,7 +146,7 @@ class LobbyFragment {
             Dialog(onDismissRequest = { showDialog = false }) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize(),
+                        .fillMaxSize().scale(animatedScale),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -238,6 +256,20 @@ class LobbyFragment {
 
     @Composable
     fun LobbyScreen(lobbyId: Int, navController: NavController) {
+        val dialogScale = remember { mutableStateOf(0f) }
+
+        LaunchedEffect(Unit) {
+            dialogScale.value = 1f
+        }
+
+        val animatedScale by animateFloatAsState(
+            targetValue = dialogScale.value,
+            animationSpec = tween(
+                durationMillis = 500,
+                easing = FastOutSlowInEasing
+            )
+        )
+
 
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
@@ -267,7 +299,7 @@ class LobbyFragment {
                 Surface(
                     color = Color.White,
                     shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp).scale(animatedScale)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -320,7 +352,7 @@ class LobbyFragment {
                 Surface(
                     color = Color.White,
                     shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp).scale(animatedScale)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -534,8 +566,7 @@ class LobbyFragment {
                                             if (isReady.value) {
                                                 val mostPopularMode =
                                                     modes[votes.value.indexOf(max(votes.value))]
-                                                if (mostPopularMode == "Free For All") {
-
+                                                if (mostPopularMode == "Free For All" || mostPopularMode == "One Hit Elimination") {
                                                     addValue(
                                                         databaseRef.child("rooms")
                                                             .child(lobbyId.toString())

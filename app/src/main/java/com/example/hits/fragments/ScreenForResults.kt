@@ -1,6 +1,9 @@
 package com.example.hits.fragments
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,10 +25,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -58,7 +65,22 @@ class ScreenForResults {
 
         val scores = remember { getUsersForResultsScreen(lobbyId, gameModePlayed) }
         val showDialog = remember { mutableStateOf(false) }
-        Box(modifier = Modifier.fillMaxSize()) {
+        val dialogScale = remember { mutableFloatStateOf(0f) }
+
+        LaunchedEffect(Unit) {
+            dialogScale.value = 1f
+        }
+
+        val animatedScale by animateFloatAsState(
+            targetValue = dialogScale.value,
+            animationSpec = tween(
+                durationMillis = 500,
+                easing = FastOutSlowInEasing
+            )
+        )
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .scale(animatedScale)) {
 
             Image(
                 painter = painterResource(id = R.drawable.main_background),
@@ -82,12 +104,17 @@ class ScreenForResults {
                     Surface(
                         color = Color.White,
                         shape = RoundedCornerShape(25.dp),
-                        modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxHeight(0.7f).padding(start = 16.dp, end = 16.dp),
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .fillMaxHeight(0.7f)
+                            .padding(start = 16.dp, end = 16.dp),
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
 
 
-                            LazyColumn(modifier = Modifier.fillMaxHeight(0.6f).padding(16.dp)) {
+                            LazyColumn(modifier = Modifier
+                                .fillMaxHeight(0.6f)
+                                .padding(16.dp)) {
                                 itemsIndexed(scores) { index, scoreData ->
                                     Card(
                                         modifier = Modifier
@@ -156,10 +183,14 @@ class ScreenForResults {
                                     .shadow(4.dp, RoundedCornerShape(50.dp))
                                     .align(Alignment.CenterHorizontally)
                                     .clickable {
-                                        databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").setValue("")
+                                        databaseRef
+                                            .child("rooms")
+                                            .child(lobbyId.toString())
+                                            .child("gameInfo")
+                                            .setValue("")
                                         removeUserFromRoom(lobbyId, userID)
 
-                                        val score = scores.find {it.id == userID}?.score
+                                        val score = scores.find { it.id == userID }?.score
 
                                         if (score != null) copyPoints(lobbyId, userID, score)
 
@@ -192,9 +223,13 @@ class ScreenForResults {
                                     .align(Alignment.CenterHorizontally)
                                     .clickable {
                                         println(scores.size)
-                                        databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").setValue("")
+                                        databaseRef
+                                            .child("rooms")
+                                            .child(lobbyId.toString())
+                                            .child("gameInfo")
+                                            .setValue("")
 
-                                        val score = scores.find {it.id == userID}?.score
+                                        val score = scores.find { it.id == userID }?.score
 
                                         if (score != null) copyPoints(lobbyId, userID, score)
 
@@ -234,17 +269,32 @@ class ScreenForResults {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-
+                        .scale(animatedScale)
                         .padding(8.dp),
                     elevation = CardDefaults.cardElevation(
                         defaultElevation = 12.dp
                     )
                 ) {
-                    Card (Modifier.fillMaxWidth(), colors = CardColors(Color.White, Color.Black, Color.Black, Color.White)) {
+                    Card(
+                        Modifier.fillMaxWidth(),
+                        colors = CardColors(Color.White, Color.Black, Color.Black, Color.White)
+                    ) {
 
-                        Text(text = "Kills ${(scores.find { it.id == userID })?.kills}", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
-                        Text(text = "Deaths ${(scores.find { it.id == userID })?.deaths}", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
-                        Text(text = "Assists ${(scores.find { it.id == userID })?.assists}", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
+                        Text(
+                            text = "Kills ${(scores.find { it.id == userID })?.kills}",
+                            modifier = Modifier.padding(16.dp),
+                            style = Typography.bodyMedium
+                        )
+                        Text(
+                            text = "Deaths ${(scores.find { it.id == userID })?.deaths}",
+                            modifier = Modifier.padding(16.dp),
+                            style = Typography.bodyMedium
+                        )
+                        Text(
+                            text = "Assists ${(scores.find { it.id == userID })?.assists}",
+                            modifier = Modifier.padding(16.dp),
+                            style = Typography.bodyMedium
+                        )
                     }
                 }
 

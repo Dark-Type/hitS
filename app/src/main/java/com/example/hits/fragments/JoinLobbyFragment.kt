@@ -1,6 +1,14 @@
 package com.example.hits.fragments
 
+import android.util.Log
+import android.view.View
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.annotation.RawRes
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -26,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,11 +44,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -141,24 +153,6 @@ class JoinLobbyFragment {
         }
     }
 
-    @Composable
-    fun NewsDialog(news: String, showDialog: MutableState<Boolean>) {
-
-        val configuration = LocalConfiguration.current
-        val screenWidth = configuration.screenWidthDp.dp
-        val screenHeight = configuration.screenHeightDp.dp
-        Dialog(onDismissRequest = { showDialog.value = false }) {
-            ElevatedCard(
-                modifier = Modifier.size(screenWidth * 2 / 3, screenHeight / 2),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 12.dp
-                )
-            ) {
-
-                Text(text = news, modifier = Modifier.padding(16.dp))
-            }
-        }
-    }
 
     @Composable
     fun LeaderboardItem(
@@ -229,33 +223,6 @@ class JoinLobbyFragment {
         }
     }
 
-    @Composable
-    fun PlayerStatsDialog(user: UserForLeaderboard, showDialog: MutableState<Boolean>) {
-        val configuration = LocalConfiguration.current
-        val screenWidth = configuration.screenWidthDp.dp
-        val screenHeight = configuration.screenHeightDp.dp
-        Dialog(onDismissRequest = { showDialog.value = false }) {
-            ElevatedCard(
-                modifier = Modifier.size(screenWidth * 2 / 3, screenHeight / 2)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-
-                    ) {
-                    Text(text = "Name: ${user.name}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Score: ${user.points}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Rank: ${user.rank + 1}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Kills: ${user.kills}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Deaths: ${user.deaths}", modifier = Modifier.padding(16.dp))
-                    Text(text = "Assists: ${user.assists}", modifier = Modifier.padding(16.dp))
-                }
-            }
-        }
-    }
-
 
     @Composable
     fun JoinLobbyScreen(navController: NavController) {
@@ -268,7 +235,80 @@ class JoinLobbyFragment {
         val selectedNews = remember { mutableStateOf<String?>(null) }
         val isSurfaceVisible = remember { mutableStateOf(false) }
         val newsList = remember { getNews() }
+        val dialogScale = remember { Animatable(0f) }
 
+        LaunchedEffect(Unit) {
+            dialogScale.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 500,
+                    easing = FastOutSlowInEasing
+                )
+            )
+        }
+        val animatedScale by animateFloatAsState(
+            targetValue = dialogScale.value,
+            animationSpec = tween(
+                durationMillis = 500,
+                easing = FastOutSlowInEasing
+            )
+        )
+
+        @Composable
+        fun NewsDialog(news: String, showDialog: MutableState<Boolean>) {
+
+            val configuration = LocalConfiguration.current
+            val screenWidth = configuration.screenWidthDp.dp
+            val screenHeight = configuration.screenHeightDp.dp
+            Dialog(onDismissRequest = { showDialog.value = false }) {
+                ElevatedCard(
+                    modifier = Modifier
+                        .size(screenWidth * 2 / 3, screenHeight / 2)
+                        .scale(animatedScale),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 12.dp
+                    )
+                ) {
+
+                    Text(
+                        text = news, modifier = Modifier
+                            .padding(16.dp)
+                            .scale(animatedScale)
+                    )
+                }
+            }
+        }
+
+        @Composable
+        fun PlayerStatsDialog(user: UserForLeaderboard, showDialog: MutableState<Boolean>) {
+            val configuration = LocalConfiguration.current
+            val screenWidth = configuration.screenWidthDp.dp
+            val screenHeight = configuration.screenHeightDp.dp
+            Dialog(onDismissRequest = { showDialog.value = false }) {
+                ElevatedCard(
+                    modifier = Modifier
+                        .size(screenWidth * 2 / 3, screenHeight / 2)
+                        .scale(animatedScale)
+
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .scale(animatedScale),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+
+                        ) {
+                        Text(text = "Name: ${user.name}", modifier = Modifier.padding(16.dp))
+                        Text(text = "Score: ${user.points}", modifier = Modifier.padding(16.dp))
+                        Text(text = "Rank: ${user.rank + 1}", modifier = Modifier.padding(16.dp))
+                        Text(text = "Kills: ${user.kills}", modifier = Modifier.padding(16.dp))
+                        Text(text = "Deaths: ${user.deaths}", modifier = Modifier.padding(16.dp))
+                        Text(text = "Assists: ${user.assists}", modifier = Modifier.padding(16.dp))
+                    }
+                }
+            }
+        }
         HitSTheme {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -317,6 +357,7 @@ class JoinLobbyFragment {
                         )
                     }
                 }
+
                 IconButton(
                     onClick = {
                         if (!isSurfaceVisible.value) navController.navigate("settingsScreen/-1") else isSurfaceVisible.value =
@@ -388,21 +429,41 @@ class JoinLobbyFragment {
                                 }
 
                                 if (showNews.value) {
-                                    LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
-                                        items(newsList) { news ->
-                                            NewsItem(news, showNewsDialog, selectedNews)
+                                    if (newsList.isEmpty()) {
+                                        Box(
+                                            modifier = Modifier.fillMaxHeight(0.5f),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
+                                    } else {
+                                        LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
+                                            items(newsList) { news ->
+                                                NewsItem(news, showNewsDialog, selectedNews)
 
+                                            }
                                         }
                                     }
+
                                 } else {
-                                    LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
-                                        itemsIndexed(leaderboardList) { index, user ->
-                                            LeaderboardItem(
-                                                user,
-                                                index,
-                                                showLeaderBoardsDialog,
-                                                selectedPlayer
-                                            )
+                                    if (leaderboardList.isEmpty()) {
+                                        Box(
+                                            modifier = Modifier.fillMaxHeight(0.5f),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator()
+                                        }
+                                    } else {
+
+                                        LazyColumn(modifier = Modifier.fillMaxHeight(0.5f)) {
+                                            itemsIndexed(leaderboardList) { index, user ->
+                                                LeaderboardItem(
+                                                    user,
+                                                    index,
+                                                    showLeaderBoardsDialog,
+                                                    selectedPlayer
+                                                )
+                                            }
                                         }
                                     }
                                 }

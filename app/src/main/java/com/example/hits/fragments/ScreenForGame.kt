@@ -31,6 +31,9 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -41,6 +44,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 
@@ -63,7 +67,6 @@ import com.example.hits.utility.TEAM_RED
 import com.example.hits.utility.TeamAndHealth
 import com.example.hits.utility.User
 import com.example.hits.utility.UserForLeaderboard
-import com.example.hits.utility.UserForTDM
 import com.example.hits.utility.copyStatsToGlobal
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.endGame
@@ -76,7 +79,6 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.getValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -451,6 +453,19 @@ class ScreenForGame {
         cameraX.textAndTime.observe(LocalLifecycleOwner.current) { pair ->
             textAndTimeState.value = pair
         }
+        val dialogScale = remember { mutableFloatStateOf(0f) }
+
+        LaunchedEffect(Unit) {
+            dialogScale.value = 1f
+        }
+
+        val animatedScale by animateFloatAsState(
+            targetValue = dialogScale.value,
+            animationSpec = tween(
+                durationMillis = 500,
+                easing = FastOutSlowInEasing
+            )
+        )
 
         val lastObservedValue = remember { mutableStateOf<String?>(null) }
         fun triggerEvent(modeType: String) {
@@ -515,6 +530,9 @@ class ScreenForGame {
             )
         }
         var showDialog by remember { mutableStateOf(false) }
+        var showStatsDialog by remember { mutableStateOf(false) }
+        var showSettingsDialog by remember { mutableStateOf(false) }
+
         Box(modifier = Modifier.fillMaxSize()) {
             if (hasCamPermission) {
                 AndroidView(
@@ -539,25 +557,66 @@ class ScreenForGame {
                     .padding(32.dp)
             ) {
 
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(
+                        onClick = {
+                            showStatsDialog = true
+                            showSettingsDialog = false
+                        },
+                        modifier = Modifier
+                            .size(50.dp)
 
-                Image(
-                    painter = when (currentHealthStateForHealthBar.value) {
-                        0 -> painterResource(id = R.drawable.health_bar_0)
-                        1 -> painterResource(id = R.drawable.health_bar_1)
-                        2 -> painterResource(id = R.drawable.health_bar_2)
-                        3 -> painterResource(id = R.drawable.health_bar_3)
-                        4 -> painterResource(id = R.drawable.health_bar_4)
-                        5 -> painterResource(id = R.drawable.health_bar_5)
-                        6 -> painterResource(id = R.drawable.health_bar_6)
-                        7 -> painterResource(id = R.drawable.health_bar_7)
-                        8 -> painterResource(id = R.drawable.health_bar_8)
-                        9 -> painterResource(id = R.drawable.health_bar_9)
-                        10 -> painterResource(id = R.drawable.health_bar_10)
-                        else -> {
-                            painterResource(id = R.drawable.health_bar_10)
-                        }
-                    }, contentDescription = "Health bar"
-                )
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.stats),
+                            contentDescription = "Stats",
+                            modifier = Modifier
+                                .size(50.dp),
+                        )
+                    }
+                    Image(
+                        modifier = Modifier.fillMaxWidth(0.5f),
+                        painter = when (currentHealthStateForHealthBar.value) {
+                            0 -> painterResource(id = R.drawable.health_bar_0)
+                            1 -> painterResource(id = R.drawable.health_bar_1)
+                            2 -> painterResource(id = R.drawable.health_bar_2)
+                            3 -> painterResource(id = R.drawable.health_bar_3)
+                            4 -> painterResource(id = R.drawable.health_bar_4)
+                            5 -> painterResource(id = R.drawable.health_bar_5)
+                            6 -> painterResource(id = R.drawable.health_bar_6)
+                            7 -> painterResource(id = R.drawable.health_bar_7)
+                            8 -> painterResource(id = R.drawable.health_bar_8)
+                            9 -> painterResource(id = R.drawable.health_bar_9)
+                            10 -> painterResource(id = R.drawable.health_bar_10)
+                            else -> {
+                                painterResource(id = R.drawable.health_bar_10)
+                            }
+                        }, contentDescription = "Health bar"
+                    )
+
+                    IconButton(
+                        onClick = {
+                            showStatsDialog = false
+                            showSettingsDialog = true
+                        },
+                        modifier = Modifier
+
+                            .size(50.dp)
+
+
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.settings),
+                            contentDescription = "Settings",
+                            modifier = Modifier
+                                .size(50.dp)
+                        )
+                    }
+                }
 
                 textAndTimeState.value?.let { pair ->
                     if (pair.first != "0" && pair.first != "-1" && pair.first != " " && pair.second != 0L) {
@@ -636,53 +695,15 @@ class ScreenForGame {
                     .align(Alignment.Center)
                     .size(20.dp)
             )
-            var showStatsDialog by remember { mutableStateOf(false) }
-            var showSettingsDialog by remember { mutableStateOf(false) }
 
 
-            IconButton(
-                onClick = {
-                    showStatsDialog = true
-                    showSettingsDialog = false
-                },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(top = 32.dp, start = 32.dp)
-                    .size(50.dp)
 
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.stats),
-                    contentDescription = "Stats",
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .size(50.dp),
-                )
-            }
-            IconButton(
-                onClick = {
-                    showStatsDialog = false
-                    showSettingsDialog = true
-                },
-                modifier = Modifier
-                    .padding(top = 32.dp, end = 32.dp)
-                    .size(50.dp)
-                    .align(Alignment.TopEnd)
-
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.settings),
-                    contentDescription = "Settings",
-                    modifier = Modifier
-                        .size(50.dp)
-                )
-            }
             if (showSettingsDialog) {
                 Dialog(onDismissRequest = { showSettingsDialog = false }) {
                     Surface(
                         color = Color.White,
                         shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().scale(animatedScale)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -761,7 +782,7 @@ class ScreenForGame {
                     Surface(
                         color = Color.White,
                         shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxHeight(0.6f)
+                        modifier = Modifier.fillMaxHeight(0.6f).scale(animatedScale)
                     ) {
                         Column(modifier = Modifier.fillMaxHeight()) {
 
@@ -954,83 +975,88 @@ class ScreenForGame {
 
                         override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
                     }
+                    Box(modifier = Modifier.fillMaxWidth()) {
 
-                    IconButton(
-                        onClick = {
+                        IconButton(
+                            onClick = {
 
-                            if (player.isAlive()) {
+                                if (player.isAlive()) {
 
-                                shakeCount = 0
-                                sensorManager.registerListener(
-                                    sensorListener,
-                                    accelerometer,
-                                    SensorManager.SENSOR_DELAY_NORMAL
-                                )
-                                job = CoroutineScope(Dispatchers.Main).launch {
-                                    while (isActive) {
-                                        delay(1000)
-                                        shakeTime++
-                                        if (shakeTime >= 10) {
-                                            player.heal(lobbyId, thisPlayerID)
+                                    shakeCount = 0
+                                    sensorManager.registerListener(
+                                        sensorListener,
+                                        accelerometer,
+                                        SensorManager.SENSOR_DELAY_NORMAL
+                                    )
+                                    job = CoroutineScope(Dispatchers.Main).launch {
+                                        while (isActive) {
+                                            delay(1000)
+                                            shakeTime++
+                                            if (shakeTime >= 10) {
+                                                player.heal(lobbyId, thisPlayerID)
 
-                                            Toast.makeText(
-                                                context,
-                                                "Shake time: $shakeTime",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            shakeTime = 0
-                                            break
+                                                Toast.makeText(
+                                                    context,
+                                                    "Shake time: $shakeTime",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                                shakeTime = 0
+                                                break
+                                            }
                                         }
+                                        sensorManager.unregisterListener(sensorListener)
                                     }
-                                    sensorManager.unregisterListener(sensorListener)
                                 }
-                            }
-                        },
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .size(100.dp)
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.heal),
-                            contentDescription = "heal",
+                            },
                             modifier = Modifier
-                                .zIndex(2f)
-                                .size(100.dp),
-                        )
-                    }
-                    Spacer(modifier = Modifier.fillMaxWidth(0.65f))
-
-                    var isAnalysisRunning = false
-
-                    IconButton(
-                        onClick = {
-                            if (!isAnalysisRunning) {
-                                Log.d("TextRecognition", "Interact button clicked")
-                                cameraX.startAnalysis()
-                                isAnalysisRunning = true
-                            } else {
-                                Log.d(
-                                    "TextRecognition",
-                                    "Interact button clicked again, stopping analysis"
-                                )
-                                cameraX.manuallyStopAnalysis()
-                                isAnalysisRunning = false
-                            }
-                        },
-                        modifier = Modifier
-                            .size(100.dp)
-                            .zIndex(2f)
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.interact),
-                            contentDescription = "Interact",
-                            modifier = Modifier
+                                .padding(16.dp)
                                 .size(100.dp)
-                        )
+                                .align(Alignment.BottomStart)
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.heal),
+                                contentDescription = "heal",
+                                modifier = Modifier
+                                    .zIndex(2f)
+                                    .size(100.dp),
+                            )
+                        }
+
+
+                        var isAnalysisRunning = false
+
+                        IconButton(
+                            onClick = {
+                                if (!isAnalysisRunning) {
+                                    Log.d("TextRecognition", "Interact button clicked")
+                                    cameraX.startAnalysis()
+                                    isAnalysisRunning = true
+                                } else {
+                                    Log.d(
+                                        "TextRecognition",
+                                        "Interact button clicked again, stopping analysis"
+                                    )
+                                    cameraX.manuallyStopAnalysis()
+                                    isAnalysisRunning = false
+                                }
+                            },
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.BottomEnd)
+                                .size(100.dp)
+                                .zIndex(2f)
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.interact),
+                                contentDescription = "Interact",
+                                modifier = Modifier
+                                    .size(100.dp)
+                            )
+                        }
                     }
                 }
-            }
 
+            }
         }
 
 
