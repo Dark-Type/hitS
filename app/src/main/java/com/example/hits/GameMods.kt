@@ -15,12 +15,13 @@ val gameModesDescription = hashMapOf(
     GAMEMODE_CTF to "Create 6 flags and try to capture them all!\n To create a flag just write Flag 1-6 somewhere! (Not ready)",
     GAMEMODE_ONE_VS_ALL to "Wanna feel like a main character in some action movie?\n Try this mode! You are the only one against everyone else!"
 )
-fun getGamemodeDescription(gamemode: String) : String {
+
+fun getGamemodeDescription(gamemode: String): String {
     return gameModesDescription[gamemode] ?: "No description"
 }
 
 
-fun getGamemodes() : List<String> {
+fun getGamemodes(): List<String> {
 
     return listOf(
         GAMEMODE_FFA,

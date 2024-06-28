@@ -21,14 +21,16 @@ class SharedPrefHelper(context: Context) {
         editor.apply()
     }
 
-    fun getID() : String? {
+    fun getID(): String? {
         return prefs.getString(idKey, null)
     }
+
     fun setFirstTimeJoiningLobby(isFirstTime: Boolean) {
         val editor = prefs.edit()
         editor.putBoolean("isFirstTimeJoiningLobby", isFirstTime)
         editor.apply()
     }
+
     fun isFirstTimeJoiningLobby(): Boolean {
         return prefs.getBoolean("isFirstTimeJoiningLobby", true)
     }
@@ -90,7 +92,7 @@ class SharedPrefHelper(context: Context) {
         editor.apply()
     }
 
-    fun getPoints() : String? {
+    fun getPoints(): String? {
         return prefs.getString(pointsKey, null)
     }
 }

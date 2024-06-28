@@ -13,9 +13,7 @@ val CustomFont = FontFamily(
     Font(resId = R.font.medium, weight = FontWeight.Medium),
     Font(resId = R.font.demi_bold, weight = FontWeight.Bold),
     Font(resId = R.font.condensed_demi_bold, weight = FontWeight.SemiBold)
-    // Add more Font objects here if you have more font files for different font weights
 )
-// Set of Material typography styles to start with
 val Typography = Typography(
     bodyMedium = TextStyle(
         fontFamily = CustomFont,

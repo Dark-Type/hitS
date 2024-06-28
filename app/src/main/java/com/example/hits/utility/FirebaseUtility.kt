@@ -37,7 +37,15 @@ data class User(
 )
 
 data class NewsObject(val text: String = "NO TEXT")
-data class ScoreData(val id: Int, val name: String, val score: Int, val kills: Int, val deaths: Int, val assists: Int)
+data class ScoreData(
+    val id: Int,
+    val name: String,
+    val score: Int,
+    val kills: Int,
+    val deaths: Int,
+    val assists: Int
+)
+
 data class UserForLeaderboard(
     val name: String,
     val points: Int,
@@ -123,7 +131,8 @@ fun addUserToRoom(roomID: Int, firstUser: User) {
     val newUserRef = databaseRef.child("rooms").child(roomID.toString()).child("users")
         .child(firstUser.id.toString())
 
-    val embeddingsRef = databaseRef.child("users").child(firstUser.id.toString()).child("embeddings")
+    val embeddingsRef =
+        databaseRef.child("users").child(firstUser.id.toString()).child("embeddings")
 
     embeddingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
 
@@ -396,9 +405,7 @@ fun getUsersForResultsScreen(
                             if (bombState == true) {
 
                                 redWonBOMB = true
-                            }
-
-                            else {
+                            } else {
 
                                 blueWonBOMB = true
                             }
@@ -409,22 +416,23 @@ fun getUsersForResultsScreen(
 
                                     GAMEMODE_FFA -> {
 
-                                            scores.add(
+                                        scores.add(
 
-                                                    ScoreData(
+                                            ScoreData(
 
-                                                        sortedUsers[i].id,
-                                                        sortedUsers[i].name,
-                                                        calculatePointsGainForFFA(
-                                                            sortedUsers[i].kills,
-                                                            sortedUsers[i].deaths,
-                                                            sortedUsers[i].assists
-                                                        ),
-                                                        sortedUsers[i].kills,
-                                                        sortedUsers[i].deaths,
-                                                        sortedUsers[i].assists
-                                                    )
-                                                    )}
+                                                sortedUsers[i].id,
+                                                sortedUsers[i].name,
+                                                calculatePointsGainForFFA(
+                                                    sortedUsers[i].kills,
+                                                    sortedUsers[i].deaths,
+                                                    sortedUsers[i].assists
+                                                ),
+                                                sortedUsers[i].kills,
+                                                sortedUsers[i].deaths,
+                                                sortedUsers[i].assists
+                                            )
+                                        )
+                                    }
 
                                     GAMEMODE_TDM -> scores.add(
 
@@ -559,6 +567,7 @@ fun addValue(valueRef: DatabaseReference, value: Int) {
         }
     })
 }
+
 var IS_USER_IN_BLUE_TEAM = false
 fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: List<String>) {
 
@@ -651,7 +660,8 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
                     currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
                         .child("isAlive").setValue(true)
                     currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
-                        .child("health").setValue(if (currMode == GAMEMODE_ONE_VS_ALL && userWithTeam.team == TEAM_BLUE) 1000 else 100)
+                        .child("health")
+                        .setValue(if (currMode == GAMEMODE_ONE_VS_ALL && userWithTeam.team == TEAM_BLUE) 1000 else 100)
                 }
 
                 currRoomRef.child("playersReady").setValue(0)
@@ -700,7 +710,7 @@ fun endGame(roomID: Int) {
         })
 }
 
-fun getUsersForCurrGameLeaderboard(roomID: Int) : SnapshotStateList<UserForLeaderboard> {
+fun getUsersForCurrGameLeaderboard(roomID: Int): SnapshotStateList<UserForLeaderboard> {
 
     val usersForCurrGameLeaderboard = SnapshotStateList<UserForLeaderboard>()
     val users = mutableListOf<User>()
@@ -708,37 +718,38 @@ fun getUsersForCurrGameLeaderboard(roomID: Int) : SnapshotStateList<UserForLeade
     databaseRef.child("rooms").child(roomID.toString()).child("users")
         .addListenerForSingleValueEvent(object : ValueEventListener {
 
-        override fun onDataChange(dataSnapshot: DataSnapshot) {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-            for (userSnapshot in dataSnapshot.children) {
+                for (userSnapshot in dataSnapshot.children) {
 
-                users.add(userSnapshot.getValue(User::class.java)!!)
-            }
+                    users.add(userSnapshot.getValue(User::class.java)!!)
+                }
 
-            for ((i, user) in users.withIndex()) {
+                for ((i, user) in users.withIndex()) {
 
-                usersForCurrGameLeaderboard.add(
-                    UserForLeaderboard(
-                        user.name,
-                        0,
-                        i + 1,
-                        0,
-                        0,
-                        0
+                    usersForCurrGameLeaderboard.add(
+                        UserForLeaderboard(
+                            user.name,
+                            0,
+                            i + 1,
+                            0,
+                            0,
+                            0
+                        )
                     )
-                )
+                }
             }
-        }
 
-        override fun onCancelled(error: DatabaseError) {}
-    })
+            override fun onCancelled(error: DatabaseError) {}
+        })
 
     return usersForCurrGameLeaderboard
 }
 
 fun addEmbeddingToDatabase(roomID: Int, userID: Int, embedding: FloatArray) {
 
-    val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings").child(userID.toString())
+    val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings")
+        .child(userID.toString())
     val mainUserRef = databaseRef.child("users").child(userID.toString()).child("embeddings")
 
     var maxEmbedding = 0
@@ -762,14 +773,15 @@ fun addEmbeddingToDatabase(roomID: Int, userID: Int, embedding: FloatArray) {
 
 fun deleteEmbeddingsFromDatabase(roomID: Int, userID: Int) {
 
-    val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings").child(userID.toString())
+    val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings")
+        .child(userID.toString())
     val mainUserRef = databaseRef.child("users").child(userID.toString()).child("embeddings")
 
     embeddingsRef.removeValue()
     mainUserRef.removeValue()
 }
 
-fun getEmbeddings(roomID: Int) : Array<Pair<FloatArray, Int>>{
+fun getEmbeddings(roomID: Int): Array<Pair<FloatArray, Int>> {
 
     val embeddingsRef = databaseRef.child("rooms").child(roomID.toString()).child("embeddings")
 
@@ -834,8 +846,9 @@ fun getEmbeddingsCount(userID: Int): CompletableFuture<Int> {
 
 fun leaveFromOngoingGame(roomID: Int, userID: Int) {
 
-    val userRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
-        .child(userID.toString())
+    val userRef =
+        databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
+            .child(userID.toString())
 
     userRef.child("health").setValue(0)
     userRef.child("isAlive").setValue(false)
@@ -843,7 +856,8 @@ fun leaveFromOngoingGame(roomID: Int, userID: Int) {
 
 fun voteForEnd(roomID: Int) {
 
-    val votesRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("voteForEnd")
+    val votesRef =
+        databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("voteForEnd")
 
     addValue(votesRef, 1)
 
@@ -866,7 +880,8 @@ fun voteForEnd(roomID: Int) {
 
                         if (votesCount != null) {
                             if (votesCount >= userCount / 2.0) {
-                                databaseRef.child("rooms").child(roomID.toString()).child("isPlaying")
+                                databaseRef.child("rooms").child(roomID.toString())
+                                    .child("isPlaying")
                                     .setValue(false)
                             }
                         }
@@ -900,7 +915,9 @@ fun explodeBomb(roomID: Int) {
 
 fun copyStatsToGlobal(roomID: Int, userID: Int) {
 
-    val currUserRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users").child(userID.toString())
+    val currUserRef =
+        databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
+            .child(userID.toString())
 
     currUserRef.addListenerForSingleValueEvent(object : ValueEventListener {
 
@@ -930,6 +947,7 @@ fun copyStatsToGlobal(roomID: Int, userID: Int) {
                 )
             }
         }
+
         override fun onCancelled(error: DatabaseError) {}
     })
 }

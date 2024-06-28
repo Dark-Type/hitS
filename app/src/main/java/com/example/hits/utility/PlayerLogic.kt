@@ -14,7 +14,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.math.max
 
-class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
+class PlayerLogic(private val healthThreshold: Int, private val damage: Int) {
     private var isAlive = true
     private var health = healthThreshold
     private var killsCount = 0
@@ -22,13 +22,14 @@ class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
     private var assistsCount = 0
 
     private val reviveHealth = 30
-    fun getHealthThreshold():Int{
+    fun getHealthThreshold(): Int {
         return healthThreshold
     }
 
-    fun interactWithPlant(lobbyId:Int, isBombPlanted:Boolean){
+    fun interactWithPlant(lobbyId: Int, isBombPlanted: Boolean) {
         if (!isBombPlanted) plant(lobbyId) else defuse(lobbyId)
     }
+
     fun changeHP(roomID: Int, playerID: Int, newHealth: Int, toastContext: Context) {
 
         health = newHealth
@@ -44,9 +45,7 @@ class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
 
             databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
                 .child(playerID.toString()).child("isAlive").setValue(false)
-        }
-
-        else if (health > 0 && !isAlive) {
+        } else if (health > 0 && !isAlive) {
 
             isAlive = true
 
@@ -59,7 +58,9 @@ class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
 
         GlobalScope.launch(Dispatchers.IO) {
 
-            val currPlayerRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users").child(playerTakenDamageID.toString())
+            val currPlayerRef =
+                databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
+                    .child(playerTakenDamageID.toString())
 
             val value = getHealthValueFromDatabase(roomID, playerTakenDamageID)
 
@@ -156,10 +157,12 @@ class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
         GlobalScope.launch(Dispatchers.IO) {
 
             val value = getHealthValueFromDatabase(roomID, userID)
-            val healthToAdd = if (value + 30 >= healthThreshold) max(healthThreshold - value, 0) else 30
+            val healthToAdd =
+                if (value + 30 >= healthThreshold) max(healthThreshold - value, 0) else 30
 
-            val healthRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
-                .child(userID.toString()).child("health")
+            val healthRef =
+                databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
+                    .child(userID.toString()).child("health")
 
             Log.d("HP", "$healthToAdd $health $healthThreshold")
 

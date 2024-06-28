@@ -53,7 +53,7 @@ class CameraX(
 
             override fun onFinish() {
                 textAndTime.postValue(Pair("-1", -1))
-                    eventType.postValue(textType)
+                eventType.postValue(textType)
                 stopAnalysis()
                 manuallyStopping = true
                 countdownTimer = null
@@ -66,6 +66,7 @@ class CameraX(
         countdownTimer?.cancel()
         textAndTime.postValue(Pair("", 0))
     }
+
     fun manuallyStopAnalysis() {
         stopAnalysis()
         manuallyStopping = true

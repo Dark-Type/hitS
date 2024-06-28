@@ -20,16 +20,6 @@ private val LightColorScheme = lightColorScheme(
     primary = Turquoise,
     secondary = LightTurquoise,
     tertiary = DarkTurquoise
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
 )
 
 @Composable
@@ -54,7 +44,8 @@ fun HitSTheme(
             val controller = WindowCompat.getInsetsController(window, view)
             controller.let {
                 it.hide(WindowInsetsCompat.Type.navigationBars())
-                it.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                it.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
             WindowInsetsControllerCompat(
                 window,
