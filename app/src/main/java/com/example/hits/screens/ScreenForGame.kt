@@ -206,12 +206,6 @@ class ScreenForGame {
 
                         currentHealthStateForHealthBar.value =
                             if (player.getHealthThreshold() == 100) newHealth / 10 else newHealth / 100
-
-
-                        Toast.makeText(context, "Health changed: $newHealth", Toast.LENGTH_SHORT)
-                            .show()
-
-
                     }
                 }
 
@@ -481,8 +475,6 @@ class ScreenForGame {
         fun triggerEvent(modeType: String) {
             hasNotInteracted.value = false
             if (modeType == "Plant") player.interactWithPlant(lobbyId, bombPlanted)
-
-            Toast.makeText(context, "You interacted with $modeType", Toast.LENGTH_SHORT).show()
         }
         cameraX.eventType.observe(LocalLifecycleOwner.current) { modeType ->
 
@@ -661,27 +653,13 @@ class ScreenForGame {
                                     val playerTakenDamageId = neuralNetwork.predictIfHit(bitmap)
                                     Log.d("CameraX", "playerId received: $playerTakenDamageId")
                                     if (playerTakenDamageId != null) {
-
                                         player.doDamage(lobbyId, playerTakenDamageId, userID)
                                         Log.d("CameraX", "got damage")
 
-                                        Toast.makeText(
-                                            context,
-                                            "You hit player with id $playerTakenDamageId",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
                                         // display damage, id and animation
                                     } else {
                                         //display miss animation
                                     }
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "DONE",
-                                            Toast.LENGTH_SHORT
-                                        )
-                                        .show()
-                                    showDialog = true
                                 }
                             }
 
@@ -1006,13 +984,6 @@ class ScreenForGame {
                                             shakeTime++
                                             if (shakeTime >= 10) {
                                                 player.heal(lobbyId, thisPlayerID)
-
-                                                Toast.makeText(
-                                                    context,
-                                                    "Shake time: $shakeTime",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                                shakeTime = 0
                                                 break
                                             }
                                         }
