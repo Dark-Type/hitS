@@ -1,11 +1,13 @@
 package com.example.hits.screens
 
+import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-
+import android.Manifest
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -65,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
@@ -280,6 +283,8 @@ class ScreenForJoinLobby {
             val configuration = LocalConfiguration.current
             val screenWidth = configuration.screenWidthDp.dp
             val screenHeight = configuration.screenHeightDp.dp
+
+
             Dialog(onDismissRequest = { showDialog.value = false }) {
                 ElevatedCard(
                     modifier = Modifier
@@ -323,15 +328,30 @@ class ScreenForJoinLobby {
                     contentScale = ContentScale.FillBounds
                 )
 
-
+                val toastContext = LocalContext.current
                 IconButton(
-                    onClick = { isSurfaceVisible.value = true },
+                    onClick = {
+                        if (ContextCompat.checkSelfPermission(
+                                toastContext,
+                                Manifest.permission.CAMERA
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            Toast.makeText(
+                                toastContext,
+                                "Permission not granted, please set it up in settings to play the game",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            isSurfaceVisible.value = true
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxSize(0.8f)
                         .fillMaxHeight(0.8f)
                         .align(Alignment.Center)
                 ) {
                     Image(
+
                         painter = painterResource(id = R.drawable.lobby_gun0),
                         contentDescription = "to lobby",
                     )
@@ -339,8 +359,19 @@ class ScreenForJoinLobby {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopEnd) {
                     IconButton(
                         onClick = {
-                            if (!isSurfaceVisible.value) navController.navigate("arScreen") else isSurfaceVisible.value =
-                                false
+                            if (ContextCompat.checkSelfPermission(
+                                    toastContext,
+                                    Manifest.permission.CAMERA
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                Toast.makeText(
+                                    toastContext,
+                                    "Permission not granted, please set it up in settings to play the game!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else
+                                if (!isSurfaceVisible.value) navController.navigate("arScreen") else isSurfaceVisible.value =
+                                    false
                         },
                         modifier = Modifier
                             .padding(top = 128.dp)
@@ -366,7 +397,11 @@ class ScreenForJoinLobby {
 
                     ) {
                     Image(
-                        painter = painterResource(id = R.drawable.lobby_go_to_settings),
+                        painter = painterResource(id = if (ContextCompat.checkSelfPermission(
+                                toastContext,
+                                Manifest.permission.CAMERA
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) R.drawable.highlighted_go_to_settings else R.drawable.lobby_go_to_settings),
                         contentDescription = "Settings",
                         modifier = Modifier
 
