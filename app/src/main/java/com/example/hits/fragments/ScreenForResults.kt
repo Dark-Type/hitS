@@ -41,6 +41,7 @@ import com.example.hits.ui.theme.Gold
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Silver
 import com.example.hits.ui.theme.Typography
+import com.example.hits.utility.copyPoints
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.getUsersForResultsScreen
 import com.example.hits.utility.removeUserFromRoom
@@ -157,6 +158,11 @@ class ScreenForResults {
                                     .clickable {
                                         databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").setValue("")
                                         removeUserFromRoom(lobbyId, userID)
+
+                                        val score = scores.find {it.id == userID}?.score
+
+                                        if (score != null) copyPoints(lobbyId, userID, score)
+
                                         navController.navigate("joinLobbyScreen")
                                     },
                                 shape = RoundedCornerShape(50.dp),
@@ -187,6 +193,11 @@ class ScreenForResults {
                                     .clickable {
                                         println(scores.size)
                                         databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").setValue("")
+
+                                        val score = scores.find {it.id == userID}?.score
+
+                                        if (score != null) copyPoints(lobbyId, userID, score)
+
                                         navController.navigate("lobbyScreen/$lobbyId")
                                     },
                                 shape = RoundedCornerShape(50.dp),

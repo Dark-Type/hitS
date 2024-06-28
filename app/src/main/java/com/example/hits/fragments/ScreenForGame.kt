@@ -46,8 +46,11 @@ import androidx.compose.ui.text.style.TextAlign
 
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.example.hits.GAMEMODE_CS_GO
+import com.example.hits.GAMEMODE_FFA
 import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
 import com.example.hits.GAMEMODE_ONE_VS_ALL
+import com.example.hits.GAMEMODE_TDM
 import com.example.hits.SharedPrefHelper
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Turquoise
@@ -55,8 +58,12 @@ import com.example.hits.ui.theme.Typography
 import com.example.hits.utility.IS_USER_IN_BLUE_TEAM
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
+import com.example.hits.utility.TEAM_BLUE
+import com.example.hits.utility.TEAM_RED
+import com.example.hits.utility.TeamAndHealth
 import com.example.hits.utility.User
 import com.example.hits.utility.UserForLeaderboard
+import com.example.hits.utility.UserForTDM
 import com.example.hits.utility.copyStatsToGlobal
 import com.example.hits.utility.databaseRef
 import com.example.hits.utility.endGame
@@ -65,9 +72,11 @@ import com.example.hits.utility.getEmbeddings
 import com.example.hits.utility.getUsersForCurrGameLeaderboard
 import com.example.hits.utility.leaveFromOngoingGame
 import com.example.hits.utility.voteForEnd
+import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.getValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -88,6 +97,7 @@ class ScreenForGame {
     private lateinit var player: PlayerLogic
     private var isVoted = false
     private var bombPlanted = false
+    private var explosion = false
 
 
     @Composable
@@ -140,6 +150,7 @@ class ScreenForGame {
 
                     if (value == false) {
                         endGame(lobbyId)
+                        Log.d("USERRR", "AA")
                         copyStatsToGlobal(lobbyId, userID)
                         navController.navigate("resultsScreen/$lobbyId/$userID/$currGameMode")
                     }
@@ -247,9 +258,11 @@ class ScreenForGame {
 
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
 
-                    val explosion = dataSnapshot.getValue(Boolean::class.java)
+                    val newExplosion = dataSnapshot.getValue(Boolean::class.java)
 
-                    if (explosion == true) {
+                    if (newExplosion == true) {
+
+                        explosion = newExplosion
 
                         Timer().schedule(2000) {
                             databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
@@ -265,6 +278,123 @@ class ScreenForGame {
                 override fun onCancelled(databaseError: DatabaseError) {
                     // Log the error
                 }
+            }
+
+            val aliveUsersListener = object : ChildEventListener {
+
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {}
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+
+                    databaseRef.child("rooms").child(lobbyId.toString())
+                        .child("gameInfo").child("users")
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+
+                            override fun onDataChange(snapshot: DataSnapshot) {
+
+                                var redAlive = 0
+                                var blueAlive = 0
+
+                                for (userSnapshot in snapshot.children) {
+
+                                    val userTeamAndHealth = userSnapshot.getValue(TeamAndHealth::class.java)
+
+                                    if (userTeamAndHealth != null) {
+
+                                        if (userTeamAndHealth.health > 0) {
+
+                                            if (userTeamAndHealth.team == TEAM_RED) redAlive++
+                                            if (userTeamAndHealth.team == TEAM_BLUE) blueAlive++
+                                        }
+                                    }
+                                }
+
+                                when (currGameMode) {
+
+                                    GAMEMODE_FFA, GAMEMODE_ONE_HIT_ELIMINATION -> {
+
+                                        if (redAlive <= 1) {
+
+                                            Timer().schedule(2000) {
+                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                    .setValue(false)
+                                            }
+
+                                            Toast.makeText(context, "1 player alive!", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                    }
+
+                                    GAMEMODE_TDM, GAMEMODE_ONE_VS_ALL -> {
+
+                                        if (blueAlive <= 0 && redAlive <= 0) {
+
+                                            Timer().schedule(2000) {
+                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                    .setValue(false)
+                                            }
+
+                                            Toast.makeText(context, "Draw! All players dead!", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+
+                                        else if (blueAlive <= 0) {
+
+                                            Timer().schedule(2000) {
+                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                    .setValue(false)
+                                            }
+
+                                            Toast.makeText(context, "Red won!", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+
+                                        else if (redAlive <= 0) {
+
+                                            Timer().schedule(2000) {
+                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                    .setValue(false)
+                                            }
+
+                                            Toast.makeText(context, "Red won!", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                    }
+
+                                    GAMEMODE_CS_GO -> {
+
+                                        if (redAlive <= 0 && !bombPlanted) {
+
+                                            Timer().schedule(2000) {
+                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                    .setValue(false)
+                                            }
+
+                                            Toast.makeText(context, "CT won!", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+
+                                        if (blueAlive <= 0 && !explosion) {
+
+                                            Timer().schedule(2000) {
+                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                    .setValue(false)
+                                            }
+
+                                            Toast.makeText(context, "T won!", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                    }
+                                }
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {}
+                        })
+                }
+
+                override fun onChildRemoved(snapshot: DataSnapshot) {}
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+                override fun onCancelled(error: DatabaseError) {}
             }
 
             databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo").child("users")
@@ -598,6 +728,8 @@ class ScreenForGame {
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                                     .clickable {
+                                        Log.d("USERRR", "AAA")
+                                        copyStatsToGlobal(lobbyId, userID)
                                         leaveFromOngoingGame(lobbyId, userID)
                                         navController.navigate("resultsScreen/$lobbyId/$userID/$currGameMode")
 

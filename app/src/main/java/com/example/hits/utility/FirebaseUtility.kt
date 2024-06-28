@@ -58,6 +58,11 @@ data class UserForTDM(
     val team: Int = -1
 )
 
+data class TeamAndHealth(
+    val health: Int = 0,
+    val team: Int = -1
+)
+
 const val TEAM_UNKNOWN = -1
 const val TEAM_RED = 0
 const val TEAM_BLUE = 1
@@ -895,7 +900,7 @@ fun explodeBomb(roomID: Int) {
 
 fun copyStatsToGlobal(roomID: Int, userID: Int) {
 
-    val currUserRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child(userID.toString())
+    val currUserRef = databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users").child(userID.toString())
 
     currUserRef.addListenerForSingleValueEvent(object : ValueEventListener {
 
@@ -904,6 +909,9 @@ fun copyStatsToGlobal(roomID: Int, userID: Int) {
             val user = snapshot.getValue(User::class.java)
 
             if (user != null) {
+
+                Log.d("USERRR", "A")
+
                 addValue(
                     databaseRef.child("users").child(userID.toString()).child("kills"),
                     user.kills
@@ -916,8 +924,20 @@ fun copyStatsToGlobal(roomID: Int, userID: Int) {
                     databaseRef.child("users").child(userID.toString()).child("assists"),
                     user.assists
                 )
+                addValue(
+                    databaseRef.child("users").child(userID.toString()).child("assists"),
+                    user.points
+                )
             }
         }
         override fun onCancelled(error: DatabaseError) {}
     })
+}
+
+fun copyPoints(roomID: Int, userID: Int, points: Int) {
+
+    addValue(
+        databaseRef.child("users").child(userID.toString()).child("points"),
+        points
+    )
 }
