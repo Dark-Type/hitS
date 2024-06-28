@@ -130,11 +130,11 @@ class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
         return health < healthThreshold
     }
 
-    fun revive(roomID: Int, IDtoRevive: Int) {
+    fun revive(roomID: Int, idToRevive: Int) {
 
         addValue(
             databaseRef.child("rooms").child(roomID.toString()).child("gameInfo").child("users")
-                .child(IDtoRevive.toString()).child("health"), reviveHealth
+                .child(idToRevive.toString()).child("health"), reviveHealth
         )
     }
 
@@ -143,11 +143,11 @@ class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
         health = reviveHealth
     }
 
-    fun plant(roomID: Int) {
+    private fun plant(roomID: Int) {
         plantBomb(roomID)
     }
 
-    fun defuse(roomID: Int) {
+    private fun defuse(roomID: Int) {
         defuseBomb(roomID)
     }
 

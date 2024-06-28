@@ -1,4 +1,4 @@
-package com.example.hits.fragments
+package com.example.hits.screens
 
 import android.Manifest
 import android.app.Activity
@@ -31,8 +31,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -68,7 +66,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 
-class SettingsFragment {
+class ScreenForSettings {
     @Composable
     fun SettingsScreen(navController: NavController, lobbyId: Int) {
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
@@ -85,9 +83,7 @@ class SettingsFragment {
         ) { isGranted: Boolean ->
             if (isGranted) {
                 Toast.makeText(context, "Thank you!", Toast.LENGTH_SHORT).show()
-
             } else {
-
                 Toast.makeText(context, "Permission is not granted", Toast.LENGTH_SHORT).show()
             }
         }
@@ -99,7 +95,6 @@ class SettingsFragment {
                 contentScale = ContentScale.FillBounds
             )
 
-
             Text(
                 text = "Settings",
                 fontSize = 36.sp,
@@ -109,7 +104,6 @@ class SettingsFragment {
                     .padding(top = 36.dp),
                 color = Color.White
             )
-
 
             Box(
                 modifier = Modifier
@@ -228,17 +222,31 @@ class SettingsFragment {
                             .clickable { showToDoDialog = true },
 
                         ) {
-                            Text("Change Skins", modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally),color = Color(0xFF595959), style = Typography.bodySmall)
-                        }
+                        Text(
+                            "Change Skins",
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.CenterHorizontally),
+                            color = Color(0xFF595959),
+                            style = Typography.bodySmall
+                        )
+                    }
                     Card(
                         colors = CardDefaults.cardColors(Color(0xFFD9D9D9)),
                         modifier = Modifier
                             .padding(bottom = 8.dp)
                             .align(Alignment.CenterHorizontally)
                             .fillMaxWidth()
-                            .clickable{ showDialog = true },
+                            .clickable { showDialog = true },
                     ) {
-                        Text("Change Nickname", modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally),color = Color(0xFF595959), style = Typography.bodySmall)
+                        Text(
+                            "Change Nickname",
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.CenterHorizontally),
+                            color = Color(0xFF595959),
+                            style = Typography.bodySmall
+                        )
                     }
                     @Composable
                     fun ShowAlertDialog(
@@ -273,36 +281,45 @@ class SettingsFragment {
                             .align(Alignment.CenterHorizontally)
                             .fillMaxWidth()
                             .clickable {
-                            val permission = Manifest.permission.CAMERA
-                            when {
-                                ContextCompat.checkSelfPermission(
-                                    context,
-                                    permission
-                                ) == PackageManager.PERMISSION_GRANTED -> {
-                                    Toast.makeText(
+                                val permission = Manifest.permission.CAMERA
+                                when {
+                                    ContextCompat.checkSelfPermission(
                                         context,
-                                        "Permission is already granted\nThank you!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                                        permission
+                                    ) == PackageManager.PERMISSION_GRANTED -> {
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "Permission is already granted\nThank you!",
+                                                Toast.LENGTH_SHORT
+                                            )
+                                            .show()
+                                    }
 
-                                else -> {
-                                    if (ActivityCompat.shouldShowRequestPermissionRationale(
-                                            context as Activity,
-                                            permission
-                                        )
-                                    ) {
-                                        requestPermissionLauncher.launch(permission)
-                                    } else {
+                                    else -> {
+                                        if (ActivityCompat.shouldShowRequestPermissionRationale(
+                                                context as Activity,
+                                                permission
+                                            )
+                                        ) {
+                                            requestPermissionLauncher.launch(permission)
+                                        } else {
 
-                                        showPermission = true
+                                            showPermission = true
+                                        }
                                     }
                                 }
-                            }
-                        },
+                            },
 
-                    ) {
-                        Text("Request Camera Permission", modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally),color = Color(0xFF595959), style = Typography.bodySmall)
+                        ) {
+                        Text(
+                            "Request Camera Permission",
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .align(Alignment.CenterHorizontally),
+                            color = Color(0xFF595959),
+                            style = Typography.bodySmall
+                        )
                     }
                     Button(
                         onClick = { navController.popBackStack() },
@@ -312,12 +329,18 @@ class SettingsFragment {
                                 elevation = 3.dp,
                                 shape = MaterialTheme.shapes.extraLarge,
                                 clip = true
-                                    ).fillMaxWidth(0.6f).align(Alignment.CenterHorizontally)
-                            ,
+                            )
+                            .fillMaxWidth(0.6f)
+                            .align(Alignment.CenterHorizontally),
                         shape = MaterialTheme.shapes.extraLarge,
                         colors = ButtonDefaults.buttonColors(Turquoise)
                     ) {
-                        Text("Exit", modifier = Modifier.padding(8.dp),color = Color.White, style = Typography.bodySmall)
+                        Text(
+                            "Exit",
+                            modifier = Modifier.padding(8.dp),
+                            color = Color.White,
+                            style = Typography.bodySmall
+                        )
                     }
                     if (showPermission) {
                         ShowAlertDialog(

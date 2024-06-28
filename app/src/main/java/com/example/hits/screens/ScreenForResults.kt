@@ -1,4 +1,4 @@
-package com.example.hits.fragments
+package com.example.hits.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -76,11 +76,13 @@ class ScreenForResults {
             animationSpec = tween(
                 durationMillis = 500,
                 easing = FastOutSlowInEasing
-            )
+            ), label = "smooth animations"
         )
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .scale(animatedScale)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .scale(animatedScale)
+        ) {
 
             Image(
                 painter = painterResource(id = R.drawable.main_background),
@@ -112,9 +114,11 @@ class ScreenForResults {
                         Column(modifier = Modifier.fillMaxWidth()) {
 
 
-                            LazyColumn(modifier = Modifier
-                                .fillMaxHeight(0.6f)
-                                .padding(16.dp)) {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxHeight(0.6f)
+                                    .padding(16.dp)
+                            ) {
                                 itemsIndexed(scores) { index, scoreData ->
                                     Card(
                                         modifier = Modifier
