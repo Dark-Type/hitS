@@ -1,10 +1,6 @@
-package com.example.hits.fragments
+package com.example.hits.screens
 
-import android.util.Log
-import android.view.View
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.annotation.RawRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -84,7 +80,7 @@ import com.example.hits.utility.getNews
 import com.example.hits.utility.getRandomID
 import com.example.hits.utility.getUsersForLeaderboard
 
-class JoinLobbyFragment {
+class ScreenForJoinLobby {
 
     @Composable
     fun Greeting(modifier: Modifier = Modifier, preferences: SharedPrefHelper) {
@@ -251,7 +247,7 @@ class JoinLobbyFragment {
             animationSpec = tween(
                 durationMillis = 500,
                 easing = FastOutSlowInEasing
-            )
+            ), label = "smooth animations"
         )
 
         @Composable

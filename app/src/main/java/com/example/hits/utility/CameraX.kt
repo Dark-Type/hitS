@@ -90,22 +90,18 @@ class CameraX(
                 imageProxy.close()
                 return
             }
-            Log.d("TextRecognizer", "Starting image analysis")
             val mediaImage = imageProxy.image
             if (mediaImage != null && !cameraX.manuallyStopping) {
                 val image =
                     InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
                 recognizer.process(image)
                     .addOnSuccessListener { visionText ->
-                        Log.d("TextRecognition", "Text recognition successful")
-                        Log.d("TextRecognition", "Text: ${visionText.text}")
                         val patternForPlantA = "(?i)plant".toRegex()
                         var triggeredByFlag = false
 
                         for (j in 1..6) {
                             val patternForFlag = "(?i)flag$j".toRegex()
                             if (patternForFlag.containsMatchIn(visionText.text)) {
-                                Log.d("TextRecognition", "Flag $j recognized")
                                 triggeredByFlag = true
                                 if (!cameraX.analysisRunning) {
                                     cameraX.analysisRunning = true
@@ -114,14 +110,12 @@ class CameraX(
                             }
                         }
                         if (patternForPlantA.containsMatchIn(visionText.text)) {
-                            Log.d("TextRecognition", "Plant recognized")
                             if (!cameraX.analysisRunning) {
                                 cameraX.analysisRunning = true
                                 cameraX.startTimer(10, "Plant")
                             }
                         } else {
                             if (!triggeredByFlag) {
-                                Log.d("TextRecognition", "No match found")
                                 cameraX.resetTimer()
                                 cameraX.analysisRunning = false
                                 firstRecognizedTime = System.currentTimeMillis()
@@ -130,8 +124,7 @@ class CameraX(
 
                     }
                     .addOnFailureListener { e ->
-                        // Task failed with an exception
-                        Log.e("TextRecognition", "Failed to process image", e)
+
                     }
                     .addOnCompleteListener {
                         imageProxy.close()
@@ -175,8 +168,7 @@ class CameraX(
                     imageCapture,
                     imageAnalyzer
                 )
-            } catch (e: Exception) {
-                Log.e("CameraX", "Error binding camera preview", e)
+            } catch (_: Exception) {
             }
         }, ContextCompat.getMainExecutor(context))
 

@@ -1,10 +1,8 @@
-package com.example.hits.fragments
+package com.example.hits.screens
 
 
 import android.graphics.Bitmap
-import android.util.Log
 import android.widget.Toast
-
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -104,11 +102,11 @@ import kotlinx.coroutines.launch
 import java.util.Collections.max
 
 
-class LobbyFragment {
+class ScreenForLobby {
 
     var users: SnapshotStateList<User> = mutableStateListOf()
-    var lobbyIdToCheck = 0
-    var databaseVotesRef = databaseRef
+    private var lobbyIdToCheck = 0
+    private var databaseVotesRef = databaseRef
     var didLocalDeviceInitiateChange = false
     var calledTransition = false
     var readyUsers = 0
@@ -136,7 +134,7 @@ class LobbyFragment {
             animationSpec = tween(
                 durationMillis = 500,
                 easing = FastOutSlowInEasing
-            )
+            ), label = "smooth animations"
         )
 
         showDialog = true
@@ -146,7 +144,8 @@ class LobbyFragment {
             Dialog(onDismissRequest = { showDialog = false }) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize().scale(animatedScale),
+                        .fillMaxSize()
+                        .scale(animatedScale),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -267,9 +266,8 @@ class LobbyFragment {
             animationSpec = tween(
                 durationMillis = 500,
                 easing = FastOutSlowInEasing
-            )
+            ), label = "smooth animations"
         )
-
 
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
@@ -299,7 +297,9 @@ class LobbyFragment {
                 Surface(
                     color = Color.White,
                     shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.padding(16.dp).scale(animatedScale)
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .scale(animatedScale)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -352,7 +352,9 @@ class LobbyFragment {
                 Surface(
                     color = Color.White,
                     shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.padding(16.dp).scale(animatedScale)
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .scale(animatedScale)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -544,12 +546,9 @@ class LobbyFragment {
                             val toastContext = LocalContext.current
                             Button(
                                 onClick = {
-
-                                    println("A")
                                     getEmbeddingsCount(
                                         sharedPrefHelper.getID()!!.toInt()
                                     ).thenAccept { countOfScansForThisUser ->
-                                        println("AAADASOd")
 
                                         if (countOfScansForThisUser <= 3) {
 
@@ -691,7 +690,6 @@ class LobbyFragment {
                                         value ?: updatedVotes[modes.indexOf(key)]
                                     votes.value = updatedVotes
 
-                                    Log.d("Firebase", "Vote for $key changed to $value")
                                 }
                             }
 
@@ -714,10 +712,6 @@ class LobbyFragment {
                                 if (readies != null) {
                                     readyUsers = readies
                                 }
-
-                                println(teamRed.size + teamBlue.size)
-                                println(teamRed.size)
-                                println(teamBlue.size)
                             }
 
                             override fun onCancelled(databaseError: DatabaseError) {
@@ -768,7 +762,6 @@ class LobbyFragment {
                                         }
                                     }
 
-                                    println("Team change detected for ${user.name} to $team")
 
                                     checkIfTransition()
                                 }
@@ -787,8 +780,6 @@ class LobbyFragment {
                             fun checkIfTransition() {
 
                                 if (readyUsers >= users.size && !calledTransition && (teamRed.size + teamBlue.size == users.size)) {
-
-                                    println("Called runGame from LobbyFragment")
 
                                     calledTransition = true
 
@@ -1008,7 +999,6 @@ class LobbyFragment {
                         Button(
 
                             onClick = {
-                                println("Button clicked for user: ${user.id}")
                                 triggerCapture.value = true
                                 bitmapState.value
 

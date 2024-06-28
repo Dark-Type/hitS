@@ -1,4 +1,4 @@
-package com.example.hits.fragments
+package com.example.hits.screens
 
 
 import android.Manifest
@@ -152,7 +152,6 @@ class ScreenForGame {
 
                     if (value == false) {
                         endGame(lobbyId)
-                        Log.d("USERRR", "AA")
                         copyStatsToGlobal(lobbyId, userID)
                         navController.navigate("resultsScreen/$lobbyId/$userID/$currGameMode")
                     }
@@ -212,7 +211,7 @@ class ScreenForGame {
                         Toast.makeText(context, "Health changed: $newHealth", Toast.LENGTH_SHORT)
                             .show()
 
-                        Log.d("TAKED DMG", newHealth.toString() + " curr hp: ${player.getHealth()}")
+
                     }
                 }
 
@@ -299,7 +298,8 @@ class ScreenForGame {
 
                                 for (userSnapshot in snapshot.children) {
 
-                                    val userTeamAndHealth = userSnapshot.getValue(TeamAndHealth::class.java)
+                                    val userTeamAndHealth =
+                                        userSnapshot.getValue(TeamAndHealth::class.java)
 
                                     if (userTeamAndHealth != null) {
 
@@ -318,11 +318,16 @@ class ScreenForGame {
                                         if (redAlive <= 1) {
 
                                             Timer().schedule(2000) {
-                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                databaseRef.child("rooms").child(lobbyId.toString())
+                                                    .child("isPlaying")
                                                     .setValue(false)
                                             }
 
-                                            Toast.makeText(context, "1 player alive!", Toast.LENGTH_SHORT)
+                                            Toast.makeText(
+                                                context,
+                                                "1 player alive!",
+                                                Toast.LENGTH_SHORT
+                                            )
                                                 .show()
                                         }
                                     }
@@ -332,29 +337,32 @@ class ScreenForGame {
                                         if (blueAlive <= 0 && redAlive <= 0) {
 
                                             Timer().schedule(2000) {
-                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                databaseRef.child("rooms").child(lobbyId.toString())
+                                                    .child("isPlaying")
                                                     .setValue(false)
                                             }
 
-                                            Toast.makeText(context, "Draw! All players dead!", Toast.LENGTH_SHORT)
+                                            Toast.makeText(
+                                                context,
+                                                "Draw! All players dead!",
+                                                Toast.LENGTH_SHORT
+                                            )
                                                 .show()
-                                        }
-
-                                        else if (blueAlive <= 0) {
+                                        } else if (blueAlive <= 0) {
 
                                             Timer().schedule(2000) {
-                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                databaseRef.child("rooms").child(lobbyId.toString())
+                                                    .child("isPlaying")
                                                     .setValue(false)
                                             }
 
                                             Toast.makeText(context, "Red won!", Toast.LENGTH_SHORT)
                                                 .show()
-                                        }
-
-                                        else if (redAlive <= 0) {
+                                        } else if (redAlive <= 0) {
 
                                             Timer().schedule(2000) {
-                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                databaseRef.child("rooms").child(lobbyId.toString())
+                                                    .child("isPlaying")
                                                     .setValue(false)
                                             }
 
@@ -368,7 +376,8 @@ class ScreenForGame {
                                         if (redAlive <= 0 && !bombPlanted) {
 
                                             Timer().schedule(2000) {
-                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                databaseRef.child("rooms").child(lobbyId.toString())
+                                                    .child("isPlaying")
                                                     .setValue(false)
                                             }
 
@@ -379,7 +388,8 @@ class ScreenForGame {
                                         if (blueAlive <= 0 && !explosion) {
 
                                             Timer().schedule(2000) {
-                                                databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
+                                                databaseRef.child("rooms").child(lobbyId.toString())
+                                                    .child("isPlaying")
                                                     .setValue(false)
                                             }
 
@@ -464,12 +474,12 @@ class ScreenForGame {
             animationSpec = tween(
                 durationMillis = 500,
                 easing = FastOutSlowInEasing
-            )
+            ), label = "smooth animations"
         )
-
+        val hasNotInteracted = remember { mutableStateOf(true) }
         val lastObservedValue = remember { mutableStateOf<String?>(null) }
         fun triggerEvent(modeType: String) {
-
+            hasNotInteracted.value = false
             if (modeType == "Plant") player.interactWithPlant(lobbyId, bombPlanted)
 
             Toast.makeText(context, "You interacted with $modeType", Toast.LENGTH_SHORT).show()
@@ -549,7 +559,6 @@ class ScreenForGame {
             if (elapsedTime == 10000L) {
                 val playerID = userID //эт нейронкой мб?
                 player.revive(lobbyId, playerID)
-                Log.d("revive", "revive $playerID")
             }
             Column(
                 modifier = Modifier
@@ -579,7 +588,9 @@ class ScreenForGame {
                         )
                     }
                     Image(
-                        modifier = Modifier.fillMaxWidth(0.5f),
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .align(Alignment.CenterVertically),
                         painter = when (currentHealthStateForHealthBar.value) {
                             0 -> painterResource(id = R.drawable.health_bar_0)
                             1 -> painterResource(id = R.drawable.health_bar_1)
@@ -619,7 +630,7 @@ class ScreenForGame {
                 }
 
                 textAndTimeState.value?.let { pair ->
-                    if (pair.first != "0" && pair.first != "-1" && pair.first != " " && pair.second != 0L) {
+                    if (pair.first != "0" && pair.first != "-1" && pair.first != " " && pair.second != 0L && hasNotInteracted.value) {
                         Text(
                             text = "Interacting with ${pair.first},\nTime remaining: ${pair.second} seconds",
                             modifier = Modifier
@@ -641,7 +652,7 @@ class ScreenForGame {
                         Log.d("CameraX", "button clicked")
 
                         if (player.isAlive())
-                            cameraX.capturePhoto() { bitmap ->
+                            cameraX.capturePhoto { bitmap ->
                                 Log.d("CameraX", "bitmap captured")
 
                                 //player.doDamage(lobbyId, 3, userID)
@@ -696,14 +707,14 @@ class ScreenForGame {
                     .size(20.dp)
             )
 
-
-
             if (showSettingsDialog) {
                 Dialog(onDismissRequest = { showSettingsDialog = false }) {
                     Surface(
                         color = Color.White,
                         shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth().scale(animatedScale)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .scale(animatedScale)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -749,7 +760,6 @@ class ScreenForGame {
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
                                     .clickable {
-                                        Log.d("USERRR", "AAA")
                                         copyStatsToGlobal(lobbyId, userID)
                                         leaveFromOngoingGame(lobbyId, userID)
                                         navController.navigate("resultsScreen/$lobbyId/$userID/$currGameMode")
@@ -782,7 +792,9 @@ class ScreenForGame {
                     Surface(
                         color = Color.White,
                         shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxHeight(0.6f).scale(animatedScale)
+                        modifier = Modifier
+                            .fillMaxHeight(0.6f)
+                            .scale(animatedScale)
                     ) {
                         Column(modifier = Modifier.fillMaxHeight()) {
 
@@ -1024,34 +1036,31 @@ class ScreenForGame {
 
 
                         var isAnalysisRunning = false
+                        if (currGameMode == GAMEMODE_CS_GO) {
+                            IconButton(
+                                onClick = {
+                                    if (!isAnalysisRunning) {
 
-                        IconButton(
-                            onClick = {
-                                if (!isAnalysisRunning) {
-                                    Log.d("TextRecognition", "Interact button clicked")
-                                    cameraX.startAnalysis()
-                                    isAnalysisRunning = true
-                                } else {
-                                    Log.d(
-                                        "TextRecognition",
-                                        "Interact button clicked again, stopping analysis"
-                                    )
-                                    cameraX.manuallyStopAnalysis()
-                                    isAnalysisRunning = false
-                                }
-                            },
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .align(Alignment.BottomEnd)
-                                .size(100.dp)
-                                .zIndex(2f)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.interact),
-                                contentDescription = "Interact",
+                                        cameraX.startAnalysis()
+                                        isAnalysisRunning = true
+                                    } else {
+                                        cameraX.manuallyStopAnalysis()
+                                        isAnalysisRunning = false
+                                    }
+                                },
                                 modifier = Modifier
+                                    .padding(16.dp)
+                                    .align(Alignment.BottomEnd)
                                     .size(100.dp)
-                            )
+                                    .zIndex(2f)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.interact),
+                                    contentDescription = "Interact",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                )
+                            }
                         }
                     }
                 }

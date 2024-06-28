@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.core.Easing
@@ -64,12 +63,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import app.rive.runtime.kotlin.core.Rive
-import com.example.hits.fragments.ScreenForGame
-import com.example.hits.fragments.JoinLobbyFragment
-import com.example.hits.fragments.LobbyFragment
-import com.example.hits.fragments.ScreenForAR
-import com.example.hits.fragments.ScreenForResults
-import com.example.hits.fragments.SettingsFragment
+import com.example.hits.screens.ScreenForGame
+import com.example.hits.screens.ScreenForJoinLobby
+import com.example.hits.screens.ScreenForLobby
+import com.example.hits.screens.ScreenForAR
+import com.example.hits.screens.ScreenForResults
+import com.example.hits.screens.ScreenForSettings
 import com.example.hits.ui.theme.HitSTheme
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Typography
@@ -80,7 +79,6 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private lateinit var sharedPrefHelper: SharedPrefHelper
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -106,12 +104,12 @@ class MainActivity : ComponentActivity() {
                 startDestination = if (nickname.isNullOrEmpty() || id == "-1") "initUI" else "joinLobbyScreen",
             ) {
                 composable("initUI") { InitUI(navController) }
-                composable("joinLobbyScreen") { JoinLobbyFragment().JoinLobbyScreen(navController) }
+                composable("joinLobbyScreen") { ScreenForJoinLobby().JoinLobbyScreen(navController) }
                 composable("settingsScreen/{lobbyId}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
 
                     if (lobbyId != null)
-                        SettingsFragment().SettingsScreen(navController, lobbyId.toInt())
+                        ScreenForSettings().SettingsScreen(navController, lobbyId.toInt())
                 }
                 composable("resultsScreen/{lobbyId}/{userID}/{gamemodePlayed}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
@@ -130,7 +128,7 @@ class MainActivity : ComponentActivity() {
                 composable("lobbyScreen/{lobbyId}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     if (lobbyId != null) {
-                        LobbyFragment().LobbyScreen(lobbyId.toInt(), navController)
+                        ScreenForLobby().LobbyScreen(lobbyId.toInt(), navController)
                     }
                 }
                 composable("gameScreen/{lobbyId}/{userID}/{currGamemode}") { backStackEntry ->
@@ -203,7 +201,7 @@ class MainActivity : ComponentActivity() {
 
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
         val nickname = sharedPrefHelper.getNickname() ?: ""
-        val snackbarHostState = remember { SnackbarHostState() }
+        val snackBarHostState = remember { SnackbarHostState() }
         val toast =
             Toast.makeText(LocalContext.current, "Creating your account...", Toast.LENGTH_SHORT)
 
@@ -224,9 +222,7 @@ class MainActivity : ComponentActivity() {
                     .align(Alignment.Center)
             )
 
-
             HitSTheme {
-
                 Box(modifier = Modifier.fillMaxSize()) {
                     val scope = rememberCoroutineScope()
                     Column(
@@ -306,14 +302,13 @@ class MainActivity : ComponentActivity() {
 
                                 if (textState.value.isBlank()) {
                                     scope.launch {
-                                        snackbarHostState.showSnackbar("Please enter a nickname")
+                                        snackBarHostState.showSnackbar("Please enter a nickname")
                                     }
                                 } else {
                                     shouldDisplayAnimation = true
                                     sharedPrefHelper.saveNickname(textState.value)
 
                                     if (sharedPrefHelper.getNickname() != null) {
-
 
                                         toast.show()
 
@@ -370,7 +365,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     SnackbarHost(
-                        hostState = snackbarHostState,
+                        hostState = snackBarHostState,
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .padding(top = 32.dp)
@@ -378,8 +373,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
     }
-
-
 }
