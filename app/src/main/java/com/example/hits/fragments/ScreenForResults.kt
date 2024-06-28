@@ -230,11 +230,10 @@ class ScreenForResults {
                     )
                 ) {
                     Card (Modifier.fillMaxWidth(), colors = CardColors(Color.White, Color.Black, Color.Black, Color.White)) {
-                        //@deadnya fill this with real kda data for player
-                        Text("prop data", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
-                        Text(text = "${(scores.find { it.id == userID })?.kills}")
-                        Text(text = "${(scores.find { it.id == userID })?.deaths}")
-                        Text(text = "${(scores.find { it.id == userID })?.assists}")
+
+                        Text(text = "Kills ${(scores.find { it.id == userID })?.kills}", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
+                        Text(text = "Deaths ${(scores.find { it.id == userID })?.deaths}", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
+                        Text(text = "Assists ${(scores.find { it.id == userID })?.assists}", modifier = Modifier.padding(16.dp), style = Typography.bodyMedium)
                     }
                 }
 

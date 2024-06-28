@@ -641,7 +641,7 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
                     currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
                         .child("isAlive").setValue(true)
                     currRoomRef.child("gameInfo").child("users").child(userWithTeam.id.toString())
-                        .child("health").setValue(100)
+                        .child("health").setValue(if (currMode == GAMEMODE_ONE_VS_ALL && userWithTeam.team == TEAM_BLUE) 1000 else 100)
                 }
 
                 currRoomRef.child("playersReady").setValue(0)

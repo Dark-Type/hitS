@@ -111,6 +111,7 @@ class ScreenForGame {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
+        val currentHealthStateForHealthBar = remember { mutableStateOf<Int?>(10) }
 
         player = PlayerLogic(
             if (currGameMode == GAMEMODE_ONE_VS_ALL && teamBlue.contains(userName)) 1000 else 100,
@@ -125,7 +126,8 @@ class ScreenForGame {
             lobbyId,
             userID,
             currGameMode,
-            navController
+            navController,
+            currentHealthStateForHealthBar
         )
 
         DisposableEffect(Unit) {
@@ -189,6 +191,10 @@ class ScreenForGame {
 
                     if (newHealth != null) {
                         player.changeHP(lobbyId, userID, newHealth, context)
+
+                        currentHealthStateForHealthBar.value =
+                            if (player.getHealthThreshold() == 100) newHealth / 10 else newHealth / 100
+
 
                         Toast.makeText(context, "Health changed: $newHealth", Toast.LENGTH_SHORT)
                             .show()
@@ -305,12 +311,17 @@ class ScreenForGame {
     fun CameraCompose(
         context: Context,
         cameraX: CameraX,
-        lobbyId: Int, userID: Int, currGameMode: String, navController: NavController
+        lobbyId: Int,
+        userID: Int,
+        currGameMode: String,
+        navController: NavController,
+        currentHealthStateForHealthBar: MutableState<Int?>
     ) {
         val textAndTimeState = remember { mutableStateOf<Pair<String, Long>?>(null) }
         cameraX.textAndTime.observe(LocalLifecycleOwner.current) { pair ->
             textAndTimeState.value = pair
         }
+
         val lastObservedValue = remember { mutableStateOf<String?>(null) }
         fun triggerEvent(modeType: String) {
 
@@ -392,16 +403,43 @@ class ScreenForGame {
                 player.revive(lobbyId, playerID)
                 Log.d("revive", "revive $playerID")
             }
-            textAndTimeState.value?.let { pair ->
-                if (pair.first != "0" && pair.first != "-1" && pair.first != " " && pair.second != 0L) {
-                    Text(
-                        text = "Interacting with ${pair.first},\nTime remaining: ${pair.second} seconds",
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 32.dp),
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp)
+            ) {
+
+
+                Image(
+                    painter = when (currentHealthStateForHealthBar.value) {
+                        0 -> painterResource(id = R.drawable.health_bar_0)
+                        1 -> painterResource(id = R.drawable.health_bar_1)
+                        2 -> painterResource(id = R.drawable.health_bar_2)
+                        3 -> painterResource(id = R.drawable.health_bar_3)
+                        4 -> painterResource(id = R.drawable.health_bar_4)
+                        5 -> painterResource(id = R.drawable.health_bar_5)
+                        6 -> painterResource(id = R.drawable.health_bar_6)
+                        7 -> painterResource(id = R.drawable.health_bar_7)
+                        8 -> painterResource(id = R.drawable.health_bar_8)
+                        9 -> painterResource(id = R.drawable.health_bar_9)
+                        10 -> painterResource(id = R.drawable.health_bar_10)
+                        else -> {
+                            painterResource(id = R.drawable.health_bar_10)
+                        }
+                    }, contentDescription = "Health bar"
+                )
+
+                textAndTimeState.value?.let { pair ->
+                    if (pair.first != "0" && pair.first != "-1" && pair.first != " " && pair.second != 0L) {
+                        Text(
+                            text = "Interacting with ${pair.first},\nTime remaining: ${pair.second} seconds",
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(top = 32.dp),
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
             Box(

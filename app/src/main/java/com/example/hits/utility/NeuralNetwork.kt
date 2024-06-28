@@ -161,13 +161,8 @@ class NeuralNetwork private constructor(context: Context) {
 
     // Найти людей на фото
     private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> = withContext(Dispatchers.Default) {
-        val resizedBitmap = Bitmap.createScaledBitmap(
-            bitmap,
-            500,
-            500,
-            false
-        )
-        val input = bitmapToByteArray(resizedBitmap)
+
+        val input = bitmapToByteArray(bitmap)
 
         val shape = longArrayOf(input.size.toLong())
 
@@ -193,26 +188,21 @@ class NeuralNetwork private constructor(context: Context) {
 
         while (boxIt.hasNext()) {
             val box = boxIt.next()
+            for(element in box) {
+                Log.d("detect", element.toString())
+            }
             // Is person detected
             if (box[5].toInt() == 0) {
+                Log.d("detect", "person detected")
 
-                val (xMin, yMin, xMax, yMax) = getBoxCoordinates(
+                val boxCoordinates = getBoxCoordinates(
                     box[0].toInt(),
                     box[1].toInt(),
                     box[2].toInt(),
                     box[3].toInt()
                 )
 
-                val scaledBoundingBoxes = scaleBoundingBox(
-                    bitmap.width,
-                    bitmap.height,
-                    xMin,
-                    yMin,
-                    xMax,
-                    yMax
-                )
-
-                boundingBoxes.add(scaledBoundingBoxes)
+                boundingBoxes.add(boxCoordinates)
             }
         }
 

@@ -22,6 +22,9 @@ class PlayerLogic(private val healthThreshold: Int, private val damage:Int) {
     private var assistsCount = 0
 
     private val reviveHealth = 30
+    fun getHealthThreshold():Int{
+        return healthThreshold
+    }
 
     fun interactWithPlant(lobbyId:Int, isBombPlanted:Boolean){
         if (!isBombPlanted) plant(lobbyId) else defuse(lobbyId)
