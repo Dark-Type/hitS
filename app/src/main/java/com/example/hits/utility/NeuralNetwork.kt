@@ -160,7 +160,9 @@ class NeuralNetwork private constructor(context: Context) {
     private fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
         val stream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-        return stream.toByteArray()
+        val result = stream.toByteArray()
+        stream.reset()
+        return result
     }
 
     // Найти людей на фото
