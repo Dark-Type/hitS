@@ -17,7 +17,7 @@ import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.getValue
+
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import kotlin.math.max
@@ -554,7 +554,7 @@ fun addValue(valueRef: DatabaseReference, value: Int) {
         }
     })
 }
-
+var IS_USER_IN_BLUE_TEAM = false
 fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: List<String>) {
 
     val currRoomRef = databaseRef.child("rooms").child(roomID.toString())
@@ -563,7 +563,8 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
 
     for (user in users) {
 
-        if (teamRed.contains(user.name))
+        if (teamRed.contains(user.name)) {
+            IS_USER_IN_BLUE_TEAM = false
             usersWithTeam.add(
                 UserForTDM(
                     user.id,
@@ -575,9 +576,12 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
                     user.assists,
                     TEAM_RED
                 )
-            )
 
-        if (teamBlue.contains(user.name))
+            )
+        }
+
+        if (teamBlue.contains(user.name)) {
+            IS_USER_IN_BLUE_TEAM = true
             usersWithTeam.add(
                 UserForTDM(
                     user.id,
@@ -590,6 +594,7 @@ fun runGame(roomID: Int, users: List<User>, teamRed: List<String>, teamBlue: Lis
                     TEAM_BLUE
                 )
             )
+        }
     }
 
     var maxModeVotes = 0

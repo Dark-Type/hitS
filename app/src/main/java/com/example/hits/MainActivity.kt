@@ -133,26 +133,19 @@ class MainActivity : ComponentActivity() {
                         LobbyFragment().LobbyScreen(lobbyId.toInt(), navController)
                     }
                 }
-                composable("gameScreen/{lobbyId}/{userID}/{currGamemode}/{blueTeam}/{userName}") { backStackEntry ->
+                composable("gameScreen/{lobbyId}/{userID}/{currGamemode}") { backStackEntry ->
                     val lobbyId = backStackEntry.arguments?.getString("lobbyId")
                     val userID = backStackEntry.arguments?.getString("userID")
                     val currGamemode = backStackEntry.arguments?.getString("currGamemode")
-                    var blueTeam = backStackEntry.arguments?.getString("blueTeam")
-                    if (blueTeam == null) {
-                        blueTeam = ""
-                    }
-                    val userName = backStackEntry.arguments?.getString("userName")
+
                     if (lobbyId != null && userID != null && currGamemode != null) {
-                        if (userName != null) {
-                            ScreenForGame().GameScreen(
-                                lobbyId.toInt(),
-                                userID.toInt(),
-                                currGamemode,
-                                navController,
-                                blueTeam,
-                                userName
-                            )
-                        }
+
+                        ScreenForGame().GameScreen(
+                            lobbyId.toInt(),
+                            userID.toInt(),
+                            currGamemode,
+                            navController
+                        )
                     }
                 }
             }

@@ -52,6 +52,7 @@ import com.example.hits.SharedPrefHelper
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Turquoise
 import com.example.hits.ui.theme.Typography
+import com.example.hits.utility.IS_USER_IN_BLUE_TEAM
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.User
@@ -105,17 +106,16 @@ class ScreenForGame {
         userID: Int,
         currGameMode: String,
         navController: NavController,
-        teamBlue: String,
-        userName: String
     ) {
         val lifecycleOwner = LocalLifecycleOwner.current
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
         val currentHealthStateForHealthBar = remember { mutableStateOf<Int?>(10) }
 
+
         player = PlayerLogic(
-            if (currGameMode == GAMEMODE_ONE_VS_ALL && teamBlue.contains(userName)) 1000 else 100,
-            if ((currGameMode == GAMEMODE_ONE_VS_ALL && teamBlue.contains(userName))) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 100 else 10
+            if (currGameMode == GAMEMODE_ONE_VS_ALL && (IS_USER_IN_BLUE_TEAM)) 1000 else 100,
+            if (currGameMode == GAMEMODE_ONE_VS_ALL && (IS_USER_IN_BLUE_TEAM)) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 100 else 10
         )
 
         leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }

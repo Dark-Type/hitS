@@ -762,19 +762,12 @@ class LobbyFragment {
                                     calledTransition = true
 
                                     runGame(lobbyId, users, teamRed, teamBlue)
-                                    val blueTeamString = teamBlue.joinToString(separator = ",")
-                                    var userName = ""
-                                    for (user in users) {
-                                        if (user.id == sharedPrefHelper.getID()!!.toInt()) {
-                                            userName = user.name
-                                        }
-                                    }
                                     navController.navigate(
                                         "gameScreen/$lobbyId/${sharedPrefHelper.getID()}/${
                                             modes[votes.value.indexOf(
                                                 max(votes.value)
                                             )]
-                                        }/$blueTeamString/$userName"
+                                        }"
                                     )
                                     {
                                         modes[votes.value.indexOf(
