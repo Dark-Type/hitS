@@ -7,3 +7,5 @@ https://colab.research.google.com/drive/1On2YAMnjJExbrqB0xmwaOchqVxiSplIg#scroll
 # Дообученная yolo для детекции людей + датасет 
 https://colab.research.google.com/drive/1-Pxyv9tScfdqymeczqi9jjggDn3TRUmj?usp=sharing
 https://colab.research.google.com/drive/1-Pxyv9tScfdqymeczqi9jjggDn3TRUmj?usp=sharing
+# Design project
+https://www.figma.com/design/RyihL3loaMdO3c1RewY0H1/hitS?node-id=221-4&t=sBIy3YVMGfjm0MWf-0
