@@ -313,7 +313,9 @@ class ScreenForLobby {
                             text = "For getting desired experience all persons in the lobby should be scanned, so they will get recognized in the game\n" +
                                     "\nTo achieve this each person is required to have 4 photos from different sides: front, right, back and left\n" +
                                     "\nBut it is recommended to make more photos for better recognition accuracy and game experience\n" +
-                                    "\nAlso try avoiding same background in photos",
+                                    "\nAlso try avoiding same background in photos\n" +
+                                    "\nTo speed up the treatment process, you should shake your phone\n" +
+                                    "\nTo interact with the bomb, you need to press the \"interact\" button and hold the camera over the inscription \"Plant\"\n",
                             style = Typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(bottom = 16.dp)
