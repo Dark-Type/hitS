@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
+import app.rive.runtime.kotlin.RiveAnimationView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -32,6 +33,7 @@ import android.hardware.SensorManager
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
@@ -44,6 +46,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -634,6 +637,16 @@ class ScreenForGame {
                     }
                 }
             }
+
+            var showWaterImage by remember { mutableStateOf(false) }
+            val imageScale by animateFloatAsState(if (showWaterImage) 1f else 0f)
+            val imageAlpha by animateFloatAsState(if (showWaterImage) 1f else 0f)
+            var waterOffset by remember { mutableStateOf(0.dp) }
+
+            var gunOffset by remember { mutableStateOf(0.dp) }
+            var gunClicked by remember { mutableStateOf(false) }
+
+
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -642,6 +655,8 @@ class ScreenForGame {
                 IconButton(
                     onClick = {
                         Log.d("CameraX", "button clicked")
+
+
 
                         if (player.isAlive())
                             cameraX.capturePhoto { bitmap ->
@@ -661,6 +676,26 @@ class ScreenForGame {
                                         //display miss animation
                                     }
                                 }
+
+                                gunClicked = !gunClicked
+                                gunOffset = if (gunOffset == 0.dp) 10.dp else 0.dp
+
+                                waterOffset = if (waterOffset == 0.dp) 10.dp else 0.dp
+
+                                showWaterImage = !showWaterImage
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    delay(400)
+                                    showWaterImage = !showWaterImage
+                                }
+
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    delay(200) // Adjust the delay as needed
+                                    gunOffset = 0.dp
+                                    gunClicked = !gunClicked
+
+                                    waterOffset = 0.dp
+                                }
+
                             }
 
                     }, enabled = true, modifier = Modifier
@@ -668,15 +703,49 @@ class ScreenForGame {
                         .size(400.dp)
                         .zIndex(1f)
                         .align(Alignment.BottomCenter)
-                ) {
+
+                )
+
+                {
+                    val animatedOffset by animateDpAsState(
+                        targetValue = gunOffset,
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = FastOutSlowInEasing
+
+                        )
+                    )
+
                     Image(
                         painter = painterResource(id = R.drawable.main_gun),
                         contentDescription = "Shoot",
                         modifier = Modifier
                             .size(400.dp)
+                            .offset(y = animatedOffset)
+                    )
+                }
+
+                if (showWaterImage) {
+                    val animatedWaterOffset by animateDpAsState(
+                        targetValue = waterOffset,
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+
+                    Image(
+                        painter = painterResource(id = R.drawable.water),
+                        contentDescription = "Water",
+                        modifier = Modifier
+                            .size(450.dp * imageScale)
+                            .align(Alignment.Center)
+                            .alpha(imageAlpha)
+                            .offset(y = animatedWaterOffset)
                     )
                 }
             }
+
             Image(
                 painter = painterResource(id = R.drawable.aim),
                 contentDescription = "aim",
