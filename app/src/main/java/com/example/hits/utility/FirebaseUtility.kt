@@ -23,7 +23,7 @@ import java.util.concurrent.CountDownLatch
 import kotlin.math.max
 
 val databaseRef: DatabaseReference =
-    FirebaseDatabase.getInstance("https://shooter-24512-default-rtdb.europe-west1.firebasedatabase.app")
+    FirebaseDatabase.getInstance("https://shooter-v2-default-rtdb.europe-west1.firebasedatabase.app")
         .getReference()
 
 data class User(
@@ -275,7 +275,7 @@ fun getNews(): SnapshotStateList<String> {
         override fun onDataChange(dataSnapshot: DataSnapshot) {
 
             for (newsSnapshot in dataSnapshot.children) {
-                news.add(newsSnapshot.getValue(NewsObject::class.java)!!.text)
+                news.add(newsSnapshot.getValue(String::class.java)!!)
             }
         }
 
