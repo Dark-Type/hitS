@@ -286,6 +286,7 @@ class NeuralNetwork private constructor(context: Context) {
         return result
     }
 
+
     /*
     Переводит картинку в эмбеддинг
     */

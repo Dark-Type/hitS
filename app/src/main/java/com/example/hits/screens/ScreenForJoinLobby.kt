@@ -285,6 +285,7 @@ class ScreenForJoinLobby {
             val screenHeight = configuration.screenHeightDp.dp
 
 
+
             Dialog(onDismissRequest = { showDialog.value = false }) {
                 ElevatedCard(
                     modifier = Modifier
@@ -329,6 +330,7 @@ class ScreenForJoinLobby {
                 )
 
                 val toastContext = LocalContext.current
+
                 IconButton(
                     onClick = {
                         if (ContextCompat.checkSelfPermission(
@@ -397,11 +399,13 @@ class ScreenForJoinLobby {
 
                     ) {
                     Image(
-                        painter = painterResource(id = if (ContextCompat.checkSelfPermission(
-                                toastContext,
-                                Manifest.permission.CAMERA
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) R.drawable.highlighted_go_to_settings else R.drawable.lobby_go_to_settings),
+                        painter = painterResource(
+                            id = if (ContextCompat.checkSelfPermission(
+                                    toastContext,
+                                    Manifest.permission.CAMERA
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) R.drawable.highlighted_go_to_settings else R.drawable.lobby_go_to_settings
+                        ),
                         contentDescription = "Settings",
                         modifier = Modifier
 

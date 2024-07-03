@@ -2,6 +2,8 @@ package com.example.hits.utility
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraManager
 import android.os.CountDownTimer
 import android.util.Log
 import android.view.Surface
@@ -174,6 +176,15 @@ class CameraX(
         }, ContextCompat.getMainExecutor(context))
 
         return previewView!!
+    }
+    fun toggleFlashLight(status: Boolean) {
+        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        try {
+            val cameraId = cameraManager.cameraIdList[0]
+            cameraManager.setTorchMode(cameraId, status)
+        } catch (e: CameraAccessException) {
+            e.printStackTrace()
+        }
     }
 
 

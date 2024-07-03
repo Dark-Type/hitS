@@ -3,10 +3,11 @@ package com.example.hits.screens
 
 import android.Manifest
 import android.content.Context
+import android.content.Context.VIBRATOR_MANAGER_SERVICE
+import android.content.Context.VIBRATOR_SERVICE
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
-import app.rive.runtime.kotlin.RiveAnimationView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -30,6 +31,9 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -50,10 +54,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.hits.GAMEMODE_CS_GO
+import com.example.hits.GAMEMODE_CTF
 import com.example.hits.GAMEMODE_FFA
 import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
 import com.example.hits.GAMEMODE_ONE_VS_ALL
@@ -105,13 +109,42 @@ class ScreenForGame {
     private var explosion = false
 
 
+    @Suppress("DEPRECATION")
     @Composable
-    fun HealthToast() {
+    fun DetectHitChangeAndAct(gotHit: MutableState<Boolean>) {
         val context = LocalContext.current
-        val health = remember { mutableIntStateOf(player.getHealth()) }
+        val previousGotHit = remember { mutableStateOf(false) }
 
-        LaunchedEffect(health.intValue) {
-            Toast.makeText(context, "Current health: ${health.intValue}", Toast.LENGTH_SHORT).show()
+        LaunchedEffect(gotHit.value) {
+
+            if (gotHit.value && gotHit.value != previousGotHit.value) {
+                val vibrator = if (Build.VERSION.SDK_INT >= 31) {
+                    (context.getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+                } else {
+                    context.getSystemService(VIBRATOR_SERVICE) as Vibrator
+                }
+                if (Build.VERSION.SDK_INT in 29..30) {
+                    vibrator.vibrate(
+                        VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                    )
+                } else if (Build.VERSION.SDK_INT >= 31) {
+                    vibrator.vibrate(
+                        VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
+                    )
+                } else {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        vibrator.vibrate(
+                            VibrationEffect.createOneShot(
+                                500L,
+                                VibrationEffect.DEFAULT_AMPLITUDE
+                            )
+                        )
+                    }
+                }
+                gotHit.value = false
+            }
+
+            previousGotHit.value = gotHit.value
         }
     }
 
@@ -126,15 +159,26 @@ class ScreenForGame {
         val context = LocalContext.current
         val cameraX = remember { CameraX(context, lifecycleOwner) }
         val currentHealthStateForHealthBar = remember { mutableStateOf<Int?>(10) }
+        val gotHit = remember { mutableStateOf(false) }
+        var isPlayerHider = false
+        var isPlayerSeeker = false
 
 
         player = PlayerLogic(
             if (currGameMode == GAMEMODE_ONE_VS_ALL && (IS_USER_IN_BLUE_TEAM)) 1000 else 100,
             if (currGameMode == GAMEMODE_ONE_VS_ALL && (IS_USER_IN_BLUE_TEAM)) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 100 else 10
         )
+        if (currGameMode == GAMEMODE_CTF) {
+            if (IS_USER_IN_BLUE_TEAM) {
+                isPlayerSeeker = true
+                Log.d("Player", "Seeker")
+            } else {
+                isPlayerHider = true
+            }
+        }
 
         leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }
-
+        Log.d("Player", "Seeker")
         CameraCompose(
             context = context,
             cameraX = cameraX,
@@ -142,8 +186,12 @@ class ScreenForGame {
             userID,
             currGameMode,
             navController,
-            currentHealthStateForHealthBar
+            currentHealthStateForHealthBar,
+            gotHit,
+            isPlayerHider,
+            isPlayerSeeker
         )
+
 
         DisposableEffect(Unit) {
 
@@ -205,7 +253,9 @@ class ScreenForGame {
                     val newHealth = dataSnapshot.getValue(Int::class.java)
 
                     if (newHealth != null) {
+                        gotHit.value = newHealth < player.getHealth()
                         player.changeHP(lobbyId, userID, newHealth, context)
+
 
                         currentHealthStateForHealthBar.value =
                             if (player.getHealthThreshold() == 100) newHealth / 10 else newHealth / 100
@@ -446,6 +496,7 @@ class ScreenForGame {
         }
     }
 
+
     @Composable
     fun CameraCompose(
         context: Context,
@@ -454,20 +505,25 @@ class ScreenForGame {
         userID: Int,
         currGameMode: String,
         navController: NavController,
-        currentHealthStateForHealthBar: MutableState<Int?>
+        currentHealthStateForHealthBar: MutableState<Int?>,
+        gotHit: MutableState<Boolean>,
+        isPlayerHider: Boolean,
+        isPlayerSeeker: Boolean
     ) {
+        Log.d("Player", "Seeker")
         val textAndTimeState = remember { mutableStateOf<Pair<String, Long>?>(null) }
         cameraX.textAndTime.observe(LocalLifecycleOwner.current) { pair ->
             textAndTimeState.value = pair
         }
         val dialogScale = remember { mutableFloatStateOf(0f) }
 
+
         LaunchedEffect(Unit) {
-            dialogScale.value = 1f
+            dialogScale.floatValue = 1f
         }
 
         val animatedScale by animateFloatAsState(
-            targetValue = dialogScale.value,
+            targetValue = dialogScale.floatValue,
             animationSpec = tween(
                 durationMillis = 500,
                 easing = FastOutSlowInEasing
@@ -488,6 +544,7 @@ class ScreenForGame {
             }
 
         }
+
         val neuralNetwork = NeuralNetwork.getInstance(context)
         LaunchedEffect(lobbyId) {
             CoroutineScope(Dispatchers.Default).launch {
@@ -496,12 +553,13 @@ class ScreenForGame {
             }
         }
 
-        HealthToast()
+        DetectHitChangeAndAct(gotHit = gotHit)
+
         val sharedPrefHelper = SharedPrefHelper(LocalContext.current)
         val thisPlayerID = sharedPrefHelper.getID()!!.toInt()
         val requiredPermissions =
             mutableListOf(
-                Manifest.permission.CAMERA,
+                Manifest.permission.CAMERA
             ).apply {
                 if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                     add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -534,7 +592,6 @@ class ScreenForGame {
                 )
             )
         }
-        var showDialog by remember { mutableStateOf(false) }
         var showStatsDialog by remember { mutableStateOf(false) }
         var showSettingsDialog by remember { mutableStateOf(false) }
 
@@ -645,109 +702,133 @@ class ScreenForGame {
 
             var gunOffset by remember { mutableStateOf(0.dp) }
             var gunClicked by remember { mutableStateOf(false) }
+            var showAimHit by remember { mutableStateOf(false) }
 
+            LaunchedEffect(showAimHit) {
+                if (showAimHit) {
+                    delay(500)
+                    showAimHit = false
+                }
+            }
 
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
             ) {
-                IconButton(
-                    onClick = {
-                        Log.d("CameraX", "button clicked")
+                Log.d("isPlayerHider", "$isPlayerHider")
+                Log.d("isPlayerSeeker", "$isPlayerSeeker")
+                if (!isPlayerHider) {
+                    IconButton(
+                        onClick = {
+                            Log.d("CameraX", "button clicked")
+
+                            if (player.isAlive()) {
+
+                                    cameraX.capturePhoto { bitmap ->
+                                        Log.d("CameraX", "bitmap captured")
+
+                                        //player.doDamage(lobbyId, 3, userID)
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            Log.d("CameraX", "coroutine launched")
+                                            val playerTakenDamageId =
+                                                neuralNetwork.predictIfHit(bitmap)
+                                            Log.d(
+                                                "CameraX",
+                                                "playerId received: $playerTakenDamageId"
+                                            )
+                                            if (playerTakenDamageId != null) {
+                                                showAimHit = true
+                                                player.doDamage(
+                                                    lobbyId,
+                                                    playerTakenDamageId,
+                                                    userID
+                                                )
+                                                Log.d("CameraX", "got damage")
+
+                                            } else {
+                                            }
+                                        }
+                                        if (currGameMode == GAMEMODE_CTF) {
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                cameraX.toggleFlashLight(true)
+                                                delay(500)
+                                                cameraX.toggleFlashLight(false)
+                                            }
+                                        }
+
+                                        gunClicked = !gunClicked
+                                        gunOffset = if (gunOffset == 0.dp) 10.dp else 0.dp
+                                            waterOffset = if (waterOffset == 0.dp) 10.dp else 0.dp
+
+                                            showWaterImage = !showWaterImage
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                delay(400)
+                                                showWaterImage = !showWaterImage
+                                            }
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            delay(200)
+                                            gunOffset = 0.dp
+                                            gunClicked = !gunClicked
+                                                waterOffset = 0.dp
+
+                                        }
 
 
-
-                        if (player.isAlive())
-                            cameraX.capturePhoto { bitmap ->
-                                Log.d("CameraX", "bitmap captured")
-
-                                //player.doDamage(lobbyId, 3, userID)
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    Log.d("CameraX", "coroutine launched")
-                                    val playerTakenDamageId = neuralNetwork.predictIfHit(bitmap)
-                                    Log.d("CameraX", "playerId received: $playerTakenDamageId")
-                                    if (playerTakenDamageId != null) {
-                                        player.doDamage(lobbyId, playerTakenDamageId, userID)
-                                        Log.d("CameraX", "got damage")
-
-                                        // display damage, id and animation
-                                    } else {
-                                        //display miss animation
-                                    }
                                 }
-
-                                gunClicked = !gunClicked
-                                gunOffset = if (gunOffset == 0.dp) 10.dp else 0.dp
-
-                                waterOffset = if (waterOffset == 0.dp) 10.dp else 0.dp
-
-                                showWaterImage = !showWaterImage
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    delay(400)
-                                    showWaterImage = !showWaterImage
-                                }
-
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    delay(200) // Adjust the delay as needed
-                                    gunOffset = 0.dp
-                                    gunClicked = !gunClicked
-
-                                    waterOffset = 0.dp
-                                }
-
                             }
 
-                    }, enabled = true, modifier = Modifier
-                        .padding(bottom = 32.dp)
-                        .size(400.dp)
-                        .zIndex(1f)
-                        .align(Alignment.BottomCenter)
-
-                )
-
-                {
-                    val animatedOffset by animateDpAsState(
-                        targetValue = gunOffset,
-                        animationSpec = tween(
-                            durationMillis = 200,
-                            easing = FastOutSlowInEasing
-
-                        )
-                    )
-
-                    Image(
-                        painter = painterResource(id = R.drawable.main_gun),
-                        contentDescription = "Shoot",
-                        modifier = Modifier
+                        }, enabled = true, modifier = Modifier
+                            .padding(bottom = 32.dp)
                             .size(400.dp)
-                            .offset(y = animatedOffset)
-                    )
-                }
+                            .zIndex(1f)
+                            .align(Alignment.BottomCenter)
 
-                if (showWaterImage) {
-                    val animatedWaterOffset by animateDpAsState(
-                        targetValue = waterOffset,
-                        animationSpec = tween(
-                            durationMillis = 200,
-                            easing = FastOutSlowInEasing
+                    )
+
+                    {
+                        val animatedOffset by animateDpAsState(
+                            targetValue = gunOffset,
+                            animationSpec = tween(
+                                durationMillis = 200,
+                                easing = FastOutSlowInEasing
+
+                            )
                         )
-                    )
 
-                    Image(
-                        painter = painterResource(id = R.drawable.water),
-                        contentDescription = "Water",
-                        modifier = Modifier
-                            .size(450.dp * imageScale)
-                            .align(Alignment.Center)
-                            .alpha(imageAlpha)
-                            .offset(y = animatedWaterOffset)
-                    )
+                        Image(
+                            painter = painterResource(id = R.drawable.main_gun),
+                            contentDescription = "Shoot",
+                            modifier = Modifier
+                                .size(400.dp)
+                                .offset(y = animatedOffset)
+                        )
+                    }
+
+                    if (showWaterImage) {
+                        val animatedWaterOffset by animateDpAsState(
+                            targetValue = waterOffset,
+                            animationSpec = tween(
+                                durationMillis = 200,
+                                easing = FastOutSlowInEasing
+                            )
+                        )
+
+                        Image(
+                            painter = painterResource(id = R.drawable.water),
+                            contentDescription = "Water",
+                            modifier = Modifier
+                                .size(450.dp * imageScale)
+                                .align(Alignment.Center)
+                                .alpha(imageAlpha)
+                                .offset(y = animatedWaterOffset)
+                        )
+                    }
                 }
             }
 
             Image(
-                painter = painterResource(id = R.drawable.aim),
+                painter = painterResource(id = if (showAimHit) R.drawable.aim_hit else R.drawable.aim),
                 contentDescription = "aim",
                 modifier = Modifier
                     .align(Alignment.Center)

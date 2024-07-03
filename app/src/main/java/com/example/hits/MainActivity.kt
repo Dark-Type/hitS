@@ -62,7 +62,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import app.rive.runtime.kotlin.core.Rive
 import com.example.hits.screens.ScreenForGame
 import com.example.hits.screens.ScreenForJoinLobby
 import com.example.hits.screens.ScreenForLobby
@@ -82,8 +81,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Rive.init(this)
         sharedPrefHelper = SharedPrefHelper(this)
+
 
         val neuralNetwork = NeuralNetwork.getInstance(this)
 

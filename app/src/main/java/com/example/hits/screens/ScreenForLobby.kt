@@ -175,7 +175,7 @@ class ScreenForLobby {
                                 shouldChooseTeams.value = false
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(Color.Red),
+                        colors = ButtonDefaults.buttonColors(Color(0xFFDC5959)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
@@ -183,6 +183,8 @@ class ScreenForLobby {
                         Text(
                             text = if (chosenGameMode == GAMEMODE_CS_GO) {
                                 "Join Terrs"
+                            } else if (chosenGameMode == GAMEMODE_CTF) {
+                                "Join Hiders"
                             } else {
                                 "Join Red"
                             },
@@ -229,7 +231,7 @@ class ScreenForLobby {
                                 }
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(Color.Blue),
+                        colors = ButtonDefaults.buttonColors(Color(0xFF5966DC)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
@@ -238,6 +240,8 @@ class ScreenForLobby {
                         Text(
                             text = if (chosenGameMode == GAMEMODE_CS_GO) {
                                 "Join Counter-Terrs"
+                            } else if (chosenGameMode == GAMEMODE_CTF) {
+                                "Join Seekers"
                             } else {
                                 "Join Blue"
                             },
@@ -296,52 +300,76 @@ class ScreenForLobby {
             Dialog(onDismissRequest = { }) {
                 Surface(
                     color = Color.White,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(32.dp),
                     modifier = Modifier
-                        .padding(16.dp)
+
                         .scale(animatedScale)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "Welcome to the lobby!\n",
-                            style = Typography.labelLarge,
-                        )
-                        Text(
-                            text = "For getting desired experience all persons in the lobby should be scanned, so they will get recognized in the game\n" +
-                                    "\nTo achieve this each person is required to have 4 photos from different sides: front, right, back and left\n" +
-                                    "\nBut it is recommended to make more photos for better recognition accuracy and game experience\n" +
-                                    "\nAlso try avoiding same background in photos\n" +
-                                    "\nTo speed up the treatment process, you should shake your phone\n" +
-                                    "\nTo interact with the bomb, you need to press the \"interact\" button and hold the camera over the inscription \"Plant\"\n",
-                            style = Typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(bottom = 16.dp)
-                        )
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .clickable {
-                                    sharedPrefHelper.setFirstTimeJoiningLobby(false)
-                                    showFirstTimeScanningDialog.value = false
-                                },
-                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                            colors = CardColors(
-                                LightTurquoise,
-                                Color.White,
-                                StrokeBlue,
-                                Color.Gray
-                            ),
+                        LazyColumn(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = "Got it!",
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .align(Alignment.CenterHorizontally),
-                                textAlign = TextAlign.Center,
-                            )
+                            item {
+                                Text(
+                                    text = "Welcome to the lobby!\n",
+                                    style = Typography.labelLarge,
+                                )
+                            }
+                            item {
+                                Card(
+                                    shape = RoundedCornerShape(4.dp),
+                                    colors = CardColors(
+                                        Color(0xFFEAEAEA),
+                                        Color(0xFF595959),
+                                        StrokeBlue,
+                                        Color.Gray
+                                    ),
+                                    elevation = CardDefaults.cardElevation(),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "For getting desired experience all persons in the lobby should be scanned, so they will get recognized in the game\n" +
+                                                "\nTo achieve this each person is required to have 4 photos from different sides: front, right, back and left\n" +
+                                                "\nBut it is recommended to make more photos for better recognition accuracy and game experience\n" +
+                                                "\nAlso try avoiding same background in photos\n" +
+                                                "\nTo speed up the healing process, you may shake your phone\n" +
+                                                "\nTo interact with the bomb, you need to press the \"interact\" button and hold the camera over the inscription \"Plant\"\n",
+                                        style = Typography.bodyMedium,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(16.dp)
+                                    )
+                                }
+                            }
+                            item {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.8f)
+                                        .padding(bottom = 16.dp, top = 16.dp)
+                                        .clickable {
+                                            sharedPrefHelper.setFirstTimeJoiningLobby(false)
+                                            showFirstTimeScanningDialog.value = false
+                                        },
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                                    colors = CardColors(
+                                        LightTurquoise,
+                                        Color.White,
+                                        StrokeBlue,
+                                        Color.Gray
+                                    ),
+                                ) {
+                                    Text(
+                                        text = "Got it!",
+                                        modifier = Modifier
+                                            .padding(16.dp)
+                                            .align(Alignment.CenterHorizontally),
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                            }
                         }
 
                     }
@@ -868,7 +896,7 @@ class ScreenForLobby {
                                                 end = 8.dp
                                             )
                                             .fillMaxWidth()
-                                            .clickable(enabled = mode != GAMEMODE_CTF) {
+                                            .clickable {
                                                 if (selectedMode.intValue != index) {
 
                                                     if (selectedMode.intValue != -1) {
@@ -1059,6 +1087,7 @@ class ScreenForLobby {
     ): MutableState<Bitmap?> {
         val photoContext = LocalContext.current
         val neuralNetwork = NeuralNetwork.getInstance(photoContext)
+
         val bitmapState = remember { mutableStateOf<Bitmap?>(null) }
         val takePictureLauncher =
             rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicturePreview()) { bitmap: Bitmap? ->
