@@ -796,10 +796,12 @@ class ScreenForGame {
                                             isAnimationPlaying = true
                                             showWaterImage = !showWaterImage
                                             CoroutineScope(Dispatchers.Main).launch {
+                                                delay(120)
                                                 showWaterImage = !showWaterImage
                                                 isAnimationPlaying = false
                                             }
                                             CoroutineScope(Dispatchers.Main).launch {
+                                                delay(50)
                                                 gunOffset = 0.dp
                                                 gunClicked = !gunClicked
                                                 waterOffset = 0.dp
