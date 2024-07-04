@@ -57,8 +57,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.example.hits.GAMEMODE_CS_GO
-import com.example.hits.GAMEMODE_CTF
 import com.example.hits.GAMEMODE_FFA
+import com.example.hits.GAMEMODE_HNS
 import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
 import com.example.hits.GAMEMODE_ONE_VS_ALL
 import com.example.hits.GAMEMODE_TDM
@@ -92,6 +92,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Timer
+import java.util.TimerTask
 import kotlin.concurrent.schedule
 import kotlin.math.sqrt
 
@@ -107,6 +108,8 @@ class ScreenForGame {
     private var isVoted = false
     private var bombPlanted = false
     private var explosion = false
+    private val HNSTimer = Timer()
+    lateinit var HNSTimerSchedule : TimerTask
 
 
     @Suppress("DEPRECATION")
@@ -163,12 +166,20 @@ class ScreenForGame {
         var isPlayerHider = false
         var isPlayerSeeker = false
 
+        if (currGameMode == GAMEMODE_HNS) {
+
+            HNSTimerSchedule = HNSTimer.schedule(300000) {
+                databaseRef.child("rooms").child(lobbyId.toString())
+                    .child("isPlaying")
+                    .setValue(false)
+            }
+        }
 
         player = PlayerLogic(
             if (currGameMode == GAMEMODE_ONE_VS_ALL && (IS_USER_IN_BLUE_TEAM)) 1000 else 100,
             if (currGameMode == GAMEMODE_ONE_VS_ALL && (IS_USER_IN_BLUE_TEAM)) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 100 else 10
         )
-        if (currGameMode == GAMEMODE_CTF) {
+        if (currGameMode == GAMEMODE_HNS) {
             if (IS_USER_IN_BLUE_TEAM) {
                 isPlayerSeeker = true
                 Log.d("Player", "Seeker")
@@ -432,7 +443,7 @@ class ScreenForGame {
                                                 .show()
                                         }
 
-                                        if (blueAlive <= 0 && !explosion) {
+                                        else if (blueAlive <= 0 && !explosion) {
 
                                             Timer().schedule(2000) {
                                                 databaseRef.child("rooms").child(lobbyId.toString())
@@ -441,6 +452,24 @@ class ScreenForGame {
                                             }
 
                                             Toast.makeText(context, "T won!", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                    }
+
+                                    GAMEMODE_HNS -> {
+
+                                        if (redAlive <= 0) {
+
+                                            HNSTimerSchedule.cancel()
+                                            HNSTimer.cancel()
+
+                                            Timer().schedule(2000) {
+                                                databaseRef.child("rooms").child(lobbyId.toString())
+                                                    .child("isPlaying")
+                                                    .setValue(false)
+                                            }
+
+                                            Toast.makeText(context, "Seekers won!", Toast.LENGTH_SHORT)
                                                 .show()
                                         }
                                     }
@@ -471,6 +500,9 @@ class ScreenForGame {
             databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
                 .child("explosion").addValueEventListener(explosionListener)
 
+            databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                .child("users").addChildEventListener(aliveUsersListener)
+
             onDispose {
                 databaseRef.child("rooms").child(lobbyId.toString()).child("isPlaying")
                     .removeEventListener(endGameListener)
@@ -488,6 +520,9 @@ class ScreenForGame {
 
                 databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
                     .child("explosion").removeEventListener(explosionListener)
+
+                databaseRef.child("rooms").child(lobbyId.toString()).child("gameInfo")
+                    .child("users").removeEventListener(aliveUsersListener)
             }
         }
 
@@ -745,11 +780,9 @@ class ScreenForGame {
                                                     userID
                                                 )
                                                 Log.d("CameraX", "got damage")
-
-                                            } else {
                                             }
                                         }
-                                        if (currGameMode == GAMEMODE_CTF) {
+                                        if (currGameMode == GAMEMODE_HNS) {
                                             CoroutineScope(Dispatchers.Main).launch {
                                                 cameraX.toggleFlashLight(true)
                                                 delay(500)

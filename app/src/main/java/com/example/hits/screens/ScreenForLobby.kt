@@ -69,7 +69,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.hits.GAMEMODE_CS_GO
-import com.example.hits.GAMEMODE_CTF
+import com.example.hits.GAMEMODE_HNS
 import com.example.hits.GAMEMODE_ONE_VS_ALL
 import com.example.hits.R
 import com.example.hits.SharedPrefHelper
@@ -183,7 +183,7 @@ class ScreenForLobby {
                         Text(
                             text = if (chosenGameMode == GAMEMODE_CS_GO) {
                                 "Join Terrs"
-                            } else if (chosenGameMode == GAMEMODE_CTF) {
+                            } else if (chosenGameMode == GAMEMODE_HNS) {
                                 "Join Hiders"
                             } else {
                                 "Join Red"
@@ -240,7 +240,7 @@ class ScreenForLobby {
                         Text(
                             text = if (chosenGameMode == GAMEMODE_CS_GO) {
                                 "Join Counter-Terrs"
-                            } else if (chosenGameMode == GAMEMODE_CTF) {
+                            } else if (chosenGameMode == GAMEMODE_HNS) {
                                 "Join Seekers"
                             } else {
                                 "Join Blue"

@@ -3,7 +3,7 @@ package com.example.hits.utility
 import android.util.Log
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.example.hits.GAMEMODE_CS_GO
-import com.example.hits.GAMEMODE_CTF
+import com.example.hits.GAMEMODE_HNS
 import com.example.hits.GAMEMODE_FFA
 import com.example.hits.GAMEMODE_ONE_HIT_ELIMINATION
 import com.example.hits.GAMEMODE_ONE_VS_ALL
@@ -69,6 +69,10 @@ data class UserForTDM(
 data class TeamAndHealth(
     val health: Int = 0,
     val team: Int = -1
+)
+
+data class isAlive(
+    val isAlive: Boolean = false
 )
 
 const val TEAM_UNKNOWN = -1
@@ -372,13 +376,20 @@ fun getUsersForResultsScreen(
                 var redKills = 0
                 var blueKills = 0
 
+                var redAlive = 0
+                var blueAlive = 0
+
                 for (userSnapshot in dataSnapshot.children) {
 
                     val user = userSnapshot.getValue(UserForTDM::class.java)
+                    val alive = userSnapshot.getValue(isAlive::class.java)
 
-                    if (user != null) {
+                    if (user != null && alive != null) {
                         if (user.team == TEAM_RED) redKills += user.kills
                         if (user.team == TEAM_BLUE) blueKills += user.kills
+
+                        if (user.team == TEAM_RED && alive.isAlive) redAlive++
+                        if (user.team == TEAM_BLUE && alive.isAlive) blueAlive++
 
                         users.add(userSnapshot.getValue(UserForTDM::class.java)!!)
                     }
@@ -396,6 +407,12 @@ fun getUsersForResultsScreen(
 
                             var redWonBOMB = false
                             var blueWonBOMB = false
+
+                            var redWonHNS = false
+                            var blueWonHNS = false
+
+                            if (redAlive > 0) redWonHNS = true
+                            else blueWonHNS = true
 
                             if (redKills > blueKills) redWonTDM = true
                             if (redKills < blueKills) blueWonTDM = true
@@ -480,7 +497,7 @@ fun getUsersForResultsScreen(
                                                 sortedUsers[i].kills,
                                                 sortedUsers[i].deaths,
                                                 sortedUsers[i].assists,
-                                                if (sortedUsers[i].team == TEAM_RED) redWonTDM else blueWonTDM
+                                                if (sortedUsers[i].team == TEAM_RED) redWonHNS else blueWonHNS
                                             ),
                                             sortedUsers[i].kills,
                                             sortedUsers[i].deaths,
@@ -506,16 +523,16 @@ fun getUsersForResultsScreen(
                                         )
                                     )
 
-                                    GAMEMODE_CTF -> scores.add(
+                                    GAMEMODE_HNS -> scores.add(
 
                                         ScoreData(
 
                                             sortedUsers[i].id,
                                             sortedUsers[i].name,
                                             calculatePointsGainForTDM(
-                                                sortedUsers[i].kills,
-                                                sortedUsers[i].deaths,
-                                                sortedUsers[i].assists,
+                                                1,
+                                                0,
+                                                0,
                                                 if (sortedUsers[i].team == TEAM_RED) redWonTDM else blueWonTDM
                                             ),
                                             sortedUsers[i].kills,
