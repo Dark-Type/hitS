@@ -2,6 +2,7 @@ package com.example.hits.screens
 
 
 import android.graphics.Bitmap
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -100,7 +101,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Collections.max
+import kotlin.properties.Delegates
 
+var chosenTeam by Delegates.notNull<Int>()
 
 class ScreenForLobby {
 
@@ -110,7 +113,6 @@ class ScreenForLobby {
     var didLocalDeviceInitiateChange = false
     var calledTransition = false
     var readyUsers = 0
-
 
     @Composable
     fun ChooseTeams(
@@ -158,6 +160,8 @@ class ScreenForLobby {
                                             .child("playersReady"), 1
                                     )
                                     setUserTeam(lobbyId, userID, TEAM_RED)
+                                    chosenTeam = TEAM_RED
+                                    Log.d("CHOSEN TEAM", TEAM_RED.toString())
                                     shouldChooseTeams.value = false
                                 } else {
                                     Toast.makeText(
@@ -172,6 +176,8 @@ class ScreenForLobby {
                                         .child("playersReady"), 1
                                 )
                                 setUserTeam(lobbyId, userID, TEAM_RED)
+                                chosenTeam = TEAM_RED
+                                Log.d("CHOSEN TEAM", TEAM_RED.toString())
                                 shouldChooseTeams.value = false
                             }
                         },
@@ -206,6 +212,8 @@ class ScreenForLobby {
                                             .child("playersReady"), 1
                                     )
                                     setUserTeam(lobbyId, userID, TEAM_BLUE)
+                                    chosenTeam = TEAM_BLUE
+                                    Log.d("CHOSEN TEAM", TEAM_BLUE.toString())
                                     shouldChooseTeams.value = false
                                 } else {
                                     Toast.makeText(
@@ -221,6 +229,8 @@ class ScreenForLobby {
                                             .child("playersReady"), 1
                                     )
                                     setUserTeam(lobbyId, userID, TEAM_BLUE)
+                                    chosenTeam = TEAM_BLUE
+                                    Log.d("CHOSEN TEAM", TEAM_BLUE.toString())
                                     shouldChooseTeams.value = false
                                 } else {
                                     Toast.makeText(
@@ -606,6 +616,8 @@ class ScreenForLobby {
                                                         sharedPrefHelper.getID()!!.toInt(),
                                                         TEAM_RED
                                                     )
+                                                    chosenTeam = TEAM_RED
+                                                    Log.d("CHOSEN TEAM", TEAM_RED.toString())
                                                     shouldChooseTeams.value = false
                                                 }
                                             } else {
@@ -619,6 +631,7 @@ class ScreenForLobby {
                                                     sharedPrefHelper.getID()!!.toInt(),
                                                     TEAM_UNKNOWN
                                                 )
+                                                chosenTeam = TEAM_UNKNOWN
                                             }
                                         }
                                     }
@@ -819,7 +832,7 @@ class ScreenForLobby {
                                             modes[votes.value.indexOf(
                                                 max(votes.value)
                                             )]
-                                        }"
+                                        }/$chosenTeam"
                                     )
                                     {
                                         modes[votes.value.indexOf(

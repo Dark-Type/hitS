@@ -66,7 +66,6 @@ import com.example.hits.SharedPrefHelper
 import com.example.hits.ui.theme.LightTurquoise
 import com.example.hits.ui.theme.Turquoise
 import com.example.hits.ui.theme.Typography
-import com.example.hits.utility.IS_USER_IN_BLUE_TEAM
 import com.example.hits.utility.NeuralNetwork
 import com.example.hits.utility.PlayerLogic
 import com.example.hits.utility.TEAM_BLUE
@@ -156,6 +155,7 @@ class ScreenForGame {
         lobbyId: Int,
         userID: Int,
         currGameMode: String,
+        chosenTeam: Int,
         navController: NavController,
     ) {
         val lifecycleOwner = LocalLifecycleOwner.current
@@ -165,6 +165,8 @@ class ScreenForGame {
         val gotHit = remember { mutableStateOf(false) }
         var isPlayerHider = false
         var isPlayerSeeker = false
+
+        Log.d("PlayerTeam", chosenTeam.toString())
 
         if (currGameMode == GAMEMODE_HNS) {
 
@@ -176,20 +178,21 @@ class ScreenForGame {
         }
 
         player = PlayerLogic(
-            if (currGameMode == GAMEMODE_ONE_VS_ALL && (IS_USER_IN_BLUE_TEAM)) 1000 else 100,
-            if (currGameMode == GAMEMODE_ONE_VS_ALL && (IS_USER_IN_BLUE_TEAM)) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 100 else 10
+            if (currGameMode == GAMEMODE_ONE_VS_ALL && (chosenTeam == TEAM_BLUE)) 1000 else 100,
+            if (currGameMode == GAMEMODE_ONE_VS_ALL && (chosenTeam == TEAM_BLUE)) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 100 else 10
         )
         if (currGameMode == GAMEMODE_HNS) {
-            if (IS_USER_IN_BLUE_TEAM) {
+            if (chosenTeam == TEAM_BLUE) {
                 isPlayerSeeker = true
                 Log.d("Player", "Seeker")
             } else {
                 isPlayerHider = true
+                Log.d("Player", "Hider")
             }
         }
 
         leaderboardData = remember { getUsersForCurrGameLeaderboard(lobbyId) }
-        Log.d("Player", "Seeker")
+
         CameraCompose(
             context = context,
             cameraX = cameraX,
@@ -545,7 +548,7 @@ class ScreenForGame {
         isPlayerHider: Boolean,
         isPlayerSeeker: Boolean
     ) {
-        Log.d("Player", "Seeker")
+
         val textAndTimeState = remember { mutableStateOf<Pair<String, Long>?>(null) }
         cameraX.textAndTime.observe(LocalLifecycleOwner.current) { pair ->
             textAndTimeState.value = pair
