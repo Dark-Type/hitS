@@ -2,12 +2,10 @@ package com.example.hits.utility
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.hardware.camera2.CameraAccessException
-import android.hardware.camera2.CameraManager
 import android.os.CountDownTimer
 import android.util.Log
-import android.view.Surface
 import androidx.annotation.OptIn
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -30,6 +28,8 @@ class CameraX(
 ) {
 
     private var imageAnalyzer: ImageAnalysis? = null
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var camera: Camera? = null
     val textAndTime = MutableLiveData<Pair<String, Long>>()
     var analysisRunning = false
     private var countdownTimer: CountDownTimer? = null
@@ -143,8 +143,24 @@ class CameraX(
 
 
     fun startCameraPreviewView(): PreviewView {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-        previewView = PreviewView(context)
+        if (cameraProvider == null) {
+            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+            cameraProviderFuture.addListener({
+                cameraProvider = cameraProviderFuture.get()
+                bindCamera()
+            }, ContextCompat.getMainExecutor(context))
+        } else {
+            bindCamera()
+        }
+        return previewView ?: PreviewView(context).also { previewView = it }
+    }
+
+    private fun bindCamera() {
+
+        if (previewView == null) {
+            previewView = PreviewView(context)
+        }
+
         val preview = Preview.Builder().build().also {
             it.setSurfaceProvider(previewView!!.surfaceProvider)
         }
@@ -155,35 +171,46 @@ class CameraX(
 
         imageCapture = ImageCapture.Builder()
             .setJpegQuality(85)
-            .setTargetRotation(Surface.ROTATION_0)
+            .setTargetRotation(previewView!!.display.rotation)
             .build()
 
-        val camSelector =
-            CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
+        val cameraSelector = CameraSelector.Builder()
+            .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+            .build()
 
-        cameraProviderFuture.addListener({
-            try {
-                val cameraProvider = cameraProviderFuture.get()
-                cameraProvider.bindToLifecycle(
-                    owner,
-                    camSelector,
-                    preview,
-                    imageCapture,
-                    imageAnalyzer
-                )
-            } catch (_: Exception) {
-            }
-        }, ContextCompat.getMainExecutor(context))
-
-        return previewView!!
+        try {
+            cameraProvider?.unbindAll() // Unbind any existing use cases
+            camera = cameraProvider?.bindToLifecycle(
+                owner,
+                cameraSelector,
+                preview,
+                imageCapture,
+                imageAnalyzer
+            )
+        } catch (e: Exception) {
+            Log.e("CameraX", "Binding failed", e)
+        }
     }
     fun toggleFlashLight(status: Boolean) {
-        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        try {
-            val cameraId = cameraManager.cameraIdList[0]
-            cameraManager.setTorchMode(cameraId, status)
-        } catch (e: CameraAccessException) {
-            e.printStackTrace()
+        if (camera != null) {
+            camera?.cameraControl?.enableTorch(status)
+        } else {
+            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+            cameraProviderFuture.addListener({
+                val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+                val cameraSelector = CameraSelector.Builder()
+                    .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                    .build()
+                try {
+                    cameraProvider.unbindAll()
+                    camera = cameraProvider.bindToLifecycle(
+                        owner, cameraSelector
+                    )
+                    camera?.cameraControl?.enableTorch(status)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }, ContextCompat.getMainExecutor(context))
         }
     }
 

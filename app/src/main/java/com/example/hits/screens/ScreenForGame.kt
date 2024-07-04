@@ -164,7 +164,7 @@ class ScreenForGame {
         val currentHealthStateForHealthBar = remember { mutableStateOf<Int?>(10) }
         val gotHit = remember { mutableStateOf(false) }
         var isPlayerHider = false
-        var isPlayerSeeker = false
+
 
         Log.d("PlayerTeam", chosenTeam.toString())
 
@@ -179,15 +179,11 @@ class ScreenForGame {
 
         player = PlayerLogic(
             if (currGameMode == GAMEMODE_ONE_VS_ALL && (chosenTeam == TEAM_BLUE)) 1000 else 100,
-            if (currGameMode == GAMEMODE_ONE_VS_ALL && (chosenTeam == TEAM_BLUE)) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION) 100 else 10
+            if (currGameMode == GAMEMODE_ONE_VS_ALL && (chosenTeam == TEAM_BLUE)) 30 else if (currGameMode == GAMEMODE_ONE_HIT_ELIMINATION || (currGameMode == GAMEMODE_HNS && chosenTeam== TEAM_BLUE)) 100 else 10
         )
         if (currGameMode == GAMEMODE_HNS) {
-            if (chosenTeam == TEAM_BLUE) {
-                isPlayerSeeker = true
-                Log.d("Player", "Seeker")
-            } else {
+            if (chosenTeam != TEAM_BLUE) {
                 isPlayerHider = true
-                Log.d("Player", "Hider")
             }
         }
 
@@ -202,8 +198,7 @@ class ScreenForGame {
             navController,
             currentHealthStateForHealthBar,
             gotHit,
-            isPlayerHider,
-            isPlayerSeeker
+            isPlayerHider
         )
 
 
@@ -545,8 +540,7 @@ class ScreenForGame {
         navController: NavController,
         currentHealthStateForHealthBar: MutableState<Int?>,
         gotHit: MutableState<Boolean>,
-        isPlayerHider: Boolean,
-        isPlayerSeeker: Boolean
+        isPlayerHider: Boolean
     ) {
 
         val textAndTimeState = remember { mutableStateOf<Pair<String, Long>?>(null) }
@@ -741,6 +735,8 @@ class ScreenForGame {
             var gunOffset by remember { mutableStateOf(0.dp) }
             var gunClicked by remember { mutableStateOf(false) }
             var showAimHit by remember { mutableStateOf(false) }
+            var isAnimationPlaying by remember { mutableStateOf(false) }
+
 
             LaunchedEffect(showAimHit) {
                 if (showAimHit) {
@@ -754,12 +750,18 @@ class ScreenForGame {
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
             ) {
-                Log.d("isPlayerHider", "$isPlayerHider")
-                Log.d("isPlayerSeeker", "$isPlayerSeeker")
                 if (!isPlayerHider) {
                     IconButton(
+                        enabled = !isAnimationPlaying,
                         onClick = {
                             Log.d("CameraX", "button clicked")
+                            if (currGameMode == GAMEMODE_HNS) {
+                                CoroutineScope(Dispatchers.Default).launch {
+                                    cameraX.toggleFlashLight(true)
+                                    delay(500)
+                                    cameraX.toggleFlashLight(false)
+                                }
+                            }
 
                             if (player.isAlive()) {
 
@@ -785,36 +787,31 @@ class ScreenForGame {
                                                 Log.d("CameraX", "got damage")
                                             }
                                         }
-                                        if (currGameMode == GAMEMODE_HNS) {
-                                            CoroutineScope(Dispatchers.Main).launch {
-                                                cameraX.toggleFlashLight(true)
-                                                delay(500)
-                                                cameraX.toggleFlashLight(false)
-                                            }
-                                        }
 
-                                        gunClicked = !gunClicked
-                                        gunOffset = if (gunOffset == 0.dp) 10.dp else 0.dp
+                                        if (currGameMode!= GAMEMODE_HNS) {
+                                            gunClicked = !gunClicked
+                                            gunOffset = if (gunOffset == 0.dp) 10.dp else 0.dp
                                             waterOffset = if (waterOffset == 0.dp) 10.dp else 0.dp
 
+                                            isAnimationPlaying = true
                                             showWaterImage = !showWaterImage
                                             CoroutineScope(Dispatchers.Main).launch {
-                                                delay(400)
                                                 showWaterImage = !showWaterImage
+                                                isAnimationPlaying = false
                                             }
-                                        CoroutineScope(Dispatchers.Main).launch {
-                                            delay(200)
-                                            gunOffset = 0.dp
-                                            gunClicked = !gunClicked
+                                            CoroutineScope(Dispatchers.Main).launch {
+                                                gunOffset = 0.dp
+                                                gunClicked = !gunClicked
                                                 waterOffset = 0.dp
 
+                                            }
                                         }
 
 
                                 }
                             }
 
-                        }, enabled = true, modifier = Modifier
+                        }, modifier = Modifier
                             .padding(bottom = 32.dp)
                             .size(400.dp)
                             .zIndex(1f)
@@ -833,7 +830,7 @@ class ScreenForGame {
                         )
 
                         Image(
-                            painter = painterResource(id = R.drawable.main_gun),
+                            painter = painterResource(id = if (currGameMode!= GAMEMODE_HNS)R.drawable.main_gun else R.drawable.flashlight),
                             contentDescription = "Shoot",
                             modifier = Modifier
                                 .size(400.dp)
