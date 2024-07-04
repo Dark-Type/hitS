@@ -168,7 +168,6 @@ class NeuralNetwork private constructor(context: Context) {
     // Найти людей на фото
     private suspend fun detect(bitmap: Bitmap): ArrayList<Array<Int>> =
         withContext(Dispatchers.Default) {
-
             val input = bitmapToByteArray(bitmap)
 
             val shape = longArrayOf(input.size.toLong())
@@ -183,12 +182,12 @@ class NeuralNetwork private constructor(context: Context) {
 
             val output = detectorOrtSession.run(
                 Collections.singletonMap("image", inputTensor),
-                setOf("image_out", "scaled_box_out_next")
+                setOf("nms_output_with_scaled_boxes_and_keypoints")
             ) as Result
             Log.d("detect", "ran session")
 
             // bounding boxes in (xcenter, ycenter, height, width) format
-            val result = (output.get(1)?.value) as Array<FloatArray>
+            val result = (output.get(0)?.value) as Array<FloatArray>
 
             val boxIt = result.iterator()
             val boundingBoxes = ArrayList<Array<Int>>()
@@ -324,7 +323,7 @@ class NeuralNetwork private constructor(context: Context) {
     }
 
     private fun readYolo(): ByteArray {
-        val modelID = R.raw.yolov8n_with_pre_post_processing
+        val modelID = R.raw.yolo_8n_pre_post_processed
         return applicationContext.resources.openRawResource(modelID).readBytes()
     }
 
