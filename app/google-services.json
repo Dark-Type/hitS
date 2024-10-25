@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "335090574521",
-    "project_id": "shooter-v2",
-    "storage_bucket": "shooter-v2.appspot.com"
+    "project_number": "1096884681522",
+    "project_id": "shooter-v3",
+    "storage_bucket": "shooter-v3.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:335090574521:android:875c55daed27ff9f1aa768",
+        "mobilesdk_app_id": "1:1096884681522:android:10a2dc63f5563bd2dc752b",
         "android_client_info": {
           "package_name": "com.example.hits"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCCBwyk1e4cQB41UqdpraH3gEEV-w-n-O4"
+          "current_key": "AIzaSyCuFdpj3V0Iqi2o-RjqCmmQJnfyhdoyHKQ"
         }
       ],
       "services": {

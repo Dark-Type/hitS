@@ -23,7 +23,7 @@ import java.util.concurrent.CountDownLatch
 import kotlin.math.max
 
 val databaseRef: DatabaseReference =
-    FirebaseDatabase.getInstance("https://shooter-v2-default-rtdb.europe-west1.firebasedatabase.app")
+    FirebaseDatabase.getInstance("https://shooter-v3-default-rtdb.europe-west1.firebasedatabase.app/")
         .getReference()
 
 data class User(
